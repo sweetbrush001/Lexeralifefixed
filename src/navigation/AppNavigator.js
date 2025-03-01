@@ -18,6 +18,7 @@ import ProfileSettingsScreen from "../screens/sidepanel/ProfileSettingsScreen";
 import FeedbackScreen from '../screens/feedback/FeedbackScreen';
 import RelaxScreen from "../screens/relax/RelaxScreen";
 import AgeRangeSelector from "../screens/auth/AgeRangeSelector"; 
+import TextToSpeechScreen from "../screens/features/TextToSpeechScreen"; // ✅ Check this path
 
 const Stack = createNativeStackNavigator();
 
@@ -42,6 +43,7 @@ const AppNavigator = () => {
         <Stack.Screen name="Feedback" component={FeedbackScreen} />
         <Stack.Screen name="Relax" component={RelaxScreen} />
         <Stack.Screen name="AgeRangeSelector" component={AgeRangeSelector} />
+        <Stack.Screen name="TextToSpeechScreen" component={TextToSpeechScreen} /> 
       </Stack.Navigator>
     </SettingsProvider>
   );

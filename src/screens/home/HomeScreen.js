@@ -297,7 +297,7 @@ const HomeScreen = () => {
           <View style={styles.smallCardsContainer}>
             <TouchableOpacity 
               style={[styles.smallCard, styles.trainingCard]}
-              onPress={() => navigation.navigate('settings')}
+              onPress={() => navigation.navigate('TextToSpeechScreen')}
             >
               <View style={styles.iconContainer}>
                 <Icon name="brain" size={24} color="#FF9999" />
