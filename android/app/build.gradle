@@ -1,0 +1,13 @@
+android {
+    // ... other configs
+    
+    defaultConfig {
+        // ... other configs
+        
+        vectorDrawables.useSupportLibrary = true
+    }
+}
+
+project.ext.react = [
+    enableHermes: true
+]
