@@ -1,239 +1,298 @@
 import { Audio } from 'expo-av';
+import { AppState } from 'react-native';
 
 /**
- * Audio Service - Handles all audio playback operations
+ * Improved Audio Service implementation with better error handling
+ * and more robust state management
  */
 class AudioService {
   constructor() {
-    this.sound = null;
+    this.soundObject = null;
     this.isPlaying = false;
     this.currentTrackId = null;
     this.volume = 1.0;
-    this.onPlaybackStatusUpdate = null;
-    this.initialized = false;
+    this.isInitialized = false;
+    this.statusCallback = null;
+    this.appStateSubscription = null;
   }
 
   /**
-   * Initialize audio session
+   * Initialize audio session with fixed interruptionModeIOS value
    */
   async init() {
-    if (this.initialized) return;
+    if (this.isInitialized) return true;
     
     try {
+      console.log('Initializing audio...');
       await Audio.setAudioModeAsync({
         allowsRecordingIOS: false,
         playsInSilentModeIOS: true,
         staysActiveInBackground: true,
-        interruptionModeIOS: 1,
+        // Fix for invalid interruptionModeIOS - use numeric value 1
+        interruptionModeIOS: 1, // This is INTERRUPTION_MODE_IOS_DO_NOT_MIX
         shouldDuckAndroid: true,
-        interruptionModeAndroid: 1,
+        interruptionModeAndroid: 1, // This is INTERRUPTION_MODE_ANDROID_DUCK_OTHERS
         playThroughEarpieceAndroid: false,
       });
-      this.initialized = true;
-      console.log("Audio initialized successfully");
+      
+      // Handle app state changes to manage audio in background
+      this.setupAppStateListener();
+      
+      this.isInitialized = true;
+      console.log('Audio initialized successfully');
+      return true;
     } catch (error) {
-      console.error('Failed to initialize audio', error);
-      throw error;
+      console.error('Error initializing audio:', error);
+      return false;
     }
   }
 
   /**
-   * Load and play a track - FIXED METHOD
-   * @param {string} uri - Track URI
-   * @param {string} trackId - Track identifier
-   * @param {Function} statusCallback - Callback for status updates
+   * Set up AppState listener for background handling
    */
-  async loadAndPlay(uri, trackId, statusCallback = null) {
-    await this.init();
+  setupAppStateListener() {
+    // Clean up any existing listener
+    if (this.appStateSubscription) {
+      this.appStateSubscription.remove();
+    }
     
-    // Unload any existing sound first
-    await this.unloadSound();
-    
-    try {
-      console.log(`Loading track: ${trackId} from URI: ${uri}`);
-      
-      // Use the static createAsync method instead of instantiating and then loading
-      const { sound: soundObject } = await Audio.Sound.createAsync(
-        { uri },
-        { 
-          shouldPlay: true,  // This will auto-play once loaded
-          isLooping: true,
-          volume: this.volume,
-          progressUpdateIntervalMillis: 1000,
-        },
-        (status) => {
-          // This is the status update callback
-          if (status.error) {
-            console.error(`Playback error: ${status.error}`);
-          }
-          if (statusCallback) {
-            statusCallback(status);
-          }
+    this.appStateSubscription = AppState.addEventListener('change', nextAppState => {
+      if (nextAppState === 'active') {
+        console.log('App has come to the foreground');
+        // Resume playing if needed
+        this.handleAppActive();
+      } else if (nextAppState === 'background') {
+        console.log('App has gone to the background');
+        // Optionally pause or handle background state
+        // this.handleAppBackground();
+      }
+    });
+  }
+
+  /**
+   * Handle app coming to foreground
+   */
+  async handleAppActive() {
+    if (this.soundObject && this.isPlaying) {
+      try {
+        const status = await this.soundObject.getStatusAsync();
+        if (status.isLoaded && !status.isPlaying) {
+          await this.soundObject.playAsync();
         }
+      } catch (error) {
+        console.error('Error resuming audio after app foregrounded:', error);
+      }
+    }
+  }
+
+  /**
+   * Load and play sound with improved error handling
+   */
+  async playSound(uri, trackId, statusCallback) {
+    try {
+      // Initialize first (will only run once)
+      await this.init();
+      
+      // Unload any existing sound
+      await this.unloadSound();
+      
+      console.log(`Loading sound: ${trackId} from ${uri}`);
+      
+      // Store callback for later use
+      this.statusCallback = statusCallback;
+      
+      // Validate URI before attempting to load
+      if (!uri) {
+        throw new Error('Invalid sound URI');
+      }
+      
+      // Create and play sound
+      const { sound } = await Audio.Sound.createAsync(
+        { uri },
+        { shouldPlay: true, isLooping: true, volume: this.volume },
+        this._onPlaybackStatusUpdate.bind(this)
       );
       
-      console.log(`Track loaded and playing: ${trackId}`);
-      
-      // Store the sound object
-      this.sound = soundObject;
+      // Store reference and state
+      this.soundObject = sound;
       this.isPlaying = true;
       this.currentTrackId = trackId;
       
+      console.log(`Sound loaded and playing: ${trackId}`);
       return true;
     } catch (error) {
-      console.error(`Error loading and playing sound: ${error.message}`, error);
+      console.error(`Error playing sound (${trackId}):`, error);
+      this.resetState();
+      
+      // Check for specific connection/resource errors
+      if (error.message && (
+        error.message.includes('network') || 
+        error.message.includes('connection') ||
+        error.message.includes('404') ||
+        error.message.includes('not found')
+      )) {
+        throw new Error('Sound file not available. Check your connection.');
+      }
+      
       throw error;
     }
   }
 
   /**
-   * Play or pause the current track
+   * Central status update handler
    */
-  async togglePlayPause() {
-    if (!this.sound) {
-      console.warn('No sound loaded to toggle');
-      return false;
+  _onPlaybackStatusUpdate(status) {
+    // Always keep track of playing state internally
+    if (status.isLoaded) {
+      this.isPlaying = status.isPlaying;
     }
     
+    // Forward status to external callback if provided
+    if (this.statusCallback) {
+      this.statusCallback(status);
+    }
+  }
+
+  /**
+   * Pause current sound
+   */
+  async pauseSound() {
+    if (!this.soundObject) return false;
+    
     try {
-      // Safely check status
-      let status;
-      try {
-        status = await this.sound.getStatusAsync();
-      } catch (err) {
-        console.error('Error getting sound status:', err);
-        this.reset(); // Reset if we can't even get status
-        return false;
-      }
-      
+      const status = await this.soundObject.getStatusAsync();
       if (!status.isLoaded) {
-        console.warn('Sound is not loaded');
-        this.reset();
+        console.warn('Sound not loaded, nothing to pause');
         return false;
       }
       
-      if (status.isPlaying) {
-        // If playing, pause it
-        console.log('Attempting to pause...');
-        await this.sound.pauseAsync();
-        this.isPlaying = false;
-        console.log('Sound paused successfully');
-      } else {
-        // If paused, play it
-        console.log('Attempting to play...');
-        await this.sound.playAsync();
-        this.isPlaying = true;
-        console.log('Sound playing successfully');
-      }
+      await this.soundObject.pauseAsync();
+      this.isPlaying = false;
       return true;
     } catch (error) {
-      console.error('Error in togglePlayPause:', error);
-      
-      // Reset state if we encounter an error
-      this.reset();
+      console.error('Error pausing sound:', error);
       return false;
     }
   }
 
   /**
-   * Reset the player state without trying to access the sound object
-   * This is a safe way to clear state when the sound object is in a bad state
+   * Resume playback of paused sound
    */
-  reset() {
-    console.log('Resetting audio player state');
-    this.sound = null;
-    this.isPlaying = false;
-    this.currentTrackId = null;
+  async resumeSound() {
+    if (!this.soundObject) return false;
+    
+    try {
+      const status = await this.soundObject.getStatusAsync();
+      if (!status.isLoaded) {
+        console.warn('Sound not loaded, nothing to resume');
+        return false;
+      }
+      
+      await this.soundObject.playAsync();
+      this.isPlaying = true;
+      return true;
+    } catch (error) {
+      console.error('Error resuming sound:', error);
+      return false;
+    }
   }
 
   /**
-   * Stop and unload the current sound
+   * Unload the sound resource with improved cleanup
    */
   async unloadSound() {
-    // If no sound, nothing to do
-    if (!this.sound) {
-      return;
-    }
-    
-    console.log('Attempting to unload sound...');
+    if (!this.soundObject) return true;
     
     try {
-      // Safely check if the sound is loaded
-      let isLoaded = false;
-      try {
-        const status = await this.sound.getStatusAsync();
-        isLoaded = status.isLoaded;
-      } catch (err) {
-        console.warn('Could not get sound status:', err.message);
-      }
+      // Get status to check if it's actually loaded
+      const status = await this.soundObject.getStatusAsync().catch(() => ({ isLoaded: false }));
       
-      if (isLoaded) {
-        // Try to stop first if it's playing
-        try {
-          await this.sound.stopAsync();
-          console.log('Sound stopped');
-        } catch (stopError) {
-          console.warn('Could not stop sound:', stopError.message);
-          // Continue to try unloading even if stopping fails
+      if (status.isLoaded) {
+        // Only call stopAsync if it is a function
+        if (this.soundObject && typeof this.soundObject.stopAsync === 'function') {
+          // Stop first to ensure clean unload
+          if (status.isPlaying) {
+            await this.soundObject.stopAsync().catch(err => console.warn('Stop error:', err));
+          }
         }
         
-        // Then try to unload
-        try {
-          await this.sound.unloadAsync();
-          console.log('Sound unloaded');
-        } catch (unloadError) {
-          console.warn('Could not unload sound:', unloadError.message);
-        }
+        // Then unload resources
+        await this.soundObject.unloadAsync().catch(err => console.warn('Unload error:', err));
       }
     } catch (error) {
-      console.warn('Error in unloadSound:', error.message);
+      console.error('Error during sound cleanup:', error);
     } finally {
-      // Always reset the state regardless of errors
-      this.reset();
+      // Always reset state regardless of errors
+      this.resetState();
+      return true;
     }
   }
 
   /**
-   * Set volume level
-   * @param {number} value - Volume level between 0 and 1
+   * Reset all state variables
    */
-  async setVolume(value) {
-    this.volume = value;
+  resetState() {
+    this.soundObject = null;
+    this.isPlaying = false;
+    this.currentTrackId = null;
+    // Don't reset statusCallback as it might be reused
+  }
+
+  /**
+   * Set volume level with more granular control
+   * @param {number} volume - Value from 0 to 1
+   */
+  async setVolume(volume) {
+    // Validate and constrain volume value
+    const validVolume = Math.max(0, Math.min(1, volume));
+    this.volume = validVolume;
     
-    if (!this.sound) return;
+    if (!this.soundObject) return false;
     
     try {
-      // Safely check if sound is loaded first
-      const status = await this.sound.getStatusAsync().catch(() => ({ isLoaded: false }));
-      
+      const status = await this.soundObject.getStatusAsync();
       if (status.isLoaded) {
-        await this.sound.setVolumeAsync(value);
-        console.log(`Volume set to ${value}`);
+        await this.soundObject.setVolumeAsync(validVolume);
+        return true;
       }
+      return false;
     } catch (error) {
       console.error('Error setting volume:', error);
+      return false;
     }
   }
-  
+
   /**
-   * Create a playback status callback function
+   * Clean up all resources
    */
-  _onPlaybackStatusUpdate(externalCallback) {
-    return (status) => {
-      // Only process significant status updates to reduce console noise
-      if (status.error) {
-        console.error('Audio playback error:', status.error);
-      } else if (status.didJustFinish) {
-        console.log('Track playback finished');
-      }
-      
-      // Call external callback if provided
-      if (externalCallback && typeof externalCallback === 'function') {
-        externalCallback(status);
-      }
-    };
+  cleanup() {
+    // Unload sound
+    this.unloadSound();
+    
+    // Remove app state listener
+    if (this.appStateSubscription) {
+      this.appStateSubscription.remove();
+      this.appStateSubscription = null;
+    }
+    
+    this.isInitialized = false;
+    this.statusCallback = null;
+  }
+
+  /**
+   * Get current status
+   */
+  async getStatus() {
+    if (!this.soundObject) return null;
+    
+    try {
+      return await this.soundObject.getStatusAsync();
+    } catch (error) {
+      console.error('Error getting status:', error);
+      return null;
+    }
   }
 }
 
-// Create a singleton instance
+// Export singleton
 export default new AudioService();

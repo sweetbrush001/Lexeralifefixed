@@ -1,27 +1,47 @@
-import React from 'react';
+import React, { useCallback, useRef } from 'react';
 import { 
   View, 
   Text, 
   StyleSheet, 
   TouchableOpacity, 
-  ActivityIndicator 
+  ActivityIndicator
 } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome5';
 
 /**
- * A reusable music player control component
+ * Simplified music player component with only stop functionality
  */
 const MusicPlayer = ({
   track,
   isPlaying,
-  onPlayPause,
   onStop,
-  onVolumeChange,
   loading,
-  volume,
   timerText,
   style
 }) => {
+  // Debounce handling
+  const lastClickTime = useRef(0);
+  const DEBOUNCE_DELAY = 300; // ms
+  
+  /**
+   * Debounced stop function
+   */
+  const handleStop = useCallback(() => {
+    const now = Date.now();
+    
+    // If loading or clicked too recently, ignore
+    if (loading || (now - lastClickTime.current) < DEBOUNCE_DELAY) {
+      return;
+    }
+    
+    // Update last click time
+    lastClickTime.current = now;
+    
+    // Call the handler
+    onStop();
+  }, [loading, onStop]);
+
+  // Safety check - don't render if track is missing
   if (!track) return null;
   
   return (
@@ -32,7 +52,7 @@ const MusicPlayer = ({
           size={24} 
           color="#fff" 
         />
-        <Text style={styles.trackName}>
+        <Text style={styles.trackName} numberOfLines={1}>
           {track.name || 'Unknown Track'}
         </Text>
         {timerText && (
@@ -43,42 +63,18 @@ const MusicPlayer = ({
       </View>
       
       <View style={styles.controls}>
-        {/* Volume button */}
+        {/* Single Stop button */}
         <TouchableOpacity 
-          style={styles.controlButton}
-          onPress={() => onVolumeChange(volume > 0 ? 0 : 1)}
-        >
-          <Icon 
-            name={volume > 0 ? "volume-up" : "volume-off"} 
-            size={18} 
-            color="#fff" 
-          />
-        </TouchableOpacity>
-        
-        {/* Play/Pause button */}
-        <TouchableOpacity 
-          style={styles.controlButton}
-          onPress={onPlayPause}
+          style={[styles.controlButton, loading && styles.disabledButton]}
+          onPress={handleStop}
           disabled={loading}
+          activeOpacity={loading ? 0.8 : 0.5}
         >
           {loading ? (
             <ActivityIndicator size="small" color="#fff" />
           ) : (
-            <Icon 
-              name={isPlaying ? "pause" : "play"} 
-              size={18} 
-              color="#fff" 
-            />
+            <Icon name="stop" size={18} color="#fff" />
           )}
-        </TouchableOpacity>
-        
-        {/* Stop button */}
-        <TouchableOpacity 
-          style={styles.controlButton}
-          onPress={onStop}
-          disabled={loading}
-        >
-          <Icon name="stop" size={18} color="#fff" />
         </TouchableOpacity>
       </View>
     </View>
@@ -98,12 +94,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     flex: 1,
+    marginRight: 10,
   },
   trackName: {
     color: '#fff',
     fontWeight: '600',
     fontSize: 16,
     marginLeft: 12,
+    flex: 1,
   },
   timerText: {
     color: 'rgba(255,255,255,0.8)',
@@ -122,6 +120,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginLeft: 10,
   },
+  disabledButton: {
+    opacity: 0.6,
+  },
 });
 
-export default MusicPlayer;
+export default React.memo(MusicPlayer); // Use memo to prevent unnecessary re-renders

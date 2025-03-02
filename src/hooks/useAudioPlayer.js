@@ -1,148 +1,222 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import AudioService from '../services/AudioService';
 
 /**
- * Custom hook for audio player functionality
+ * Improved audio player hook with better state management
+ * and error handling
  */
 export default function useAudioPlayer() {
   const [currentTrack, setCurrentTrack] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [volume, setVolumeState] = useState(1.0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [playbackStatus, setPlaybackStatus] = useState(null);
+  const [volume, setVolumeState] = useState(1.0);
   
+  // Debounce control - prevent rapid clicking
+  const debounceTimerRef = useRef(null);
+  const isOperationInProgressRef = useRef(false);
+  
+  // Clear error after delay
   useEffect(() => {
-    // Initialize the audio service
-    AudioService.init().catch(err => {
-      console.error('Failed to initialize audio service', err);
-      setError('Failed to initialize audio player');
-    });
-    
-    // Cleanup on unmount
-    return () => {
-      AudioService.unloadSound();
-    };
-  }, []);
-  
-  /**
-   * Play a track with the given URI - IMPROVED VERSION
-   * @param {string} uri - The track URI
-   * @param {string} trackId - Identifier for the track
-   * @param {object} metadata - Additional track information
-   */
-  const playTrack = async (uri, trackId, metadata = {}) => {
-    if (!uri || !trackId) {
-      setError('Invalid track information');
-      return;
+    let errorTimer;
+    if (error) {
+      errorTimer = setTimeout(() => {
+        setError(null);
+      }, 3000);
     }
     
-    try {
-      setLoading(true);
-      setError(null);
-      
-      console.log(`Attempting to play track: ${trackId}`);
-      
-      // Check if this is the same track
-      if (currentTrack && currentTrack.id === trackId) {
-        console.log('Same track - toggling play/pause');
-        const success = await AudioService.togglePlayPause();
-        
-        if (success) {
-          setIsPlaying(!isPlaying);
-        } else {
-          console.log('Toggle failed, will try to reload track');
-          // If toggle failed, force reload
-          await AudioService.loadAndPlay(uri, trackId, updatePlaybackStatus);
-          setIsPlaying(true);
-        }
-      } else {
-        console.log('New track - loading and playing');
-        // Load and play new track
-        await AudioService.loadAndPlay(uri, trackId, updatePlaybackStatus);
-        setCurrentTrack({ id: trackId, uri, ...metadata });
-        setIsPlaying(true);
+    return () => {
+      if (errorTimer) clearTimeout(errorTimer);
+    };
+  }, [error]);
+  
+  // Clean up on unmount
+  useEffect(() => {
+    return () => {
+      // Cancel any pending operations
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
       }
       
-      console.log('Track play operation completed successfully');
-    } catch (err) {
-      console.error(`Error playing track: ${err.message}`, err);
-      setError(`Couldn't play ${metadata.name || 'track'}: ${err.message || 'Unknown error'}`);
-      // Reset state
-      setCurrentTrack(null);
-      setIsPlaying(false);
-    } finally {
-      setLoading(false);
+      // Clean up audio resources
+      AudioService.cleanup();
+    };
+  }, []);
+
+  /**
+   * Debounce function to prevent rapid operations
+   */
+  const debounce = (func, delay = 300) => {
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
     }
+    
+    if (isOperationInProgressRef.current) {
+      return Promise.resolve(false);
+    }
+    
+    return new Promise(resolve => {
+      debounceTimerRef.current = setTimeout(() => {
+        isOperationInProgressRef.current = true;
+        Promise.resolve(func())
+          .then(result => {
+            isOperationInProgressRef.current = false;
+            resolve(result);
+          })
+          .catch(err => {
+            isOperationInProgressRef.current = false;
+            console.error('Operation error:', err);
+            resolve(false);
+          });
+      }, delay);
+    });
   };
 
-  // Helper function to update playback status
-  const updatePlaybackStatus = (status) => {
-    setPlaybackStatus(status);
-    
-    // Update isPlaying based on status
+  /**
+   * Play a track with improved state handling
+   */
+  const playTrack = useCallback(async (uri, trackId, metadata = {}) => {
+    return debounce(async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        // If same track is already playing, pause it
+        if (currentTrack?.id === trackId && isPlaying) {
+          await AudioService.pauseSound();
+          setIsPlaying(false);
+          return true;
+        }
+        
+        // If same track is paused, resume it
+        if (currentTrack?.id === trackId && !isPlaying) {
+          const resumed = await AudioService.resumeSound();
+          if (resumed) {
+            setIsPlaying(true);
+            return true;
+          } else {
+            // If resume fails, try loading again
+            console.log('Resume failed, reloading track');
+          }
+        }
+        
+        // Load and play new track
+        await AudioService.playSound(uri, trackId, handleStatus);
+        setCurrentTrack({ id: trackId, uri, ...metadata });
+        setIsPlaying(true);
+        return true;
+      } catch (err) {
+        console.error(`Error in playTrack (${trackId}):`, err);
+        
+        // Provide specific error messages based on error type
+        if (err.message?.includes('not available') || err.message?.includes('connection')) {
+          setError(`Could not load "${metadata.name || 'track'}". Check your connection.`);
+        } else {
+          setError(`Problem playing "${metadata.name || 'track'}". ${err.message || ''}`);
+        }
+        
+        // Reset state
+        setCurrentTrack(null);
+        setIsPlaying(false);
+        return false;
+      } finally {
+        setLoading(false);
+      }
+    });
+  }, []);
+
+  /**
+   * Handle playback status updates
+   */
+  const handleStatus = useCallback((status) => {
     if (status.isLoaded) {
       setIsPlaying(status.isPlaying);
     }
-  };
-  
+    
+    // You could add more status handling here if needed
+  }, []);
+
   /**
-   * Stop the current track
+   * Stop track playback
    */
-  const stopTrack = async () => {
-    try {
-      await AudioService.unloadSound();
-      setCurrentTrack(null);
-      setIsPlaying(false);
-      setPlaybackStatus(null);
-    } catch (err) {
-      console.error('Error stopping track:', err);
-      // Reset state even if there was an error
-      setCurrentTrack(null);
-      setIsPlaying(false);
-    }
-  };
-  
-  /**
-   * Toggle play/pause of current track
-   */
-  const togglePlayPause = async () => {
-    try {
-      if (!currentTrack) return;
-      
-      const success = await AudioService.togglePlayPause();
-      if (success) {
-        setIsPlaying(!isPlaying);
+  const stopTrack = useCallback(async () => {
+    return debounce(async () => {
+      try {
+        setLoading(true);
+        await AudioService.unloadSound();
+        setCurrentTrack(null);
+        setIsPlaying(false);
+        return true;
+      } catch (err) {
+        console.error('Error stopping track:', err);
+        // Reset UI state even if there was an error
+        setCurrentTrack(null);
+        setIsPlaying(false);
+        return false;
+      } finally {
+        setLoading(false);
       }
-    } catch (err) {
-      console.error('Error toggling play/pause', err);
-    }
-  };
-  
+    });
+  }, []);
+
   /**
-   * Set the volume level
-   * @param {number} value - Volume level between 0 and 1
+   * Toggle play/pause
    */
-  const setVolume = async (value) => {
+  const togglePlayPause = useCallback(async () => {
+    return debounce(async () => {
+      if (!currentTrack) return false;
+      
+      try {
+        setLoading(true);
+        
+        if (isPlaying) {
+          const paused = await AudioService.pauseSound();
+          if (paused) setIsPlaying(false);
+          return paused;
+        } else {
+          const resumed = await AudioService.resumeSound();
+          if (resumed) setIsPlaying(true);
+          return resumed;
+        }
+      } catch (err) {
+        console.error('Error toggling playback:', err);
+        setError('Playback control failed');
+        return false;
+      } finally {
+        setLoading(false);
+      }
+    });
+  }, [currentTrack, isPlaying]);
+
+  /**
+   * Set volume with improved handling
+   */
+  const setVolume = useCallback(async (value) => {
+    // Ensure value is between 0-1
+    const validValue = Math.max(0, Math.min(1, value));
+    
     try {
-      await AudioService.setVolume(value);
-      setVolumeState(value);
+      await AudioService.setVolume(validValue);
+      setVolumeState(validValue);
+      return true;
     } catch (err) {
-      console.error('Error setting volume', err);
+      console.error('Error setting volume:', err);
+      return false;
     }
-  };
-  
+  }, []);
+
+  const clearError = useCallback(() => setError(null), []);
+
   return {
     currentTrack,
     isPlaying,
-    volume,
     loading,
     error,
-    playbackStatus,
+    volume,
     playTrack,
     stopTrack,
     togglePlayPause,
     setVolume,
-    clearError: () => setError(null),
+    clearError,
   };
 }

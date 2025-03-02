@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -13,12 +13,11 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/FontAwesome5';
-import { LinearGradient } from 'expo-linear-gradient';
-import TTSVoiceButton from '../../components/TTSVoiceButton';
+import { LinearGradient } from 'expo-linear-gradient'; 
 import useAudioPlayer from '../../hooks/useAudioPlayer';
 import useTimer from '../../hooks/useTimer';
 import MusicPlayer from '../../components/MusicPlayer';
-import { getAllRelaxationSoundUrls } from '../../utils/CloudinaryHelper';
+import { validateCloudinaryResources, getAllRelaxationSoundUrls } from '../../utils/CloudinaryHelper';
 
 const { width, height } = Dimensions.get('window');
 const cardSize = width / 2 - 30;
@@ -30,6 +29,11 @@ const RelaxScreen = () => {
   const [error, setError] = useState(null);
   const [loadingSoundId, setLoadingSoundId] = useState(null);
   const [favorites, setFavorites] = useState([]);
+  const [unavailableTracks, setUnavailableTracks] = useState([]);
+  
+  // Added to prevent URL fetching loop
+  const urlsLoadedRef = useRef(false);
+  const validationRunningRef = useRef(false);
   
   // Use our new audio player hook
   const { 
@@ -52,46 +56,90 @@ const RelaxScreen = () => {
     startTimer, 
     stopTimer, 
     formatTime: formatTimerDisplay 
-  } = useTimer(() => {
-    // Stop playback when timer completes
-    stopTrack();
-  });
+  } = useTimer(onTimerComplete);
+  
+  // Handle timer completion with proper state updates
+  function onTimerComplete() {
+    console.log("Timer completed - stopping playback");
+    stopTrack().then(() => {
+      // Make sure UI reflects stopped state
+      setError(null);
+    });
+  }
   
   // Show any audio errors
   useEffect(() => {
+    let errorTimer;
+    
     if (audioError) {
       setError(audioError);
-      // Clear the audio error after 3 seconds
-      const timeout = setTimeout(() => {
+      errorTimer = setTimeout(() => {
         clearAudioError();
         setError(null);
       }, 3000);
-      return () => clearTimeout(timeout);
     }
-  }, [audioError]);
+    
+    return () => {
+      if (errorTimer) clearTimeout(errorTimer);
+    };
+  }, [audioError, clearAudioError]);
 
-  // Fetch music URLs from CloudinaryHelper
+  // Fetch and validate music URLs - FIXED to prevent infinite loop
   useEffect(() => {
-    const fetchMusicUrls = async () => {
+    // Skip if we've already loaded URLs or if validation is in progress
+    if (urlsLoadedRef.current || validationRunningRef.current) return;
+    
+    validationRunningRef.current = true;
+    
+    const fetchAndValidateUrls = async () => {
       try {
         setLoading(true);
-        // Use the helper function to get all URLs
+        setError(null);
+        
+        // Get URLs
         const urls = getAllRelaxationSoundUrls();
-        console.log("Built URLs:", urls);
+        console.log("Generated URLs once:", urls);
+        
+        // Validate resources
+        const { valid, invalidResources } = await validateCloudinaryResources(urls);
+        
+        if (!valid && invalidResources.length > 0) {
+          console.warn("Some resources unavailable:", invalidResources);
+          setUnavailableTracks(invalidResources);
+        }
+        
         setTrackUrls(urls);
+        urlsLoadedRef.current = true; // Mark as loaded
       } catch (err) {
         console.error("Error setting up music URLs:", err);
-        setError("Failed to load music tracks");
+        setError("Failed to load music tracks. Please check your connection.");
       } finally {
         setLoading(false);
+        validationRunningRef.current = false;
       }
     };
     
-    fetchMusicUrls();
+    fetchAndValidateUrls();
+    
+    // Empty dependency array - only run once on mount
   }, []);
   
-  // Handle track selection
-  const handleTrackSelect = async (trackId) => {
+  // Separate cleanup effect
+  useEffect(() => {
+    return () => {
+      console.log("Cleaning up RelaxScreen");
+      stopTrack();
+    };
+  }, [stopTrack]);
+  
+  // Improved track selection with error checking
+  const handleTrackSelect = useCallback(async (trackId) => {
+    // Check if track is unavailable
+    if (unavailableTracks.includes(trackId)) {
+      setError(`This track is currently unavailable.`);
+      return;
+    }
+    
     try {
       setLoadingSoundId(trackId);
       
@@ -107,14 +155,20 @@ const RelaxScreen = () => {
         return;
       }
       
-      await playTrack(uri, trackId, track);
+      // If this track is already playing, stop it
+      if (currentTrack?.id === trackId && isPlaying) {
+        await stopTrack();
+      } else {
+        // Otherwise play the new track
+        await playTrack(uri, trackId, track);
+      }
     } catch (err) {
       console.error("Error selecting track:", err);
       setError(`Failed to play ${trackId}`);
     } finally {
       setLoadingSoundId(null);
     }
-  };
+  }, [unavailableTracks, trackUrls, playTrack, stopTrack, currentTrack, isPlaying, soundTracks]);
 
   // Add a function to toggle favorite status
   const toggleFavorite = (trackId) => {
@@ -378,7 +432,7 @@ const RelaxScreen = () => {
                         onPress={() => handleTrackSelect(track.id)}
                       >
                         <Icon 
-                          name={currentTrack?.id === track.id && isPlaying ? "pause" : "play"} 
+                          name={currentTrack?.id === track.id && isPlaying ? "stop" : "play"} 
                           size={16} 
                           color={currentTrack?.id === track.id ? track.gradient[0] : "#fff"} 
                         />
@@ -421,17 +475,12 @@ const RelaxScreen = () => {
               track={currentTrack}
               isPlaying={isPlaying}
               loading={audioLoading}
-              onPlayPause={togglePlayPause}
               onStop={stopTrack}
-              onVolumeChange={setVolume}
-              volume={volume}
               timerText={timerIsRunning ? formatTimerDisplay() : null}
               style={styles.nowPlayingBar}
             />
           )}
           
-          {/* Draggable Voice Button */}
-          <TTSVoiceButton />
         </SafeAreaView>
       </LinearGradient>
     </ImageBackground>
