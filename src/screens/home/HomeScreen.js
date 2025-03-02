@@ -6,7 +6,6 @@ import {
   StyleSheet,
   SafeAreaView,
   Image,
-  ImageBackground,
   StatusBar,
   Alert,
   Animated,
@@ -14,13 +13,18 @@ import {
   BackHandler
 } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
-import Icon from 'react-native-vector-icons/FontAwesome5';
-import TTSVoiceButton from '../../components/TTSVoiceButton';
+import { LinearGradient } from 'expo-linear-gradient';
+import { BlurView } from 'expo-blur';
 import { collection, getDocs, doc, getDoc } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
-import { db } from '../../config/firebaseConfig'; // Import from your config file
+import { db } from '../../config/firebaseConfig';
+import TTSVoiceButton from '../../components/TTSVoiceButton';
 
-const { width } = Dimensions.get('window');
+// Modern icon libraries
+import { Feather } from '@expo/vector-icons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+
+const { width, height } = Dimensions.get('window');
 const PANEL_WIDTH = width * 0.8;
 
 const HomeScreen = () => {
@@ -62,11 +66,9 @@ const HomeScreen = () => {
             setCurrentUser(prev => ({
               ...prev,
               displayName: userData.name || prev.displayName,
-              // Update profile image if it exists in Firestore
               photoURL: userData.profileImage || prev.photoURL
             }));
             
-            // Store profile image separately for easier access
             if (userData.profileImage) {
               setUserProfileImage(userData.profileImage);
             }
@@ -213,11 +215,9 @@ const HomeScreen = () => {
     fetchMotivationalTexts();
   }, []);
 
-  // Set up interval to change text every 10 seconds
+  // Set up interval to change text every 60 seconds
   useEffect(() => {
-    // Always create the interval
     const interval = setInterval(() => {
-      // Only update if we have texts
       if (motivationalTexts.length > 0) {
         setCurrentTextIndex((prevIndex) => 
           (prevIndex + 1) % motivationalTexts.length
@@ -225,7 +225,6 @@ const HomeScreen = () => {
       }
     }, 60000);
 
-    // Always return cleanup
     return () => clearInterval(interval);
   }, [motivationalTexts]);
 
@@ -243,369 +242,372 @@ const HomeScreen = () => {
   };
 
   return (
-    <ImageBackground
-      source={require('../../../assets/home_back.png')}
-      style={styles.backgroundImage}
-      resizeMode="cover"
-    >
-      <SafeAreaView style={styles.container}>
-        {/* Header with Logo */}
-        <View style={styles.header}>
-          <View style={styles.headerMain}>
-            <Image
-              source={require('../../../assets/Logo.png')}
-              style={styles.logo}
-            />
-            <Text style={styles.logoText}>Lexera Life</Text>
-          </View>
-          <TouchableOpacity 
-            style={styles.menuButton}
-            onPress={togglePanel}
-          >
-            <Icon name="bars" size={24} color="#666" />
-          </TouchableOpacity>
-        </View>
-
-        {/* Motivational Card with dynamic text from Firebase */}
-        <View style={styles.messageCard}>
-          <View style={styles.messageContent}>
-            <Text style={styles.messageText}>
-              {loading ? "Loading inspiration..." : currentMotivationalText}
-            </Text>
-          </View>
-
-          {/* User Profile Picture */}
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor="#f5f5f5" />
+      
+      {/* Modern App Header */}
+      <View style={styles.header}>
+        <View style={styles.headerMain}>
           <Image
-            source={getProfileImage()}
-            style={styles.profilePicture}
+            source={require('../../../assets/Logo.png')}
+            style={styles.logo}
           />
+          <Text style={styles.logoText}>Lexera Life</Text>
         </View>
+        <TouchableOpacity 
+          style={styles.menuButton}
+          onPress={togglePanel}
+        >
+          <Feather name="menu" size={24} color="#FF6B6B" />
+        </TouchableOpacity>
+      </View>
+      
+      {/* User Welcome Section */}
+      <View style={styles.welcomeSection}>
+        <View style={styles.userInfoSection}>
+          <Text style={styles.welcomeText}>Hello,</Text>
+          <Text style={styles.userName}>{currentUser ? currentUser.displayName : 'Lexera User'}</Text>
+        </View>
+        <TouchableOpacity 
+          style={styles.profileButton}
+          onPress={() => navigation.navigate('profile')}
+        >
+          <Image source={getProfileImage()} style={styles.profilePicture} />
+        </TouchableOpacity>
+      </View>
 
-        {/* Feature Cards */}
-        <View style={styles.featureContainer}>
+      {/* Motivational Card with Gradient Background */}
+      <LinearGradient
+        colors={['#FF9F9F', '#FF6B6B']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
+        style={styles.messageCard}
+      >
+        
+        <Text style={styles.messageText}>
+          {loading ? "Loading inspiration..." : currentMotivationalText}
+        </Text>
+      </LinearGradient>
+
+      {/* Feature Cards with New Grid Layout */}
+      <Text style={styles.sectionTitle}>Features</Text>
+      
+      <View style={styles.featureGrid}>
+        {/* Row 1 */}
+        <View style={styles.featureRow}>
           <TouchableOpacity 
-            style={[styles.featureCard, styles.botCard]}
+            style={[styles.featureCard, styles.primaryCard]}
             onPress={() => navigation.navigate('Chatbot')}
           >
-            <Image
-              source={require('../../../assets/g12.png')}
-              style={styles.botImage}
-            />
-            <Text style={styles.featureTitle}>Lexera Bot</Text>
+            <BlurView intensity={10} style={styles.cardBlur}>
+              <MaterialCommunityIcons name="robot" size={28} color="#FF6B6B" />
+              <Text style={styles.featureTitle}>Lexera Bot</Text>
+            </BlurView>
           </TouchableOpacity>
-
-          <View style={styles.smallCardsContainer}>
-            <TouchableOpacity 
-              style={[styles.smallCard, styles.trainingCard]}
-              onPress={() => navigation.navigate('settings')}
-            >
-              <View style={styles.iconContainer}>
-                <Icon name="brain" size={24} color="#FF9999" />
-              </View>
-              <Text style={styles.smallCardTitle}>Brain training</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity 
-              style={[styles.smallCard, styles.testCard]}
-              onPress={() => navigation.navigate('TestIntro')}
-            >
-              <View style={styles.iconContainer}>
-                <Icon name="clipboard-check" size={24} color="#FF9999" />
-              </View>
-              <Text style={styles.smallCardTitle}>Dyslexia Test</Text>
-            </TouchableOpacity>
-
-            {/* New Relax Card */}
-            <TouchableOpacity 
-              style={[styles.smallCard, styles.relaxCard]}
-              onPress={() => navigation.navigate('Relax')}
-            >
-              <View style={styles.iconContainer}>
-                <Icon name="spa" size={24} color="#FF9999" />
-              </View>
-              <Text style={styles.smallCardTitle}>Relax</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity 
-              style={[styles.smallCard, styles.communityCard]}
-              onPress={() => navigation.navigate('Community')}
-            >
-              <View style={styles.iconContainer}>
-                <Icon name="users" size={24} color="#FF9999" />
-              </View>
-              <Text style={styles.smallCardTitle}>Community</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* Bottom Navigation - Fix the syntax error */}
-        <View style={styles.bottomNav}>
-          <TouchableOpacity style={styles.navItem}>
-            <Icon name="home" size={24} color="#fff" />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.navItem}>
-            <Icon name="user" size={24} color="#fff" />
+          
+          <TouchableOpacity 
+            style={[styles.featureCard, styles.secondaryCard]}
+            onPress={() => navigation.navigate('settings')}
+          >
+            <BlurView intensity={10} style={styles.cardBlur}>
+              <MaterialCommunityIcons name="brain" size={28} color="#FF6B6B" />
+              <Text style={styles.featureTitle}>Brain Training</Text>
+            </BlurView>
           </TouchableOpacity>
         </View>
         
-        {/* Draggable Voice Button */}
-        <TTSVoiceButton />
-
-        {/* Overlay when panel is open */}
-        <Animated.View 
-          style={[
-            styles.overlay,
-            { 
-              opacity: overlayOpacity,
-              pointerEvents: isPanelOpen ? 'auto' : 'none'
-            }
-          ]} 
+        {/* Row 2 */}
+        <View style={styles.featureRow}>
+          <TouchableOpacity 
+            style={[styles.featureCard, styles.secondaryCard]}
+            onPress={() => navigation.navigate('TestIntro')}
+          >
+            <BlurView intensity={10} style={styles.cardBlur}>
+              <Feather name="clipboard" size={28} color="#FF6B6B" />
+              <Text style={styles.featureTitle}>Dyslexia Test</Text>
+            </BlurView>
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            style={[styles.featureCard, styles.primaryCard]}
+            onPress={() => navigation.navigate('Relax')}
+          >
+            <BlurView intensity={10} style={styles.cardBlur}>
+              <Feather name="heart" size={28} color="#FF6B6B" />
+              <Text style={styles.featureTitle}>Relax</Text>
+            </BlurView>
+          </TouchableOpacity>
+        </View>
+        
+        {/* Community Card (Full Width) */}
+        <TouchableOpacity 
+          style={[styles.featureCard, styles.fullWidthCard]}
+          onPress={() => navigation.navigate('Community')}
         >
-          <TouchableOpacity
-            style={styles.overlayTouchable}
-            activeOpacity={1}
-            onPress={togglePanel}
-          />
-        </Animated.View>
+          <BlurView intensity={10} style={styles.cardBlur}>
+            <Feather name="users" size={28} color="#FF6B6B" />
+            <Text style={styles.featureTitle}>Community</Text>
+          </BlurView>
+        </TouchableOpacity>
+      </View>
+      
+      {/* Draggable Voice Button */}
+      <TTSVoiceButton />
 
-        {/* Side Panel */}
-        <Animated.View 
-          style={[
-            styles.sidePanel,
-            { transform: [{ translateX: slideAnim }] }
-          ]}
-        >
-          <View style={styles.sidePanelContent}>
-            <View style={styles.sidePanelHeader}>
-              <View style={styles.profileSection}>
-                <Image
-                  source={getProfileImage()}
-                  style={styles.sidePanelProfilePic}
-                />
-                <View style={styles.userInfoContainer}>
-                  <Text style={styles.sidePanelUsername}>
-                    {currentUser ? currentUser.displayName : 'Loading...'}
-                  </Text>
-                  <Text style={styles.sidePanelEmail}>
-                    {currentUser ? currentUser.email : ''}
-                  </Text>
-                </View>
+      {/* Overlay when panel is open */}
+      <Animated.View 
+        style={[
+          styles.overlay,
+          { 
+            opacity: overlayOpacity,
+            pointerEvents: isPanelOpen ? 'auto' : 'none'
+          }
+        ]} 
+      >
+        <TouchableOpacity
+          style={styles.overlayTouchable}
+          activeOpacity={1}
+          onPress={togglePanel}
+        />
+      </Animated.View>
+
+      {/* Side Panel */}
+      <Animated.View 
+        style={[
+          styles.sidePanel,
+          { transform: [{ translateX: slideAnim }] }
+        ]}
+      >
+        <BlurView intensity={30} style={styles.sidePanelContent}>
+          <View style={styles.sidePanelHeader}>
+            <View style={styles.profileSection}>
+              <Image
+                source={getProfileImage()}
+                style={styles.sidePanelProfilePic}
+              />
+              <View style={styles.userInfoContainer}>
+                <Text style={styles.sidePanelUsername}>
+                  {currentUser ? currentUser.displayName : 'Loading...'}
+                </Text>
+                <Text style={styles.sidePanelEmail}>
+                  {currentUser ? currentUser.email : ''}
+                </Text>
               </View>
-              <TouchableOpacity 
-                style={styles.closeButton}
-                onPress={togglePanel}
-              >
-                <Icon name="times" size={20} color="#666" />
-              </TouchableOpacity>
             </View>
-            
-            <View style={styles.sidePanelMenu}>
-              <TouchableOpacity 
-                style={styles.menuItem}
-                onPress={() => handleMenuItemPress('profile')}
-              >
-                <View style={styles.menuIconContainer}>
-                  <Icon name="user" size={20} color="#FF9999" />
-                </View>
-                <Text style={styles.menuItemText}>Profile</Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity 
-                style={styles.menuItem}
-                onPress={() => handleMenuItemPress('settings')}
-              >
-                <View style={styles.menuIconContainer}>
-                  <Icon name="cog" size={20} color="#FF9999" />
-                </View>
-                <Text style={styles.menuItemText}>Settings</Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity 
-                style={styles.menuItem}
-                onPress={() => handleMenuItemPress('feedback')}
-              >
-                <View style={styles.menuIconContainer}>
-                  <Icon name="comment-alt" size={20} color="#FF9999" />
-                </View>
-                <Text style={styles.menuItemText}>Feedback</Text>
-              </TouchableOpacity>
-              
-              <View style={styles.divider} />
-              
-              <TouchableOpacity 
-                style={[styles.menuItem, styles.logoutItem]}
-                onPress={() => handleMenuItemPress('Auth')}
-              >
-                <View style={[styles.menuIconContainer, styles.logoutIconContainer]}>
-                  <Icon name="sign-out-alt" size={20} color="#fff" />
-                </View>
-                <Text style={styles.menuItemText}>Logout</Text>
-              </TouchableOpacity>
-            </View>
-            
-            <View style={styles.sidePanelFooter}>
-              <Text style={styles.versionText}>Lexera Life v1.0.2</Text>
-              <Text style={styles.copyrightText}>© 2025 Lexera Life</Text>
-            </View>
+            <TouchableOpacity 
+              style={styles.closeButton}
+              onPress={togglePanel}
+            >
+              <Feather name="x" size={20} color="#666" />
+            </TouchableOpacity>
           </View>
-        </Animated.View>
-      </SafeAreaView>
-    </ImageBackground>
+          
+          <View style={styles.sidePanelMenu}>
+            <TouchableOpacity 
+              style={styles.menuItem}
+              onPress={() => handleMenuItemPress('profile')}
+            >
+              <View style={styles.menuIconContainer}>
+                <Feather name="user" size={20} color="#FF6B6B" />
+              </View>
+              <Text style={styles.menuItemText}>Profile</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={styles.menuItem}
+              onPress={() => handleMenuItemPress('settings')}
+            >
+              <View style={styles.menuIconContainer}>
+                <Feather name="settings" size={20} color="#FF6B6B" />
+              </View>
+              <Text style={styles.menuItemText}>Settings</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={styles.menuItem}
+              onPress={() => handleMenuItemPress('feedback')}
+            >
+              <View style={styles.menuIconContainer}>
+                <Feather name="message-square" size={20} color="#FF6B6B" />
+              </View>
+              <Text style={styles.menuItemText}>Feedback</Text>
+            </TouchableOpacity>
+            
+            <View style={styles.divider} />
+            
+            <TouchableOpacity 
+              style={[styles.menuItem, styles.logoutItem]}
+              onPress={() => handleMenuItemPress('Auth')}
+            >
+              <View style={[styles.menuIconContainer, styles.logoutIconContainer]}>
+                <Feather name="log-out" size={20} color="#fff" />
+              </View>
+              <Text style={styles.menuItemText}>Logout</Text>
+            </TouchableOpacity>
+          </View>
+          
+          <View style={styles.sidePanelFooter}>
+            <Text style={styles.versionText}>Lexera Life v1.0.2</Text>
+            <Text style={styles.copyrightText}>© 2025 Lexera Life</Text>
+          </View>
+        </BlurView>
+      </Animated.View>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: 'transparent',
-  },
-  backgroundImage: {
-    flex: 1,
-    width: '100%',
-    height: '100%',
+    backgroundColor: '#f5f5f5',
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: 10,
+    paddingHorizontal: 20,
+    paddingVertical: 15,
     backgroundColor: '#fff',
-    borderBottomRightRadius: 30,
-    borderBottomLeftRadius: 30,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
   },
   headerMain: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   logo: {
-    width: 100,
-    height: 50,
-    marginRight: 18,
+    width: 40,
+    height: 40,
+    marginRight: 10,
   },
   logoText: {
-    fontSize: 35,
+    fontSize: 22,
     fontWeight: 'bold',
+    color: '#333',
   },
   menuButton: {
-    padding: 10,
-    borderRadius: 20,
-    backgroundColor: '#f5f5f5',
     width: 44,
     height: 44,
     justifyContent: 'center',
     alignItems: 'center',
+    borderRadius: 22,
+    backgroundColor: '#fff',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  welcomeSection: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 20,
+  },
+  userInfoSection: {
+    flex: 1,
+  },
+  welcomeText: {
+    fontSize: 16,
+    color: '#757575',
+  },
+  userName: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  profileButton: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    overflow: 'hidden',
+    borderWidth: 2,
+    borderColor: '#FF6B6B',
+  },
+  profilePicture: {
+    width: '100%',
+    height: '100%',
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#333',
+    paddingHorizontal: 20,
+    marginTop: 20,
+    marginBottom: 15,
   },
   messageCard: {
-    margin: 10,
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    marginHorizontal: 20,
     borderRadius: 20,
-    padding: 20,
+    padding: 25,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    elevation: 5,
+    minHeight: 120,
+    position: 'relative',
+  },
+  quoteIconContainer: {
+    position: 'absolute',
+    top: 15,
+    right: 15,
+  },
+  messageText: {
+    fontSize: 18,
+    lineHeight: 26,
+    color: '#fff',
+    fontWeight: '500',
+  },
+  featureGrid: {
+    paddingHorizontal: 20,
+    flex: 1,
+  },
+  featureRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 15,
+  },
+  featureCard: {
+    borderRadius: 20,
+    overflow: 'hidden',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 5,
-    marginTop: 20,
-    position: 'relative',
-    minHeight: 150,
+    shadowRadius: 6,
+    elevation: 3,
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
   },
-  messageContent: {
-    flex: 1,
-    justifyContent: 'center',
-    paddingRight: 120,
-  },
-  messageText: {
-    fontSize: 22,
-    lineHeight: 32,
-    color: '#333',
-    fontWeight: '500',
-  },
-  featureContainer: {
-    padding: 10,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 30,
-  },
-  featureCard: {
-    flex: 1,
-    backgroundColor: '#fff',
-    borderRadius: 20,
+  cardBlur: {
     padding: 20,
-    marginRight: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: '100%',
   },
-  botCard: {
-    flex: 1,
-    justifyContent: 'space-between',
-  },
-  botImage: {
-    width: '100%',
+  primaryCard: {
+    width: '48%',
     height: 120,
-    resizeMode: 'contain',
+    backgroundColor: '#FAF3F0',
+  },
+  secondaryCard: {
+    width: '48%',
+    height: 120,
+    backgroundColor: '#FFFFFF',
+  },
+  fullWidthCard: {
+    width: '100%',
+    height: 100,
+    marginBottom: 15,
+    backgroundColor: '#F8E8E8',
   },
   featureTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#666',
-    marginTop: 10,
-  },
-  smallCardsContainer: {
-    flex: 1,
-    justifyContent: 'space-between',
-  },
-  smallCard: {
-    backgroundColor: '#fff',
-    borderRadius: 20,
-    padding: 20,
-    marginBottom: 10,
-  },
-  communityCard: {
-    backgroundColor: '#fff',
-    borderRadius: 20,
-    padding: 20,
-    marginBottom: 10,
-    flex: 1,
-    justifyContent: 'space-between',
-  },
-  iconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#FFE6E6',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  smallCardTitle: {
     fontSize: 16,
-    color: '#666',
+    fontWeight: '600',
+    color: '#333',
+    marginTop: 10,
+    textAlign: 'center',
   },
-  bottomNav: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center',
-    paddingVertical: 20,
-    borderTopLeftRadius: 30,
-    borderTopRightRadius: 30,
-    position: 'absolute',
-    bottom: -8,
-    left: 0,
-    right: 0,
-  },
-  navItem: {
-    padding: 10,
-  },
-  profilePicture: {
-    position: 'absolute',
-    right: 20,
-    top: 20,
-    width: 100,
-    height: 100,
-    borderRadius: 15,
-    borderWidth: 2,
-    borderColor: '#fff',
-  },
-  
-  // Improved Side Panel Styles
   overlay: {
     position: 'absolute',
     top: 0,
@@ -629,7 +631,7 @@ const styles = StyleSheet.create({
   },
   sidePanelContent: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: 'rgba(255, 255, 255, 0.98)',
     borderTopRightRadius: 25,
     borderBottomRightRadius: 25,
     overflow: 'hidden',
@@ -639,7 +641,7 @@ const styles = StyleSheet.create({
     shadowRadius: 15,
   },
   sidePanelHeader: {
-    paddingVertical: 25,
+    paddingVertical: 30,
     paddingHorizontal: 20,
     borderBottomWidth: 1,
     borderBottomColor: '#f0f0f0',
@@ -702,7 +704,7 @@ const styles = StyleSheet.create({
     marginRight: 15,
   },
   menuItemText: {
-    fontSize: 18,
+    fontSize: 16,
     color: '#333',
     fontWeight: '500',
   },
@@ -713,10 +715,10 @@ const styles = StyleSheet.create({
     marginHorizontal: 10,
   },
   logoutItem: {
-    backgroundColor: '#FFEFEF',
+    backgroundColor: '#FFF0F0',
   },
   logoutIconContainer: {
-    backgroundColor: '#FF4444',
+    backgroundColor: '#FF6B6B',
   },
   sidePanelFooter: {
     padding: 20,
@@ -732,12 +734,6 @@ const styles = StyleSheet.create({
   copyrightText: {
     fontSize: 12,
     color: '#999',
-  },
-  relaxCard: {
-    backgroundColor: '#fff',
-    borderRadius: 20,
-    padding: 20,
-    marginBottom: 10,
   },
 });
 
