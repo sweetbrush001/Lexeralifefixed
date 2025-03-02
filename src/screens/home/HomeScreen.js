@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
-  Text,
   TouchableOpacity,
   StyleSheet,
   SafeAreaView,
@@ -10,7 +9,8 @@ import {
   Alert,
   Animated,
   Dimensions,
-  BackHandler
+  BackHandler,
+  Text,
 } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -18,7 +18,9 @@ import { BlurView } from 'expo-blur';
 import { collection, getDocs, doc, getDoc } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import { db } from '../../config/firebaseConfig';
-import TTSVoiceButton from '../../components/TTSVoiceButton';
+// Import TextReaderRoot and ReadableText
+import TextReaderRoot from '../../components/TextReaderRoot';
+import ReadableText from '../../components/ReadableText';
 
 // Modern icon libraries
 import { Feather } from '@expo/vector-icons';
@@ -242,217 +244,241 @@ const HomeScreen = () => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#f5f5f5" />
-      
-      {/* Modern App Header */}
-      <View style={styles.header}>
-        <View style={styles.headerMain}>
-          <Image
-            source={require('../../../assets/Logo.png')}
-            style={styles.logo}
+    <TextReaderRoot>
+      <SafeAreaView style={styles.container}>
+        <StatusBar barStyle="dark-content" backgroundColor="#f5f5f5" />
+        
+        {/* Modern App Header */}
+        <View style={styles.header}>
+          <View style={styles.headerMain}>
+            <Image
+              source={require('../../../assets/Logo.png')}
+              style={styles.logo}
+            />
+            {/* App title should NOT be read */}
+            <ReadableText style={styles.logoText} readable={false}>
+              Lexera Life
+            </ReadableText>
+          </View>
+          <TouchableOpacity 
+            style={styles.menuButton}
+            onPress={togglePanel}
+          >
+            <Feather name="menu" size={24} color="#FF6B6B" />
+          </TouchableOpacity>
+        </View>
+        
+        {/* User Welcome Section - READ WITH PRIORITY 1 */}
+        <View style={styles.welcomeSection}>
+          <View style={styles.userInfoSection}>
+            {/* Welcome message with highest priority */}
+            <ReadableText style={styles.welcomeText} readable={true} priority={1}>
+              Hello,
+            </ReadableText>
+            <ReadableText style={styles.userName} readable={true} priority={2}>
+              {currentUser ? currentUser.displayName : 'Lexera User'}
+            </ReadableText>
+          </View>
+          <TouchableOpacity 
+            style={styles.profileButton}
+            onPress={() => navigation.navigate('profile')}
+          >
+            <Image source={getProfileImage()} style={styles.profilePicture} />
+          </TouchableOpacity>
+        </View>
+
+        {/* Motivational Card - READ WITH PRIORITY 3 */}
+        <LinearGradient
+          colors={['#FF9F9F', '#FF6B6B']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={styles.messageCard}
+        >
+          <ReadableText style={styles.messageText} readable={true} priority={3}>
+            {loading ? "Loading inspiration..." : currentMotivationalText}
+          </ReadableText>
+        </LinearGradient>
+
+        {/* Features heading - not read */}
+        <ReadableText style={styles.sectionTitle} readable={false}>
+          Features
+        </ReadableText>
+        
+        <View style={styles.featureGrid}>
+          {/* Row 1 */}
+          <View style={styles.featureRow}>
+            <TouchableOpacity 
+              style={[styles.featureCard, styles.primaryCard]}
+              onPress={() => navigation.navigate('Chatbot')}
+            >
+              <BlurView intensity={10} style={styles.cardBlur}>
+                <MaterialCommunityIcons name="robot" size={28} color="#FF6B6B" />
+                {/* Feature 1 - READ WITH PRIORITY 4 */}
+                <ReadableText style={styles.featureTitle} readable={true} priority={4}>
+                  Lexera Bot
+                </ReadableText>
+              </BlurView>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={[styles.featureCard, styles.secondaryCard]}
+              onPress={() => navigation.navigate('settings')}
+            >
+              <BlurView intensity={10} style={styles.cardBlur}>
+                <MaterialCommunityIcons name="brain" size={28} color="#FF6B6B" />
+                {/* Feature 2 - READ WITH PRIORITY 5 */}
+                <ReadableText style={styles.featureTitle} readable={true} priority={5}>
+                  Brain Training
+                </ReadableText>
+              </BlurView>
+            </TouchableOpacity>
+          </View>
+          
+          {/* Row 2 */}
+          <View style={styles.featureRow}>
+            <TouchableOpacity 
+              style={[styles.featureCard, styles.secondaryCard]}
+              onPress={() => navigation.navigate('TestIntro')}
+            >
+              <BlurView intensity={10} style={styles.cardBlur}>
+                <Feather name="clipboard" size={28} color="#FF6B6B" />
+                {/* Feature 3 - READ WITH PRIORITY 6 */}
+                <ReadableText style={styles.featureTitle} readable={true} priority={6}>
+                  Dyslexia Test
+                </ReadableText>
+              </BlurView>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={[styles.featureCard, styles.primaryCard]}
+              onPress={() => navigation.navigate('Relax')}
+            >
+              <BlurView intensity={10} style={styles.cardBlur}>
+                <Feather name="heart" size={28} color="#FF6B6B" />
+                {/* Feature 4 - READ WITH PRIORITY 7 */}
+                <ReadableText style={styles.featureTitle} readable={true} priority={7}>
+                  Relax
+                </ReadableText>
+              </BlurView>
+            </TouchableOpacity>
+          </View>
+          
+          {/* Community Card (Full Width) */}
+          <TouchableOpacity 
+            style={[styles.featureCard, styles.fullWidthCard]}
+            onPress={() => navigation.navigate('Community')}
+          >
+            <BlurView intensity={10} style={styles.cardBlur}>
+              <Feather name="users" size={28} color="#FF6B6B" />
+              {/* Feature 5 - READ WITH PRIORITY 8 */}
+              <ReadableText style={styles.featureTitle} readable={true} priority={8}>
+                Community
+              </ReadableText>
+            </BlurView>
+          </TouchableOpacity>
+        </View>
+
+        {/* Overlay when panel is open */}
+        <Animated.View 
+          style={[
+            styles.overlay,
+            { 
+              opacity: overlayOpacity,
+              pointerEvents: isPanelOpen ? 'auto' : 'none'
+            }
+          ]} 
+        >
+          <TouchableOpacity
+            style={styles.overlayTouchable}
+            activeOpacity={1}
+            onPress={togglePanel}
           />
-          <Text style={styles.logoText}>Lexera Life</Text>
-        </View>
-        <TouchableOpacity 
-          style={styles.menuButton}
-          onPress={togglePanel}
+        </Animated.View>
+
+        {/* Side Panel - NOTHING HERE SHOULD BE READ */}
+        <Animated.View 
+          style={[
+            styles.sidePanel,
+            { transform: [{ translateX: slideAnim }] }
+          ]}
         >
-          <Feather name="menu" size={24} color="#FF6B6B" />
-        </TouchableOpacity>
-      </View>
-      
-      {/* User Welcome Section */}
-      <View style={styles.welcomeSection}>
-        <View style={styles.userInfoSection}>
-          <Text style={styles.welcomeText}>Hello,</Text>
-          <Text style={styles.userName}>{currentUser ? currentUser.displayName : 'Lexera User'}</Text>
-        </View>
-        <TouchableOpacity 
-          style={styles.profileButton}
-          onPress={() => navigation.navigate('profile')}
-        >
-          <Image source={getProfileImage()} style={styles.profilePicture} />
-        </TouchableOpacity>
-      </View>
-
-      {/* Motivational Card with Gradient Background */}
-      <LinearGradient
-        colors={['#FF9F9F', '#FF6B6B']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 0 }}
-        style={styles.messageCard}
-      >
-        
-        <Text style={styles.messageText}>
-          {loading ? "Loading inspiration..." : currentMotivationalText}
-        </Text>
-      </LinearGradient>
-
-      {/* Feature Cards with New Grid Layout */}
-      <Text style={styles.sectionTitle}>Features</Text>
-      
-      <View style={styles.featureGrid}>
-        {/* Row 1 */}
-        <View style={styles.featureRow}>
-          <TouchableOpacity 
-            style={[styles.featureCard, styles.primaryCard]}
-            onPress={() => navigation.navigate('Chatbot')}
-          >
-            <BlurView intensity={10} style={styles.cardBlur}>
-              <MaterialCommunityIcons name="robot" size={28} color="#FF6B6B" />
-              <Text style={styles.featureTitle}>Lexera Bot</Text>
-            </BlurView>
-          </TouchableOpacity>
-          
-          <TouchableOpacity 
-            style={[styles.featureCard, styles.secondaryCard]}
-            onPress={() => navigation.navigate('settings')}
-          >
-            <BlurView intensity={10} style={styles.cardBlur}>
-              <MaterialCommunityIcons name="brain" size={28} color="#FF6B6B" />
-              <Text style={styles.featureTitle}>Brain Training</Text>
-            </BlurView>
-          </TouchableOpacity>
-        </View>
-        
-        {/* Row 2 */}
-        <View style={styles.featureRow}>
-          <TouchableOpacity 
-            style={[styles.featureCard, styles.secondaryCard]}
-            onPress={() => navigation.navigate('TestIntro')}
-          >
-            <BlurView intensity={10} style={styles.cardBlur}>
-              <Feather name="clipboard" size={28} color="#FF6B6B" />
-              <Text style={styles.featureTitle}>Dyslexia Test</Text>
-            </BlurView>
-          </TouchableOpacity>
-          
-          <TouchableOpacity 
-            style={[styles.featureCard, styles.primaryCard]}
-            onPress={() => navigation.navigate('Relax')}
-          >
-            <BlurView intensity={10} style={styles.cardBlur}>
-              <Feather name="heart" size={28} color="#FF6B6B" />
-              <Text style={styles.featureTitle}>Relax</Text>
-            </BlurView>
-          </TouchableOpacity>
-        </View>
-        
-        {/* Community Card (Full Width) */}
-        <TouchableOpacity 
-          style={[styles.featureCard, styles.fullWidthCard]}
-          onPress={() => navigation.navigate('Community')}
-        >
-          <BlurView intensity={10} style={styles.cardBlur}>
-            <Feather name="users" size={28} color="#FF6B6B" />
-            <Text style={styles.featureTitle}>Community</Text>
-          </BlurView>
-        </TouchableOpacity>
-      </View>
-      
-      {/* Draggable Voice Button */}
-      <TTSVoiceButton />
-
-      {/* Overlay when panel is open */}
-      <Animated.View 
-        style={[
-          styles.overlay,
-          { 
-            opacity: overlayOpacity,
-            pointerEvents: isPanelOpen ? 'auto' : 'none'
-          }
-        ]} 
-      >
-        <TouchableOpacity
-          style={styles.overlayTouchable}
-          activeOpacity={1}
-          onPress={togglePanel}
-        />
-      </Animated.View>
-
-      {/* Side Panel */}
-      <Animated.View 
-        style={[
-          styles.sidePanel,
-          { transform: [{ translateX: slideAnim }] }
-        ]}
-      >
-        <BlurView intensity={30} style={styles.sidePanelContent}>
-          <View style={styles.sidePanelHeader}>
-            <View style={styles.profileSection}>
-              <Image
-                source={getProfileImage()}
-                style={styles.sidePanelProfilePic}
-              />
-              <View style={styles.userInfoContainer}>
-                <Text style={styles.sidePanelUsername}>
-                  {currentUser ? currentUser.displayName : 'Loading...'}
-                </Text>
-                <Text style={styles.sidePanelEmail}>
-                  {currentUser ? currentUser.email : ''}
-                </Text>
+          <BlurView intensity={30} style={styles.sidePanelContent}>
+            <View style={styles.sidePanelHeader}>
+              <View style={styles.profileSection}>
+                <Image
+                  source={getProfileImage()}
+                  style={styles.sidePanelProfilePic}
+                />
+                <View style={styles.userInfoContainer}>
+                  <Text style={styles.sidePanelUsername}>
+                    {currentUser ? currentUser.displayName : 'Loading...'}
+                  </Text>
+                  <Text style={styles.sidePanelEmail}>
+                    {currentUser ? currentUser.email : ''}
+                  </Text>
+                </View>
               </View>
+              <TouchableOpacity 
+                style={styles.closeButton}
+                onPress={togglePanel}
+              >
+                <Feather name="x" size={20} color="#666" />
+              </TouchableOpacity>
             </View>
-            <TouchableOpacity 
-              style={styles.closeButton}
-              onPress={togglePanel}
-            >
-              <Feather name="x" size={20} color="#666" />
-            </TouchableOpacity>
-          </View>
-          
-          <View style={styles.sidePanelMenu}>
-            <TouchableOpacity 
-              style={styles.menuItem}
-              onPress={() => handleMenuItemPress('profile')}
-            >
-              <View style={styles.menuIconContainer}>
-                <Feather name="user" size={20} color="#FF6B6B" />
-              </View>
-              <Text style={styles.menuItemText}>Profile</Text>
-            </TouchableOpacity>
             
-            <TouchableOpacity 
-              style={styles.menuItem}
-              onPress={() => handleMenuItemPress('settings')}
-            >
-              <View style={styles.menuIconContainer}>
-                <Feather name="settings" size={20} color="#FF6B6B" />
-              </View>
-              <Text style={styles.menuItemText}>Settings</Text>
-            </TouchableOpacity>
+            {/* All menu items are not readable - using Text instead of ReadableText */}
+            <View style={styles.sidePanelMenu}>
+              <TouchableOpacity 
+                style={styles.menuItem}
+                onPress={() => handleMenuItemPress('profile')}
+              >
+                <View style={styles.menuIconContainer}>
+                  <Feather name="user" size={20} color="#FF6B6B" />
+                </View>
+                <Text style={styles.menuItemText}>Profile</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={styles.menuItem}
+                onPress={() => handleMenuItemPress('settings')}
+              >
+                <View style={styles.menuIconContainer}>
+                  <Feather name="settings" size={20} color="#FF6B6B" />
+                </View>
+                <Text style={styles.menuItemText}>Settings</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={styles.menuItem}
+                onPress={() => handleMenuItemPress('feedback')}
+              >
+                <View style={styles.menuIconContainer}>
+                  <Feather name="message-square" size={20} color="#FF6B6B" />
+                </View>
+                <Text style={styles.menuItemText}>Feedback</Text>
+              </TouchableOpacity>
+              
+              <View style={styles.divider} />
+              
+              <TouchableOpacity 
+                style={[styles.menuItem, styles.logoutItem]}
+                onPress={() => handleMenuItemPress('Auth')}
+              >
+                <View style={[styles.menuIconContainer, styles.logoutIconContainer]}>
+                  <Feather name="log-out" size={20} color="#fff" />
+                </View>
+                <Text style={styles.menuItemText}>Logout</Text>
+              </TouchableOpacity>
+            </View>
             
-            <TouchableOpacity 
-              style={styles.menuItem}
-              onPress={() => handleMenuItemPress('feedback')}
-            >
-              <View style={styles.menuIconContainer}>
-                <Feather name="message-square" size={20} color="#FF6B6B" />
-              </View>
-              <Text style={styles.menuItemText}>Feedback</Text>
-            </TouchableOpacity>
-            
-            <View style={styles.divider} />
-            
-            <TouchableOpacity 
-              style={[styles.menuItem, styles.logoutItem]}
-              onPress={() => handleMenuItemPress('Auth')}
-            >
-              <View style={[styles.menuIconContainer, styles.logoutIconContainer]}>
-                <Feather name="log-out" size={20} color="#fff" />
-              </View>
-              <Text style={styles.menuItemText}>Logout</Text>
-            </TouchableOpacity>
-          </View>
-          
-          <View style={styles.sidePanelFooter}>
-            <Text style={styles.versionText}>Lexera Life v1.0.2</Text>
-            <Text style={styles.copyrightText}>© 2025 Lexera Life</Text>
-          </View>
-        </BlurView>
-      </Animated.View>
-    </SafeAreaView>
+            <View style={styles.sidePanelFooter}>
+              <Text style={styles.versionText}>Lexera Life v1.0.2</Text>
+              <Text style={styles.copyrightText}>© 2025 Lexera Life</Text>
+            </View>
+          </BlurView>
+        </Animated.View>
+      </SafeAreaView>
+    </TextReaderRoot>
   );
 };
 

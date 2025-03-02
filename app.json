@@ -14,20 +14,32 @@
     },
     "ios": {
       "supportsTablet": true,
-      "scheme": "lexeralife"
+      "scheme": "lexeralife",
+      "infoPlist": {
+        "NSSpeechRecognitionUsageDescription": "This app uses speech recognition to convert your speech to text",
+        "NSMicrophoneUsageDescription": "This app uses the microphone to record audio for speech recognition"
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "scheme": "lexeralife"
+      "scheme": "lexeralife",
+      "permissions": ["RECORD_AUDIO"]
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "expo-font"
+      "expo-font",
+      [
+        "@react-native-voice/voice",
+        {
+          "microphonePermission": "Allow Lexera Life to access your microphone",
+          "speechRecognitionPermission": "Allow Lexera Life to access speech recognition"
+        }
+      ]
     ]
   }
 }
