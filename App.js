@@ -2,7 +2,7 @@ import 'react-native-gesture-handler';
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import AppNavigator from './src/navigation/AppNavigator';
-
+import SettingsProvider from './src/context/SettingsContext';
 // Import the auth instance from firebaseConfig.js
 import { auth } from './src/config/firebaseConfig';
 

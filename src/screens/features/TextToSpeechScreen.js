@@ -1,65 +1,95 @@
 import React, { useState } from "react";
-import { View, Text, TouchableOpacity, StyleSheet, Image, Alert } from "react-native";
+import { 
+  View, Text, TouchableOpacity, StyleSheet, Image, Alert, ActivityIndicator, ScrollView 
+} from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import * as ImagePicker from "expo-image-picker";
 import * as Speech from "expo-speech";
 import * as FileSystem from "expo-file-system";
+import * as ImageManipulator from "expo-image-manipulator"; // For image resizing
 
-// Replace this with your actual API key
-const GOOGLE_CLOUD_VISION_API_KEY = "AIzaSyBWPYuGOj4LKR4nxkmi00QT3ZTCwrTI_oE";
+const OCR_API_KEY = "K87132275288957"; // Replace with your actual OCR.space API Key
 
 const TextToSpeechScreen = () => {
   const navigation = useNavigation();
   const [text, setText] = useState("");
-  const [image, setImage] = useState(null);
+  const [imageUri, setImageUri] = useState(null);
+  const [loading, setLoading] = useState(false);
 
-  // Function to pick an image from camera
+  // 📸 Capture Image from Camera
   const pickImage = async () => {
-    let result = await ImagePicker.launchCameraAsync({
-      allowsEditing: true,
-      base64: true,
-    });
+    try {
+      let result = await ImagePicker.launchCameraAsync({
+        allowsEditing: true,
+        base64: false,
+        quality: 1, // High-quality image
+      });
 
-    if (!result.canceled) {
-      setImage(result.uri);
-      extractText(result.base64);
+      if (!result.canceled) {
+        setImageUri(result.assets[0].uri);
+        processImage(result.assets[0].uri);
+      }
+    } catch (error) {
+      console.error("Error picking image:", error);
+      Alert.alert("Error", "Failed to capture image.");
     }
   };
 
-  // Function to extract text using Google Cloud Vision API
-  const extractText = async (base64Image) => {
+  // 📂 Resize & Convert Image to Base64
+  const processImage = async (imageUri) => {
+    setLoading(true);
     try {
-      const body = JSON.stringify({
-        requests: [
-          {
-            image: { content: base64Image },
-            features: [{ type: "TEXT_DETECTION" }],
-          },
-        ],
-      });
-
-      const response = await fetch(
-        `https://vision.googleapis.com/v1/images:annotate?key=${GOOGLE_CLOUD_VISION_API_KEY}`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: body,
-        }
+      // Resize and compress image before processing (fix file size issue)
+      const manipulatedImage = await ImageManipulator.manipulateAsync(
+        imageUri,
+        [{ resize: { width: 800 } }], // Resize width to 800px
+        { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG } // Compress image
       );
 
-      const result = await response.json();
-      const detectedText = result.responses[0]?.textAnnotations?.[0]?.description || "No text detected";
+      const base64Image = await FileSystem.readAsStringAsync(manipulatedImage.uri, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
 
-      setText(detectedText);
+      extractText(base64Image);
+    } catch (error) {
+      console.error("Error processing image:", error);
+      Alert.alert("Error", "Failed to process image.");
+      setLoading(false);
+    }
+  };
+
+  // 🔍 Extract Text using OCR API
+  const extractText = async (base64Image) => {
+    try {
+      let formData = new FormData();
+      formData.append("apikey", OCR_API_KEY);
+      formData.append("base64image", `data:image/jpeg;base64,${base64Image}`);
+      formData.append("language", "eng");
+      formData.append("isOverlayRequired", "true"); // Improves OCR accuracy
+
+      const response = await fetch("https://api.ocr.space/parse/image", {
+        method: "POST",
+        body: formData,
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
+      const result = await response.json();
+      console.log("OCR API Response:", result); // Debugging
+
+      if (result.ParsedResults && result.ParsedResults.length > 0) {
+        setText(result.ParsedResults[0].ParsedText.trim() || "No text detected");
+      } else {
+        setText("No text detected. Try again with a clearer image.");
+      }
     } catch (error) {
       console.error("Error extracting text:", error);
       Alert.alert("Error", "Failed to extract text. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
-  // Function to read extracted text aloud
+  // 🔊 Read Extracted Text
   const speakText = () => {
     if (text) {
       Speech.speak(text);
@@ -71,18 +101,20 @@ const TextToSpeechScreen = () => {
   return (
     <View style={styles.container}>
       <TouchableOpacity onPress={pickImage} style={styles.button}>
-        <Text style={styles.buttonText}>Capture Document</Text>
+        <Text style={styles.buttonText}>📸 Capture Document</Text>
       </TouchableOpacity>
 
-      {image && <Image source={{ uri: image }} style={styles.preview} />}
+      {imageUri && <Image source={{ uri: imageUri }} style={styles.preview} />}
+
+      {loading && <ActivityIndicator size="large" color="#FF9999" />}
 
       {text ? (
-        <View style={styles.textContainer}>
+        <ScrollView style={styles.textContainer}>
           <Text style={styles.extractedText}>{text}</Text>
           <TouchableOpacity onPress={speakText} style={styles.button}>
-            <Text style={styles.buttonText}>Read Aloud</Text>
+            <Text style={styles.buttonText}>🔊 Read Aloud</Text>
           </TouchableOpacity>
-        </View>
+        </ScrollView>
       ) : null}
     </View>
   );
@@ -106,13 +138,18 @@ const styles = StyleSheet.create({
     fontSize: 18,
   },
   preview: {
-    width: 200,
-    height: 200,
+    width: 250,
+    height: 250,
     resizeMode: "contain",
     marginBottom: 20,
   },
   textContainer: {
-    alignItems: "center",
+    maxHeight: 300,
+    padding: 10,
+    borderWidth: 1,
+    borderColor: "#ddd",
+    borderRadius: 10,
+    marginVertical: 10,
   },
   extractedText: {
     fontSize: 16,

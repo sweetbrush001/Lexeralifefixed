@@ -43,3 +43,4 @@ export const SettingsProvider = ({ children }) => {
 };
 
 export const useSettings = () => useContext(SettingsContext); 
+export default SettingsProvider;  
