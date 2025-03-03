@@ -25,18 +25,22 @@ import ReadableText from '../../components/ReadableText';
 // Modern icon libraries
 import { Feather } from '@expo/vector-icons';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { isUserOnboarded, markUserAsOnboarded } from '../../utils/introService';
+import { isNewUser as checkIfNewUser, markFeatureIntroShown } from '../../utils/FeatureIntroUtils';
+import { isNewUserInFirebase, hasUserSeenFeatureIntroInFirebase } from '../../utils/userFirebaseUtils';
 
 const { width, height } = Dimensions.get('window');
 const PANEL_WIDTH = width * 0.8;
 
-const HomeScreen = () => {
-  const navigation = useNavigation();
+const HomeScreen = ({ route, navigation }) => {
   const [motivationalTexts, setMotivationalTexts] = useState([]);
   const [currentTextIndex, setCurrentTextIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [isPanelOpen, setIsPanelOpen] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
   const [userProfileImage, setUserProfileImage] = useState(null);
+  const [isFirstTimeUser, setIsFirstTimeUser] = useState(false);
+  const [isNewUser, setIsNewUser] = useState(false); // Start with false default
   
   // Animation value for side panel
   const slideAnim = useRef(new Animated.Value(-PANEL_WIDTH)).current;
@@ -83,6 +87,48 @@ const HomeScreen = () => {
     
     fetchUserData();
   }, []);
+
+  // Check if the user has completed onboarding when the component mounts
+  useEffect(() => {
+    const checkOnboardingStatus = async () => {
+      const onboarded = await isUserOnboarded();
+      setIsFirstTimeUser(!onboarded);
+      
+      // If this is the first visit after registration, mark as onboarded
+      if (!onboarded) {
+        await markUserAsOnboarded();
+        // Set isNewUser to true if not onboarded yet
+        setIsNewUser(true);
+      }
+    };
+    
+    checkOnboardingStatus();
+  }, []);
+
+  // Check new user status on mount - consolidated with route params check
+  useEffect(() => {
+    const checkNewUserStatus = async () => {
+      try {
+        // First priority: check route params (e.g., if coming directly from registration)
+        if (route.params?.isNewUser !== undefined) {
+          console.log("Setting new user status from navigation params:", route.params.isNewUser);
+          setIsNewUser(route.params.isNewUser);
+          return;
+        }
+        
+        // Otherwise check Firebase
+        const newUserStatus = await isNewUserInFirebase();
+        console.log("New user status from Firebase:", newUserStatus);
+        setIsNewUser(newUserStatus);
+      } catch (error) {
+        console.error("Error checking new user status:", error);
+        // Default to false on error
+        setIsNewUser(false);
+      }
+    };
+    
+    checkNewUserStatus();
+  }, [route.params?.isNewUser]);
 
   // Close panel when back button is pressed
   useFocusEffect(
@@ -243,6 +289,36 @@ const HomeScreen = () => {
     return require('../../../assets/profilepic.png');
   };
 
+  // Modified navigation handling for features with proper intro logic
+  const handleFeatureNavigation = async (featureKey, introRoute, featureRoute) => {
+    console.log(`Attempting to navigate to feature: ${featureKey}, intro: ${introRoute}, main: ${featureRoute}`);
+    
+    // For global new users, always show intros
+    if (isNewUser) {
+      console.log(`New user navigating to ${introRoute}`);
+      navigation.navigate(introRoute);
+      return;
+    }
+    
+    try {
+      // For returning users, check if they've seen this specific intro
+      const hasSeenIntro = await hasUserSeenFeatureIntroInFirebase(featureKey);
+      console.log(`User has seen ${featureKey} intro? ${hasSeenIntro}`);
+      
+      if (hasSeenIntro) {
+        console.log(`User has seen ${featureKey} intro, going directly to ${featureRoute}`);
+        navigation.navigate(featureRoute);
+      } else {
+        console.log(`User hasn't seen ${featureKey} intro yet, showing ${introRoute}`);
+        navigation.navigate(introRoute);
+      }
+    } catch (error) {
+      console.error(`Error in feature navigation for ${featureKey}:`, error);
+      // On error, default to showing the feature
+      navigation.navigate(featureRoute);
+    }
+  };
+
   return (
     <TextReaderRoot>
       <SafeAreaView style={styles.container}>
@@ -309,7 +385,7 @@ const HomeScreen = () => {
           <View style={styles.featureRow}>
             <TouchableOpacity 
               style={[styles.featureCard, styles.primaryCard]}
-              onPress={() => navigation.navigate('Chatbot')}
+              onPress={() => handleFeatureNavigation('chatbot', 'ChatbotIntro', 'Chatbot')}
             >
               <BlurView intensity={10} style={styles.cardBlur}>
                 <MaterialCommunityIcons name="robot" size={28} color="#FF6B6B" />
@@ -322,7 +398,7 @@ const HomeScreen = () => {
             
             <TouchableOpacity 
               style={[styles.featureCard, styles.secondaryCard]}
-              onPress={() => navigation.navigate('settings')}
+              onPress={() => handleFeatureNavigation('game', 'GameIntro', 'Game')}
             >
               <BlurView intensity={10} style={styles.cardBlur}>
                 <MaterialCommunityIcons name="brain" size={28} color="#FF6B6B" />
@@ -338,7 +414,7 @@ const HomeScreen = () => {
           <View style={styles.featureRow}>
             <TouchableOpacity 
               style={[styles.featureCard, styles.secondaryCard]}
-              onPress={() => navigation.navigate('TestIntro')}
+              onPress={() => handleFeatureNavigation('test', 'TestIntroIntro', 'Test')}
             >
               <BlurView intensity={10} style={styles.cardBlur}>
                 <Feather name="clipboard" size={28} color="#FF6B6B" />
@@ -351,7 +427,7 @@ const HomeScreen = () => {
             
             <TouchableOpacity 
               style={[styles.featureCard, styles.primaryCard]}
-              onPress={() => navigation.navigate('Relax')}
+              onPress={() => handleFeatureNavigation('relax', 'RelaxIntro', 'Relax')}
             >
               <BlurView intensity={10} style={styles.cardBlur}>
                 <Feather name="heart" size={28} color="#FF6B6B" />
@@ -366,7 +442,7 @@ const HomeScreen = () => {
           {/* Community Card (Full Width) */}
           <TouchableOpacity 
             style={[styles.featureCard, styles.fullWidthCard]}
-            onPress={() => navigation.navigate('Community')}
+            onPress={() => handleFeatureNavigation('community', 'CommunityIntro', 'Community')}
           >
             <BlurView intensity={10} style={styles.cardBlur}>
               <Feather name="users" size={28} color="#FF6B6B" />
