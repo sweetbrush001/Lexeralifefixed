@@ -40,7 +40,7 @@ const TestIntroScreen = () => {
       .catch(err => console.error('Error marking test intro as seen:', err));
     
     // Navigate to the test screen
-    navigation.navigate('TestIntro');
+    navigation.navigate('Teststarting');
   };
 
   // Handle back button press

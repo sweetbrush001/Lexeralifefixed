@@ -39,7 +39,7 @@ const AppNavigator = () => {
         <Stack.Screen name="Chatbot" component={ChatbotScreen} />
         
         {/* Test related screens */}
-        <Stack.Screen name="TestIntro" component={TestIntroScreen} />
+        <Stack.Screen name="Teststarting" component={TestIntroScreen} />
         <Stack.Screen name="Test" component={TestScreen} />
         <Stack.Screen name="Results" component={ResultsScreen} />
         <Stack.Screen name="PreviousResults" component={PreviousResultsScreen} />

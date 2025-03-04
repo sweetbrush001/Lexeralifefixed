@@ -414,7 +414,7 @@ const HomeScreen = ({ route, navigation }) => {
           <View style={styles.featureRow}>
             <TouchableOpacity 
               style={[styles.featureCard, styles.secondaryCard]}
-              onPress={() => handleFeatureNavigation('test', 'TestIntroIntro', 'Test')}
+              onPress={() => handleFeatureNavigation('test', 'TestIntroIntro', 'Teststarting')}
             >
               <BlurView intensity={10} style={styles.cardBlur}>
                 <Feather name="clipboard" size={28} color="#FF6B6B" />
