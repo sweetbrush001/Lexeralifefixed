@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View,
   TouchableOpacity,
@@ -15,89 +15,49 @@ import {
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
-import { collection, getDocs, doc, getDoc } from 'firebase/firestore';
-import { getAuth } from 'firebase/auth';
-import { db } from '../../config/firebaseConfig';
-// Import TextReaderRoot and ReadableText
+import { Feather } from '@expo/vector-icons';
+
+// Components
 import TextReaderRoot from '../../components/TextReaderRoot';
 import ReadableText from '../../components/ReadableText';
+import SidePanel from '../../components/home/SidePanel';
+import FeatureCard from '../../components/home/FeatureCard';
 
-// Modern icon libraries
-import { Feather } from '@expo/vector-icons';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+// Custom hooks
+import useUserData from '../../hooks/useUserData';
+import useMotivationalTexts from '../../hooks/useMotivationalTexts';
+import useFeatureNavigation from '../../hooks/useFeatureNavigation';
+
+// Utils
 import { isUserOnboarded, markUserAsOnboarded } from '../../utils/introService';
-import { isNewUser as checkIfNewUser, markFeatureIntroShown } from '../../utils/FeatureIntroUtils';
-import { isNewUserInFirebase, hasUserSeenFeatureIntroInFirebase } from '../../utils/userFirebaseUtils';
+import { isNewUserInFirebase } from '../../utils/userFirebaseUtils';
 
-const { width, height } = Dimensions.get('window');
+const { width } = Dimensions.get('window');
 const PANEL_WIDTH = width * 0.8;
 
 const HomeScreen = ({ route, navigation }) => {
-  const [motivationalTexts, setMotivationalTexts] = useState([]);
-  const [currentTextIndex, setCurrentTextIndex] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [isPanelOpen, setIsPanelOpen] = useState(false);
-  const [currentUser, setCurrentUser] = useState(null);
-  const [userProfileImage, setUserProfileImage] = useState(null);
-  const [isFirstTimeUser, setIsFirstTimeUser] = useState(false);
-  const [isNewUser, setIsNewUser] = useState(false); // Start with false default
+  // Custom hooks
+  const { currentUser, getProfileImage } = useUserData();
+  const { currentText, loading: textLoading } = useMotivationalTexts();
+  const handleFeatureNavigation = useFeatureNavigation(navigation, isNewUser);
   
-  // Animation value for side panel
+  // State variables
+  const [isPanelOpen, setIsPanelOpen] = useState(false);
+  const [isFirstTimeUser, setIsFirstTimeUser] = useState(false);
+  const [isNewUser, setIsNewUser] = useState(false);
+  
+  // Animation refs
   const slideAnim = useRef(new Animated.Value(-PANEL_WIDTH)).current;
   const overlayOpacity = useRef(new Animated.Value(0)).current;
 
-  // Get current user information including profile image from Firestore
-  useEffect(() => {
-    const fetchUserData = async () => {
-      const auth = getAuth();
-      const user = auth.currentUser;
-      
-      if (user) {
-        try {
-          // First set basic user info from auth
-          setCurrentUser({
-            email: user.email,
-            displayName: user.displayName || 'Lexera User',
-            photoURL: user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.email)}&background=random&color=fff&size=256`
-          });
-          
-          // Then fetch additional data from Firestore
-          const userDocRef = doc(db, "users", user.uid);
-          const docSnap = await getDoc(userDocRef);
-          
-          if (docSnap.exists()) {
-            const userData = docSnap.data();
-            
-            // Update user info with data from Firestore
-            setCurrentUser(prev => ({
-              ...prev,
-              displayName: userData.name || prev.displayName,
-              photoURL: userData.profileImage || prev.photoURL
-            }));
-            
-            if (userData.profileImage) {
-              setUserProfileImage(userData.profileImage);
-            }
-          }
-        } catch (error) {
-          console.error("Error fetching user data:", error);
-        }
-      }
-    };
-    
-    fetchUserData();
-  }, []);
-
-  // Check if the user has completed onboarding when the component mounts
+  // Check if the user has completed onboarding
   useEffect(() => {
     const checkOnboardingStatus = async () => {
       const onboarded = await isUserOnboarded();
       setIsFirstTimeUser(!onboarded);
       
-      // If this is the first visit after registration, mark as onboarded
       if (!onboarded) {
         await markUserAsOnboarded();
-        // Set isNewUser to true if not onboarded yet
         setIsNewUser(true);
       }
     };
@@ -105,24 +65,19 @@ const HomeScreen = ({ route, navigation }) => {
     checkOnboardingStatus();
   }, []);
 
-  // Check new user status on mount - consolidated with route params check
+  // Check new user status
   useEffect(() => {
     const checkNewUserStatus = async () => {
       try {
-        // First priority: check route params (e.g., if coming directly from registration)
         if (route.params?.isNewUser !== undefined) {
-          console.log("Setting new user status from navigation params:", route.params.isNewUser);
           setIsNewUser(route.params.isNewUser);
           return;
         }
         
-        // Otherwise check Firebase
         const newUserStatus = await isNewUserInFirebase();
-        console.log("New user status from Firebase:", newUserStatus);
         setIsNewUser(newUserStatus);
       } catch (error) {
         console.error("Error checking new user status:", error);
-        // Default to false on error
         setIsNewUser(false);
       }
     };
@@ -130,7 +85,7 @@ const HomeScreen = ({ route, navigation }) => {
     checkNewUserStatus();
   }, [route.params?.isNewUser]);
 
-  // Close panel when back button is pressed
+  // Handle back button press
   useFocusEffect(
     React.useCallback(() => {
       const onBackPress = () => {
@@ -146,8 +101,8 @@ const HomeScreen = ({ route, navigation }) => {
     }, [isPanelOpen])
   );
 
-  // Toggle side panel
-  const togglePanel = () => {
+  // Toggle side panel - memoized
+  const togglePanel = useCallback(() => {
     if (isPanelOpen) {
       // Close panel
       Animated.parallel([
@@ -180,10 +135,10 @@ const HomeScreen = ({ route, navigation }) => {
         }),
       ]).start();
     }
-  };
+  }, [isPanelOpen, slideAnim, overlayOpacity]);
 
-  // Handle menu item press
-  const handleMenuItemPress = (screen) => {
+  // Handle menu item press - memoized
+  const handleMenuItemPress = useCallback((screen) => {
     // First close the panel with animation
     Animated.parallel([
       Animated.timing(slideAnim, {
@@ -211,113 +166,7 @@ const HomeScreen = ({ route, navigation }) => {
         navigation.navigate(screen);
       }
     });
-  };
-
-  // Fetch motivational texts from Firebase
-  const fetchMotivationalTexts = async () => {
-    try {
-      console.log("Starting to fetch motivational texts...");
-      const querySnapshot = await getDocs(collection(db, "motivationalTexts"));
-      const texts = [];
-      
-      querySnapshot.forEach((doc) => {
-        console.log("Document data:", doc.data());
-        if (doc.data().text) {
-          texts.push(doc.data().text);
-        }
-      });
-      
-      console.log(`Found ${texts.length} motivational texts`);
-      
-      if (texts.length > 0) {
-        setMotivationalTexts(texts);
-      } else {
-        // Fallback texts in case Firebase data is empty
-        setMotivationalTexts([
-          "Believe in yourself! Every great achievement starts with the decision to try.",
-          "Don't stop when you're tired. Stop when you're done.",
-          "Success comes from what you do consistently.",
-          "Stay positive, work hard, make it happen."
-        ]);
-        console.log("Using fallback motivational texts");
-      }
-    } catch (error) {
-      console.error("Error fetching motivational texts: ", error);
-      // Show error alert or fallback to default texts
-      Alert.alert("Data Loading Error", "Could not load motivational texts. Using defaults instead.");
-      
-      // Fallback texts
-      setMotivationalTexts([
-        "Believe in yourself! Every great achievement starts with the decision to try.",
-        "Don't stop when you're tired. Stop when you're done.",
-        "Success comes from what you do consistently.",
-        "Stay positive, work hard, make it happen."
-      ]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Fetch data when component mounts
-  useEffect(() => {
-    fetchMotivationalTexts();
-  }, []);
-
-  // Set up interval to change text every 60 seconds
-  useEffect(() => {
-    const interval = setInterval(() => {
-      if (motivationalTexts.length > 0) {
-        setCurrentTextIndex((prevIndex) => 
-          (prevIndex + 1) % motivationalTexts.length
-        );
-      }
-    }, 60000);
-
-    return () => clearInterval(interval);
-  }, [motivationalTexts]);
-
-  // Current text to display
-  const currentMotivationalText = motivationalTexts[currentTextIndex] || "Loading inspiration...";
-
-  // Generate a profile image URL prioritizing Firestore data
-  const getProfileImage = () => {
-    if (userProfileImage) {
-      return { uri: userProfileImage };
-    } else if (currentUser && currentUser.photoURL) {
-      return { uri: currentUser.photoURL };
-    }
-    return require('../../../assets/profilepic.png');
-  };
-
-  // Modified navigation handling for features with proper intro logic
-  const handleFeatureNavigation = async (featureKey, introRoute, featureRoute) => {
-    console.log(`Attempting to navigate to feature: ${featureKey}, intro: ${introRoute}, main: ${featureRoute}`);
-    
-    // For global new users, always show intros
-    if (isNewUser) {
-      console.log(`New user navigating to ${introRoute}`);
-      navigation.navigate(introRoute);
-      return;
-    }
-    
-    try {
-      // For returning users, check if they've seen this specific intro
-      const hasSeenIntro = await hasUserSeenFeatureIntroInFirebase(featureKey);
-      console.log(`User has seen ${featureKey} intro? ${hasSeenIntro}`);
-      
-      if (hasSeenIntro) {
-        console.log(`User has seen ${featureKey} intro, going directly to ${featureRoute}`);
-        navigation.navigate(featureRoute);
-      } else {
-        console.log(`User hasn't seen ${featureKey} intro yet, showing ${introRoute}`);
-        navigation.navigate(introRoute);
-      }
-    } catch (error) {
-      console.error(`Error in feature navigation for ${featureKey}:`, error);
-      // On error, default to showing the feature
-      navigation.navigate(featureRoute);
-    }
-  };
+  }, [navigation, slideAnim, overlayOpacity]);
 
   return (
     <TextReaderRoot>
@@ -331,7 +180,6 @@ const HomeScreen = ({ route, navigation }) => {
               source={require('../../../assets/Logo.png')}
               style={styles.logo}
             />
-            {/* App title should NOT be read */}
             <ReadableText style={styles.logoText} readable={false}>
               Lexera Life
             </ReadableText>
@@ -344,10 +192,9 @@ const HomeScreen = ({ route, navigation }) => {
           </TouchableOpacity>
         </View>
         
-        {/* User Welcome Section - READ WITH PRIORITY 1 */}
+        {/* User Welcome Section */}
         <View style={styles.welcomeSection}>
           <View style={styles.userInfoSection}>
-            {/* Welcome message with highest priority */}
             <ReadableText style={styles.welcomeText} readable={true} priority={1}>
               Hello,
             </ReadableText>
@@ -363,7 +210,7 @@ const HomeScreen = ({ route, navigation }) => {
           </TouchableOpacity>
         </View>
 
-        {/* Motivational Card - READ WITH PRIORITY 3 */}
+        {/* Motivational Card */}
         <LinearGradient
           colors={['#FF9F9F', '#FF6B6B']}
           start={{ x: 0, y: 0 }}
@@ -371,11 +218,11 @@ const HomeScreen = ({ route, navigation }) => {
           style={styles.messageCard}
         >
           <ReadableText style={styles.messageText} readable={true} priority={3}>
-            {loading ? "Loading inspiration..." : currentMotivationalText}
+            {textLoading ? "Loading inspiration..." : currentText}
           </ReadableText>
         </LinearGradient>
 
-        {/* Features heading - not read */}
+        {/* Features heading */}
         <ReadableText style={styles.sectionTitle} readable={false}>
           Features
         </ReadableText>
@@ -383,176 +230,67 @@ const HomeScreen = ({ route, navigation }) => {
         <View style={styles.featureGrid}>
           {/* Row 1 */}
           <View style={styles.featureRow}>
-            <TouchableOpacity 
-              style={[styles.featureCard, styles.primaryCard]}
+            <FeatureCard
+              title="Lexera Bot"
+              iconType="material"
+              iconName="robot"
+              cardStyle={styles.primaryCard}
+              priority={4}
               onPress={() => handleFeatureNavigation('chatbot', 'ChatbotIntro', 'Chatbot')}
-            >
-              <BlurView intensity={10} style={styles.cardBlur}>
-                <MaterialCommunityIcons name="robot" size={28} color="#FF6B6B" />
-                {/* Feature 1 - READ WITH PRIORITY 4 */}
-                <ReadableText style={styles.featureTitle} readable={true} priority={4}>
-                  Lexera Bot
-                </ReadableText>
-              </BlurView>
-            </TouchableOpacity>
+            />
             
-            <TouchableOpacity 
-              style={[styles.featureCard, styles.secondaryCard]}
+            <FeatureCard
+              title="Brain Training"
+              iconType="material"
+              iconName="brain"
+              cardStyle={styles.secondaryCard}
+              priority={5}
               onPress={() => handleFeatureNavigation('game', 'GameIntro', 'Game')}
-            >
-              <BlurView intensity={10} style={styles.cardBlur}>
-                <MaterialCommunityIcons name="brain" size={28} color="#FF6B6B" />
-                {/* Feature 2 - READ WITH PRIORITY 5 */}
-                <ReadableText style={styles.featureTitle} readable={true} priority={5}>
-                  Brain Training
-                </ReadableText>
-              </BlurView>
-            </TouchableOpacity>
+            />
           </View>
           
           {/* Row 2 */}
           <View style={styles.featureRow}>
-            <TouchableOpacity 
-              style={[styles.featureCard, styles.secondaryCard]}
+            <FeatureCard
+              title="Dyslexia Test"
+              iconType="feather"
+              iconName="clipboard"
+              cardStyle={styles.secondaryCard}
+              priority={6}
               onPress={() => handleFeatureNavigation('test', 'TestIntroIntro', 'Teststarting')}
-            >
-              <BlurView intensity={10} style={styles.cardBlur}>
-                <Feather name="clipboard" size={28} color="#FF6B6B" />
-                {/* Feature 3 - READ WITH PRIORITY 6 */}
-                <ReadableText style={styles.featureTitle} readable={true} priority={6}>
-                  Dyslexia Test
-                </ReadableText>
-              </BlurView>
-            </TouchableOpacity>
+            />
             
-            <TouchableOpacity 
-              style={[styles.featureCard, styles.primaryCard]}
+            <FeatureCard
+              title="Relax"
+              iconType="feather"
+              iconName="heart"
+              cardStyle={styles.primaryCard}
+              priority={7}
               onPress={() => handleFeatureNavigation('relax', 'RelaxIntro', 'Relax')}
-            >
-              <BlurView intensity={10} style={styles.cardBlur}>
-                <Feather name="heart" size={28} color="#FF6B6B" />
-                {/* Feature 4 - READ WITH PRIORITY 7 */}
-                <ReadableText style={styles.featureTitle} readable={true} priority={7}>
-                  Relax
-                </ReadableText>
-              </BlurView>
-            </TouchableOpacity>
+            />
           </View>
           
-          {/* Community Card (Full Width) */}
-          <TouchableOpacity 
-            style={[styles.featureCard, styles.fullWidthCard]}
+          {/* Community Card */}
+          <FeatureCard
+            title="Community"
+            iconType="feather"
+            iconName="users"
+            cardStyle={styles.fullWidthCard}
+            priority={8}
             onPress={() => handleFeatureNavigation('community', 'CommunityIntro', 'Community')}
-          >
-            <BlurView intensity={10} style={styles.cardBlur}>
-              <Feather name="users" size={28} color="#FF6B6B" />
-              {/* Feature 5 - READ WITH PRIORITY 8 */}
-              <ReadableText style={styles.featureTitle} readable={true} priority={8}>
-                Community
-              </ReadableText>
-            </BlurView>
-          </TouchableOpacity>
+          />
         </View>
 
-        {/* Overlay when panel is open */}
-        <Animated.View 
-          style={[
-            styles.overlay,
-            { 
-              opacity: overlayOpacity,
-              pointerEvents: isPanelOpen ? 'auto' : 'none'
-            }
-          ]} 
-        >
-          <TouchableOpacity
-            style={styles.overlayTouchable}
-            activeOpacity={1}
-            onPress={togglePanel}
-          />
-        </Animated.View>
-
-        {/* Side Panel - NOTHING HERE SHOULD BE READ */}
-        <Animated.View 
-          style={[
-            styles.sidePanel,
-            { transform: [{ translateX: slideAnim }] }
-          ]}
-        >
-          <BlurView intensity={30} style={styles.sidePanelContent}>
-            <View style={styles.sidePanelHeader}>
-              <View style={styles.profileSection}>
-                <Image
-                  source={getProfileImage()}
-                  style={styles.sidePanelProfilePic}
-                />
-                <View style={styles.userInfoContainer}>
-                  <Text style={styles.sidePanelUsername}>
-                    {currentUser ? currentUser.displayName : 'Loading...'}
-                  </Text>
-                  <Text style={styles.sidePanelEmail}>
-                    {currentUser ? currentUser.email : ''}
-                  </Text>
-                </View>
-              </View>
-              <TouchableOpacity 
-                style={styles.closeButton}
-                onPress={togglePanel}
-              >
-                <Feather name="x" size={20} color="#666" />
-              </TouchableOpacity>
-            </View>
-            
-            {/* All menu items are not readable - using Text instead of ReadableText */}
-            <View style={styles.sidePanelMenu}>
-              <TouchableOpacity 
-                style={styles.menuItem}
-                onPress={() => handleMenuItemPress('profile')}
-              >
-                <View style={styles.menuIconContainer}>
-                  <Feather name="user" size={20} color="#FF6B6B" />
-                </View>
-                <Text style={styles.menuItemText}>Profile</Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity 
-                style={styles.menuItem}
-                onPress={() => handleMenuItemPress('settings')}
-              >
-                <View style={styles.menuIconContainer}>
-                  <Feather name="settings" size={20} color="#FF6B6B" />
-                </View>
-                <Text style={styles.menuItemText}>Settings</Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity 
-                style={styles.menuItem}
-                onPress={() => handleMenuItemPress('feedback')}
-              >
-                <View style={styles.menuIconContainer}>
-                  <Feather name="message-square" size={20} color="#FF6B6B" />
-                </View>
-                <Text style={styles.menuItemText}>Feedback</Text>
-              </TouchableOpacity>
-              
-              <View style={styles.divider} />
-              
-              <TouchableOpacity 
-                style={[styles.menuItem, styles.logoutItem]}
-                onPress={() => handleMenuItemPress('Auth')}
-              >
-                <View style={[styles.menuIconContainer, styles.logoutIconContainer]}>
-                  <Feather name="log-out" size={20} color="#fff" />
-                </View>
-                <Text style={styles.menuItemText}>Logout</Text>
-              </TouchableOpacity>
-            </View>
-            
-            <View style={styles.sidePanelFooter}>
-              <Text style={styles.versionText}>Lexera Life v1.0.2</Text>
-              <Text style={styles.copyrightText}>© 2025 Lexera Life</Text>
-            </View>
-          </BlurView>
-        </Animated.View>
+        {/* Side Panel */}
+        <SidePanel
+          isPanelOpen={isPanelOpen}
+          slideAnim={slideAnim}
+          overlayOpacity={overlayOpacity}
+          togglePanel={togglePanel}
+          currentUser={currentUser}
+          getProfileImage={getProfileImage}
+          handleMenuItemPress={handleMenuItemPress}
+        />
       </SafeAreaView>
     </TextReaderRoot>
   );
