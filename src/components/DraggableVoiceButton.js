@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useContext } from 'react';
 import {
   Text,
   TouchableOpacity,
@@ -7,26 +7,28 @@ import {
   PanResponder,
   Dimensions,
   Easing,
-  Platform,
-  Modal,
-  View,
-  TextInput,
-  KeyboardAvoidingView,
+  Platform
 } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome5';
 import * as Speech from 'expo-speech';
+import Voice from '@react-native-voice/voice'; // Changed to correct package
 import { useTextReader } from '../context/TextReaderContext';
+
+// Create a context for speech recognition to communicate with parent components
+export const SpeechContext = React.createContext({
+  transcription: '',
+  setTranscription: () => {}
+});
 
 const DraggableVoiceButton = ({ onSpeechResult }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [isListening, setIsListening] = useState(false);
   const [status, setStatus] = useState('');
-  const [modalVisible, setModalVisible] = useState(false);
-  const [inputText, setInputText] = useState('');
+  const [transcript, setTranscript] = useState('');
   const fabAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const pan = useRef(new Animated.ValueXY()).current;
-  const inputRef = useRef(null);
   
   // Get text reader context for TTS
   const { getAllReadableText } = useTextReader();
@@ -35,15 +37,52 @@ const DraggableVoiceButton = ({ onSpeechResult }) => {
   const screenWidth = Dimensions.get('window').width;
   const screenHeight = Dimensions.get('window').height;
   
-  // Initial position
+  // Initialize Voice recognition
   useEffect(() => {
-    pan.setValue({
-      x: screenWidth - 80,
-      y: screenHeight - 150
-    });
-  }, [screenWidth, screenHeight]);
+    // Set up voice listeners
+    Voice.onSpeechStart = () => {
+      console.log('Speech started');
+    };
+    Voice.onSpeechRecognized = () => {
+      console.log('Speech recognized');
+    };
+    Voice.onSpeechEnd = () => {
+      console.log('Speech ended');
+      setIsListening(false);
+    };
+    Voice.onSpeechError = (error) => {
+      console.error('Speech error:', error);
+      setStatus('Error listening');
+      setIsListening(false);
+      setTimeout(() => setStatus(''), 2000);
+    };
+    Voice.onSpeechResults = (event) => {
+      console.log('Speech results:', event.value);
+      if (event.value && event.value[0]) {
+        setTranscript(event.value[0]);
+        
+        // Call the callback with the transcript
+        if (onSpeechResult) {
+          onSpeechResult(event.value[0]);
+        }
+      }
+    };
+    
+    // Clean up listeners on unmount
+    return () => {
+      Voice.destroy().then(Voice.removeAllListeners);
+    };
+  }, [onSpeechResult]);
   
-  // Pan responder setup
+  // Initial positioning
+  useEffect(() => {
+    const initialX = screenWidth - 80;
+    const initialY = screenHeight - 150;
+    
+    pan.setValue({ x: initialX, y: initialY });
+  }, []);
+  
+  // Create PanResponder
   const panResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
@@ -57,7 +96,8 @@ const DraggableVoiceButton = ({ onSpeechResult }) => {
         });
         pan.setValue({ x: 0, y: 0 });
         
-        Animated.sequence([
+        // Button animation
+        Animated.sequence([ 
           Animated.timing(scaleAnim, {
             toValue: 0.9,
             duration: 100,
@@ -77,8 +117,15 @@ const DraggableVoiceButton = ({ onSpeechResult }) => {
       onPanResponderRelease: () => {
         pan.flattenOffset();
         
-        let newX = Math.max(0, Math.min(pan.x._value, screenWidth - 70));
-        let newY = Math.max(100, Math.min(pan.y._value, screenHeight - 100));
+        // Add boundary checks
+        let newX = pan.x._value;
+        let newY = pan.y._value;
+        
+        // Ensure button stays within screen bounds
+        if (newX < 0) newX = 0;
+        if (newX > screenWidth - 70) newX = screenWidth - 70;
+        if (newY < 100) newY = 100; 
+        if (newY > screenHeight - 100) newY = screenHeight - 100;
         
         Animated.spring(pan, {
           toValue: { x: newX, y: newY },
@@ -89,7 +136,7 @@ const DraggableVoiceButton = ({ onSpeechResult }) => {
     })
   ).current;
   
-  // Stop active functions
+  // Stop any active functions (speaking or listening)
   const stopActiveFunction = async () => {
     if (isSpeaking) {
       Speech.stop();
@@ -99,20 +146,32 @@ const DraggableVoiceButton = ({ onSpeechResult }) => {
       return true;
     }
     
+    if (isListening) {
+      await Voice.stop();
+      setIsListening(false);
+      setStatus('Stopped listening');
+      setTimeout(() => setStatus(''), 1000);
+      return true;
+    }
+    
     return false;
   };
   
-  // Button press handler
+  // Toggle FAB expansion or stop active function
   const handleButtonPress = async () => {
+    // If speaking or listening, stop the active function
     const stopped = await stopActiveFunction();
+    
+    // If no function was stopped, toggle FAB
     if (!stopped) {
       toggleFAB();
     }
   };
   
-  // Toggle FAB
+  // Toggle FAB expansion
   const toggleFAB = () => {
-    if (isSpeaking) return;
+    // Don't toggle if currently speaking or listening
+    if (isSpeaking || isListening) return;
     
     if (isExpanded) {
       Animated.timing(fabAnim, {
@@ -132,13 +191,15 @@ const DraggableVoiceButton = ({ onSpeechResult }) => {
     setIsExpanded(!isExpanded);
   };
 
-  // TTS function
+  // TTS (Text to Speech) function
   const activateTTS = async () => {
+    // If already speaking, stop it
     if (isSpeaking) {
       await stopActiveFunction();
       return;
     }
     
+    // Get text from context
     const textToRead = getAllReadableText();
     
     if (!textToRead || textToRead.trim() === '') {
@@ -153,7 +214,7 @@ const DraggableVoiceButton = ({ onSpeechResult }) => {
     Speech.speak(textToRead, {
       language: 'en',
       pitch: 1.0,
-      rate: 0.7,
+      rate: 0.7, // Slightly slower for better comprehension
       onDone: () => {
         setIsSpeaking(false);
         setStatus('');
@@ -166,46 +227,54 @@ const DraggableVoiceButton = ({ onSpeechResult }) => {
         console.error('TTS error:', error);
         setIsSpeaking(false);
         setStatus('Error reading text');
-        setTimeout(() => setStatus(''), 2000);
       }
     });
     
+    // Close menu after activation
     toggleFAB();
   };
 
-  // Empty STT function that just shows the text input modal
-  const activateSTT = () => {
-    showTextInputModal();
-  };
-  
-  // Show text input modal as fallback
-  const showTextInputModal = () => {
-    setModalVisible(true);
-    setTimeout(() => {
-      if (inputRef.current) {
-        inputRef.current.focus();
+  // STT (Speech to Text) function using Voice
+  const activateSTT = async () => {
+    try {
+      // If already listening, stop it
+      if (isListening) {
+        await stopActiveFunction();
+        return;
       }
-    }, 300);
-  };
-  
-  // Handle text submission from modal
-  const handleTextSubmit = () => {
-    if (inputText.trim() && onSpeechResult) {
-      try {
-        onSpeechResult(inputText.trim());
-        setInputText('');
-        setModalVisible(false);
-        setStatus('Message sent!');
-        setTimeout(() => setStatus(''), 2000);
-      } catch (error) {
-        console.error('Error submitting text:', error);
-        setStatus('Error sending message');
-        setTimeout(() => setStatus(''), 2000);
-      }
+      
+      // Start listening
+      setStatus('Listening...');
+      setIsListening(true);
+      setTranscript('');
+      
+      // Start the voice recognition
+      await Voice.start('en-US');
+      
+      // Set a timeout to automatically stop listening after 10 seconds
+      setTimeout(async () => {
+        if (isListening) {
+          try {
+            await Voice.stop();
+            setIsListening(false);
+            setStatus('');
+          } catch (error) {
+            console.error('Error stopping voice recognition:', error);
+          }
+        }
+      }, 10000);
+    } catch (error) {
+      console.error("Error with voice recognition:", error);
+      setStatus('Voice recognition error');
+      setTimeout(() => setStatus(''), 2000);
+      setIsListening(false);
     }
+    
+    // Close menu after starting listening
+    toggleFAB();
   };
 
-  // Animated values
+  // Animated values for expanded options
   const ttsTranslateY = fabAnim.interpolate({
     inputRange: [0, 1],
     outputRange: [0, -90]
@@ -227,151 +296,99 @@ const DraggableVoiceButton = ({ onSpeechResult }) => {
   });
 
   return (
-    <>
+    <Animated.View
+      style={[styles.container, { 
+        transform: [
+          { translateX: pan.x }, 
+          { translateY: pan.y }, 
+          { scale: scaleAnim }
+        ] 
+      }]}
+      {...panResponder.panHandlers}
+    >
+      {/* TTS Option */}
       <Animated.View
-        style={[styles.container, { 
-          transform: [
-            { translateX: pan.x }, 
-            { translateY: pan.y }, 
-            { scale: scaleAnim }
-          ] 
-        }]}
-        {...panResponder.panHandlers}
+        style={[
+          styles.option, 
+          styles.ttsOption, 
+          { 
+            opacity, 
+            transform: [{ translateY: ttsTranslateY }], 
+            zIndex: isExpanded ? 1 : -1 
+          }
+        ]}
       >
-        {/* TTS Option */}
-        <Animated.View
-          style={[
-            styles.option, 
-            styles.ttsOption, 
-            { 
-              opacity, 
-              transform: [{ translateY: ttsTranslateY }], 
-              zIndex: isExpanded ? 1 : -1 
-            }
-          ]}
-        >
-          <TouchableOpacity
-            style={[styles.optionButton, isSpeaking ? styles.activeOption : null]}
-            onPress={activateTTS}
-            activeOpacity={0.8}
-          >
-            <Icon name="volume-up" size={22} color="#fff" />
-            <Text style={styles.optionText}>
-              {isSpeaking ? "Stop Reading" : "Read Text"}
-            </Text>
-          </TouchableOpacity>
-        </Animated.View>
-
-        {/* Text Input Option */}
-        <Animated.View
-          style={[
-            styles.option, 
-            styles.sttOption, 
-            { 
-              opacity, 
-              transform: [{ translateY: sttTranslateY }], 
-              zIndex: isExpanded ? 1 : -1 
-            }
-          ]}
-        >
-          <TouchableOpacity
-            style={styles.optionButton}
-            onPress={activateSTT}
-            activeOpacity={0.8}
-          >
-            <Icon name="keyboard" size={22} color="#fff" />
-            <Text style={styles.optionText}>
-              Message Input
-            </Text>
-          </TouchableOpacity>
-        </Animated.View>
-
-        {/* Status Text */}
-        {status ? (
-          <Animated.View
-            style={[styles.statusBubble, { 
-              opacity: status ? 1 : 0, 
-              transform: [{ translateY: -220 }]
-            }]}
-          >
-            <Text style={styles.statusText}>{status}</Text>
-          </Animated.View>
-        ) : null}
-
-        {/* Main Button */}
         <TouchableOpacity
-          style={[
-            styles.fab, 
-            isExpanded ? styles.fabActive : null, 
-            isSpeaking ? styles.fabSpeaking : null
-          ]}
-          onPress={handleButtonPress}
-          activeOpacity={0.9}
+          style={[styles.optionButton, isSpeaking ? styles.activeOption : null]}
+          onPress={activateTTS}
+          activeOpacity={0.8}
         >
-          <Animated.View style={{ transform: [{ rotate: rotation }] }}>
-            <Icon 
-              name={isSpeaking ? "volume-up" : "plus"} 
-              size={24} 
-              color="#fff" 
-            />
-          </Animated.View>
-          {isSpeaking && (
-            <Text style={styles.speakingIndicator}>•</Text>
-          )}
+          <Icon name="volume-up" size={22} color="#fff" />
+          <Text style={styles.optionText}>
+            {isSpeaking ? "Stop Reading" : "Read Text"}
+          </Text>
         </TouchableOpacity>
       </Animated.View>
-      
-      {/* Text Input Modal */}
-      <Modal
-        animationType="slide"
-        transparent={true}
-        visible={modalVisible}
-        onRequestClose={() => setModalVisible(false)}
+
+      {/* STT Option */}
+      <Animated.View
+        style={[
+          styles.option, 
+          styles.sttOption, 
+          { 
+            opacity, 
+            transform: [{ translateY: sttTranslateY }], 
+            zIndex: isExpanded ? 1 : -1 
+          }
+        ]}
       >
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          style={styles.modalContainer}
+        <TouchableOpacity
+          style={[styles.optionButton, isListening ? styles.activeOption : null]}
+          onPress={activateSTT}
+          activeOpacity={0.8}
         >
-          <TouchableOpacity
-            style={styles.modalOverlay}
-            activeOpacity={1}
-            onPress={() => setModalVisible(false)}
-          >
-            <View 
-              style={styles.modalContent} 
-              onStartShouldSetResponder={() => true}
-              onResponderRelease={(e) => e.stopPropagation()}
-            >
-              <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>Type Your Message</Text>
-                <TouchableOpacity onPress={() => setModalVisible(false)}>
-                  <Icon name="times" size={24} color="#333" />
-                </TouchableOpacity>
-              </View>
-              
-              <TextInput
-                ref={inputRef}
-                style={styles.textInput}
-                multiline
-                placeholder="Enter your message here..."
-                value={inputText}
-                onChangeText={setInputText}
-                autoFocus
-              />
-              
-              <TouchableOpacity
-                style={[styles.submitButton, !inputText.trim() && styles.submitButtonDisabled]}
-                onPress={handleTextSubmit}
-                disabled={!inputText.trim()}
-              >
-                <Text style={styles.submitButtonText}>Send Message</Text>
-                <Icon name="paper-plane" size={16} color={inputText.trim() ? "#fff" : "#aaa"} style={{ marginLeft: 8 }} />
-              </TouchableOpacity>
-            </View>
-          </TouchableOpacity>
-        </KeyboardAvoidingView>
-      </Modal>
-    </>
+          <Icon name="microphone" size={22} color="#fff" />
+          <Text style={styles.optionText}>
+            {isListening ? "Stop Listening" : "Voice Input"}
+          </Text>
+        </TouchableOpacity>
+      </Animated.View>
+
+      {/* Status Text */}
+      {status ? (
+        <Animated.View
+          style={[styles.statusBubble, { 
+            opacity: status ? 1 : 0, 
+            transform: [{ translateY: -220 }]
+          }]}
+        >
+          <Text style={styles.statusText}>{status}</Text>
+        </Animated.View>
+      ) : null}
+
+      {/* Main Button */}
+      <TouchableOpacity
+        style={[
+          styles.fab, 
+          isExpanded ? styles.fabActive : null, 
+          isSpeaking ? styles.fabSpeaking : null,
+          isListening ? styles.fabListening : null
+        ]}
+        onPress={handleButtonPress}
+        activeOpacity={0.9}
+      >
+        <Animated.View style={{ transform: [{ rotate: rotation }] }}>
+          <Icon 
+            name={isListening ? "microphone" : isSpeaking ? "volume-up" : "plus"} 
+            size={24} 
+            color="#fff" 
+          />
+        </Animated.View>
+        {(isSpeaking || isListening) && (
+          <Text style={styles.speakingIndicator}>•</Text>
+        )}
+      </TouchableOpacity>
+    </Animated.View>
   );
 };
 
@@ -383,7 +400,7 @@ const styles = StyleSheet.create({
     zIndex: 999,
   },
   fab: {
-    backgroundColor: '#A990FF',
+    backgroundColor: '#A990FF', // Purple to match chat theme
     width: 60,
     height: 60,
     borderRadius: 30,
@@ -404,67 +421,8 @@ const styles = StyleSheet.create({
   fabSpeaking: {
     backgroundColor: '#44AAFF',
   },
-  modalContainer: {
-    flex: 1,
-    justifyContent: 'center',
-  },
-  modalOverlay: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-  },
-  modalContent: {
-    backgroundColor: '#fff',
-    borderRadius: 15,
-    padding: 20,
-    width: '85%',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 15,
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
-  },
-  textInput: {
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 10,
-    padding: 12,
-    fontSize: 16,
-    minHeight: 100,
-    maxHeight: 150,
-    textAlignVertical: 'top',
-  },
-  submitButton: {
-    backgroundColor: '#A990FF',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 12,
-    marginTop: 15,
-    borderRadius: 10,
-  },
-  submitButtonDisabled: {
-    backgroundColor: '#e0e0e0',
-  },
-  submitButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
+  fabListening: {
+    backgroundColor: '#FF9944',
   },
   speakingIndicator: {
     position: 'absolute',
@@ -526,3 +484,4 @@ const styles = StyleSheet.create({
 });
 
 export default DraggableVoiceButton;
+
