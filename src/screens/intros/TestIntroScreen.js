@@ -1,17 +1,15 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useCallback } from 'react';
 import { BackHandler } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-// Fix the import path for FeatureIntroScreen
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import FeatureIntroScreen from '../../components/FeatureIntroScreen';
-import { markFeatureIntroAsSeenInFirebase } from '../../utils/userFirebaseUtils';
+import { markFeatureIntroAsSeen } from '../../utils/FeatureIntroUtils';
 
-// Use online images instead of Lottie animations
 const testIntroSlides = [
   {
     id: '1',
     title: 'Dyslexia Screening',
     description: 'Welcome to our comprehensive dyslexia screening tool, designed to help identify potential reading difficulties.',
-    imageUrl: 'https://img.freepik.com/free-vector/creative-brain-concept-illustration_114360-1324.jpg',
+    imageUrl: 'https://img.freepik.com/free-vector/brain-concept-illustration_114360-1932.jpg',
     icon: 'book-reader'
   },
   {
@@ -25,58 +23,61 @@ const testIntroSlides = [
     id: '3',
     title: 'Track Your Progress',
     description: 'Take the test multiple times to track your improvement over time. View your results history anytime.',
-    imageUrl: 'https://img.freepik.com/free-vector/growth-statistics-concept-illustration_114360-5495.jpg',
+    imageUrl: 'https://img.freepik.com/free-vector/progress-concept-illustration_114360-1421.jpg',
     icon: 'chart-line'
   },
 ];
 
 const TestIntroScreen = () => {
   const navigation = useNavigation();
+  const featureKey = 'test';
   
-  // Mark feature as seen when completed
-  const handleComplete = () => {
-    console.log('[TestIntro] Intro completed, navigating to Test screen');
-    
-    // Mark this intro as seen in Firebase
-    markFeatureIntroAsSeenInFirebase('test')
-      .catch(err => console.error('Error marking test intro as seen:', err));
-    
-    // Navigate to the test screen
+  // Fix function call
+  const markFeatureAsSeen = useCallback(async () => {
+    try {
+      console.log(`[TestIntro] Marking ${featureKey} as seen`);
+      await markFeatureIntroAsSeen(featureKey); // Fixed function name
+    } catch (err) {
+      console.error(`Error marking ${featureKey} intro as seen:`, err);
+    }
+  }, [featureKey]);
+
+  // Handle navigation completion
+  const handleComplete = useCallback(() => {
+    console.log(`[TestIntro] Intro completed, navigating to Test`);
+    markFeatureAsSeen();
     navigation.navigate('Teststarting');
-  };
+  }, [navigation, markFeatureAsSeen]);
 
   // Handle back button press
-  useEffect(() => {
-    const backHandler = BackHandler.addEventListener(
-      'hardwareBackPress',
-      () => {
-        console.log('[TestIntro] Back button pressed, marking as seen');
-        
-        markFeatureIntroAsSeenInFirebase('test')
-          .catch(err => console.error('Error marking test intro as seen:', err));
-        
-        navigation.navigate('Home');
-        return true;
-      }
-    );
+  useFocusEffect(
+    useCallback(() => {
+      const backHandler = BackHandler.addEventListener(
+        'hardwareBackPress',
+        () => {
+          console.log(`[TestIntro] Back button pressed, marking as seen`);
+          markFeatureAsSeen();
+          navigation.navigate('Home');
+          return true;
+        }
+      );
 
-    return () => backHandler.remove();
-  }, [navigation]);
+      return () => backHandler.remove();
+    }, [navigation, markFeatureAsSeen])
+  );
 
   // Mark as seen on unmount
   useEffect(() => {
     return () => {
-      console.log('[TestIntro] Screen unmounting, marking as seen');
-      
-      markFeatureIntroAsSeenInFirebase('test')
-        .catch(err => console.error('Error marking test intro as seen on unmount:', err));
+      console.log(`[TestIntro] Screen unmounting, marking as seen`);
+      markFeatureAsSeen();
     };
-  }, []);
+  }, [markFeatureAsSeen]);
 
   return (
     <FeatureIntroScreen
       slides={testIntroSlides}
-      featureKey="test"
+      featureKey={featureKey}
       onComplete={handleComplete}
       colors={['#4158D0', '#C850C0']} // Purple/blue gradient for test
     />

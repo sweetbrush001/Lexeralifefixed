@@ -1,31 +1,30 @@
 import React, { useEffect } from 'react';
 import { BackHandler } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-// Fix the import path for FeatureIntroScreen
 import FeatureIntroScreen from '../../components/FeatureIntroScreen';
-import { markFeatureIntroAsSeenInFirebase } from '../../utils/userFirebaseUtils';
+import { markFeatureIntroAsSeen } from '../../utils/FeatureIntroUtils';
 
-// Use online images instead of Lottie animations
+// Use image URLs that are reliable
 const chatbotSlides = [
   {
     id: '1',
     title: 'Meet Lexera Bot',
     description: 'Your personal AI assistant designed specifically to help with dyslexia-friendly conversations.',
-    imageUrl: 'https://img.freepik.com/free-vector/cute-robot-waving-hand-cartoon-vector-icon-illustration-science-technology-icon-concept_138676-4565.jpg',
+    imageUrl: 'https://img.freepik.com/free-vector/chat-bot-concept-illustration_114360-5522.jpg',
     icon: 'robot'
   },
   {
     id: '2',
     title: 'Voice Conversations',
     description: 'Speak naturally with Lexera Bot! The voice recognition feature makes communication easier.',
-    imageUrl: 'https://img.freepik.com/free-vector/speech-recognition-abstract-concept-illustration_335657-3854.jpg',
+    imageUrl: 'https://img.freepik.com/free-vector/voice-technologies-concept-illustration_114360-7811.jpg',
     icon: 'microphone'
   },
   {
     id: '3',
     title: 'Get Answers & Support',
     description: 'Ask questions about dyslexia, get reading tips, or just chat for emotional support whenever you need it.',
-    imageUrl: 'https://img.freepik.com/free-vector/organic-flat-customer-support-illustration_23-2148899173.jpg',
+    imageUrl: 'https://img.freepik.com/free-vector/faq-concept-illustration_114360-5585.jpg',
     icon: 'question-circle'
   },
 ];
@@ -33,17 +32,21 @@ const chatbotSlides = [
 const ChatbotIntroScreen = () => {
   const navigation = useNavigation();
 
-  // Handle back button to properly mark feature as seen
+  // FIXED: Handle back button to properly mark feature as seen
   useEffect(() => {
     const backHandler = BackHandler.addEventListener(
       'hardwareBackPress',
       () => {
         console.log('[ChatbotIntro] Back button pressed, marking as seen');
         
-        markFeatureIntroAsSeenInFirebase('chatbot')
-          .catch(err => console.error('Error marking chatbot intro as seen:', err));
+        // Use the enhanced function that updates both local and Firebase
+        markFeatureIntroAsSeen('chatbot');
         
-        navigation.navigate('Home');
+        // Navigate with a slight delay to ensure state is updated
+        setTimeout(() => {
+          navigation.navigate('Home');
+        }, 100);
+        
         return true;
       }
     );
@@ -51,24 +54,19 @@ const ChatbotIntroScreen = () => {
     return () => backHandler.remove();
   }, [navigation]);
 
-  // When user completes intro
+  // FIXED: When user completes intro
   const handleComplete = () => {
     console.log('[ChatbotIntro] Intro completed, navigating to Chatbot');
     
-    // Mark this intro as seen in Firebase
-    markFeatureIntroAsSeenInFirebase('chatbot')
-      .catch(err => console.error('Error marking chatbot intro as seen:', err));
-    
+    // Our enhanced function now handles marking both local and Firebase
     navigation.navigate('Chatbot');
   };
 
-  // Also mark as seen on unmount
+  // FIXED: Also mark as seen on unmount
   useEffect(() => {
     return () => {
       console.log('[ChatbotIntro] Screen unmounting, marking as seen');
-      
-      markFeatureIntroAsSeenInFirebase('chatbot')
-        .catch(err => console.error('Error marking chatbot intro as seen on unmount:', err));
+      markFeatureIntroAsSeen('chatbot');
     };
   }, []);
 

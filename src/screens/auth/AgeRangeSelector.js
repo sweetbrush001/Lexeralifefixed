@@ -13,10 +13,6 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { markAsNewUser } from '../../utils/FeatureIntroUtils';
-import { doc, setDoc } from 'firebase/firestore';
-import { getAuth } from 'firebase/auth';
-import { db } from '../../config/firebaseConfig';
 
 // Get screen dimensions for responsive sizing
 const { width, height } = Dimensions.get('window');
@@ -29,7 +25,8 @@ const fontSize = (size) => {
   return Math.round(baseSize * width / 375);
 };
 
-const AgeRangeSelector = ({ navigation }) => {
+export default function AgeRangeSelector() {
+  const navigation = useNavigation();
   const [selectedAgeRange, setSelectedAgeRange] = useState(null);
 
   // Age range options
@@ -66,39 +63,9 @@ const AgeRangeSelector = ({ navigation }) => {
   };
 
   // Handle next button press - navigate to Home page
-  const handleNextPress = async () => {
+  const handleNextPress = () => {
     if (selectedAgeRange) {
-      try {
-        // Process age selection data...
-        
-        // Mark this as a new user - this is CRITICAL!
-        console.log('[AgeRangeSelector] Marking user as NEW');
-        await markAsNewUser();
-        
-        // Mark user as new in Firebase
-        const auth = getAuth();
-        const user = auth.currentUser;
-        
-        if (user) {
-          // Create/update user document marking them as new
-          const userDocRef = doc(db, 'users', user.uid);
-          await setDoc(userDocRef, {
-            isNewUser: true,      // Explicitly mark as new
-            email: user.email,
-            seenIntros: {},       // Empty object for intros they've seen
-            lastUpdated: new Date()
-          }, { merge: true });    // Use merge to preserve any existing data
-          
-          console.log("User marked as new in Firebase");
-        }
-        
-        // Navigate to home with isNewUser flag
-        navigation.navigate('Home', { isNewUser: true });
-      } catch (error) {
-        console.error('[AgeRangeSelector] Error during continue:', error);
-        // Still navigate even if there's an error
-        navigation.navigate('Home', { isNewUser: true });
-      }
+      navigation.replace('Home');
     }
   };
 
@@ -334,5 +301,3 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
 });
-
-export default AgeRangeSelector;

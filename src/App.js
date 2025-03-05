@@ -1,10 +1,13 @@
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { TextReaderProvider } from './context/TextReaderContext';
-import AppNavigator from './navigation/AppNavigator'; // Your navigation setup
+import AppNavigator from './navigation/AppNavigator';
 
-// Wrap the entire app with TextReaderProvider for global accessibility
+// Remove any imports related to intro screens or initIntroSystem
+
 export default function App() {
+  // Remove any useEffect or other initialization related to intro screens
+  
   return (
     <TextReaderProvider>
       <NavigationContainer>

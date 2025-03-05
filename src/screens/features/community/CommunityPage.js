@@ -3,7 +3,7 @@ import {
   View, 
   Text, 
   TouchableOpacity, 
-  FlatList,
+  FlatList, 
   StyleSheet, 
   SafeAreaView, 
   Image, 
@@ -12,23 +12,20 @@ import {
   StatusBar, 
   TextInput, 
   Share,
+  Animated,
   Easing,
   Platform,
-  Alert,
-  Animated // Use React Native's Animated instead of Reanimated for now
+  Alert
 } from 'react-native'; 
 import { collection, arrayRemove, doc, getDoc, updateDoc, arrayUnion, increment, deleteDoc, onSnapshot, query, orderBy, limit } from 'firebase/firestore';
 import Icon from 'react-native-vector-icons/FontAwesome5';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { db, auth } from '../../../config/firebaseConfig';
-import LottieView from 'lottie-react-native';
-// Remove Reanimated import as it's causing issues
+import LottieView from 'lottie-react-native';  // Import LottieView for animations
+import { FadeIn, SlideInRight, SlideInDown, SlideOutDown } from 'react-native-reanimated';
 import LoadingScreen from '../../../screens/loading/LoadingScreen';
 import OrbitLoader from '../../../components/ui/OrbitLoader';
-import SkeletonPlaceholder from 'react-native-skeleton-placeholder';
-import * as Haptics from 'expo-haptics';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Menu, MenuItem } from 'react-native-material-menu';
+
 
 const CommunityPage = ({ navigation }) => {
     const [posts, setPosts] = useState([]);
@@ -44,63 +41,39 @@ const CommunityPage = ({ navigation }) => {
     
     const insets = useSafeAreaInsets();
     
-    // Replace Reanimated values with standard React Native Animated values
+    // Animation for the floating action button
     const fabAnim = useRef(new Animated.Value(0)).current;
-    const searchBarHeight = useRef(new Animated.Value(0)).current;
-    const headerShadow = useRef(new Animated.Value(0)).current;
     const lastScrollY = useRef(0);
     
     // Pagination and loading more content
     const [postsLimit, setPostsLimit] = useState(10);
     const [hasMorePosts, setHasMorePosts] = useState(true);
     const [loadingMore, setLoadingMore] = useState(false);
-    const [loadingError, setLoadingError] = useState(null);
 
-    // Enhanced list performance with FlatList
-    const listRef = useRef(null);
-
-    const fetchPosts = useCallback(async () => {
-        try {
-            setLoading(true);
-            setLoadingError(null);
+    const fetchPosts = useCallback(() => {
+        setLoading(true);
+        const postsQuery = query(
+            collection(db, 'communityPosts'),
+            orderBy('timestamp', 'desc'),
+            limit(postsLimit)
+        );
+        
+        onSnapshot(postsQuery, (querySnapshot) => {
+            const postsList = querySnapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data(),
+                likes: doc.data().likes || 0,
+                comments: doc.data().comments || []
+            }));
             
-            const postsQuery = query(
-                collection(db, 'communityPosts'),
-                orderBy('timestamp', 'desc'),
-                limit(postsLimit)
-            );
-            
-            onSnapshot(postsQuery, (querySnapshot) => {
-                const postsList = querySnapshot.docs.map(doc => ({
-                    id: doc.id,
-                    ...doc.data(),
-                    likes: doc.data().likes || 0,
-                    comments: doc.data().comments || [],
-                    // Add parsed timestamp for better sorting/filtering
-                    parsedTime: doc.data().timestamp ? doc.data().timestamp.toMillis() : Date.now()
-                }));
-                
-                setPosts(postsList);
-                setLoading(false);
-                setRefreshing(false);
-                setLoadingMore(false);
-                
-                // Check if we have more posts to load
-                setHasMorePosts(querySnapshot.docs.length === postsLimit);
-            }, (error) => {
-                console.error('Error fetching posts:', error);
-                setLoadingError('Failed to load posts. Please try again.');
-                setLoading(false);
-                setRefreshing(false);
-                setLoadingMore(false);
-            });
-        } catch (error) {
-            console.error('Error in fetchPosts:', error);
-            setLoadingError('Something went wrong. Please try again.');
+            setPosts(postsList);
             setLoading(false);
             setRefreshing(false);
             setLoadingMore(false);
-        }
+            
+            // Check if we have more posts to load
+            setHasMorePosts(querySnapshot.docs.length === postsLimit);
+        });
     }, [postsLimit]);
 
     useEffect(() => {
@@ -108,41 +81,18 @@ const CommunityPage = ({ navigation }) => {
     }, [fetchPosts]);
 
     const onRefresh = useCallback(() => {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         setRefreshing(true);
         // Reset to initial posts count when refreshing
         setPostsLimit(10);
         fetchPosts();
     }, [fetchPosts]);
     
-    const loadMorePosts = useCallback(() => {
-        if (hasMorePosts && !loadingMore && !loading) {
+    const loadMorePosts = () => {
+        if (hasMorePosts && !loadingMore) {
             setLoadingMore(true);
-            Haptics.selectionAsync();
             setPostsLimit(prevLimit => prevLimit + 10);
         }
-    }, [hasMorePosts, loadingMore, loading]);
-
-    // Toggle search bar with animation using React Native Animated
-    const toggleSearch = useCallback(() => {
-        Haptics.selectionAsync();
-        if (searchVisible) {
-            // Hide search bar
-            Animated.timing(searchBarHeight, {
-                toValue: 0,
-                duration: 250,
-                useNativeDriver: false
-            }).start(() => setSearchVisible(false));
-        } else {
-            // Show search bar
-            setSearchVisible(true);
-            Animated.timing(searchBarHeight, {
-                toValue: 1,
-                duration: 250,
-                useNativeDriver: false
-            }).start();
-        }
-    }, [searchVisible, searchBarHeight]);
+    };
 
     // Handle scroll events for hiding/showing the FAB
     const handleScroll = Animated.event(
@@ -151,64 +101,28 @@ const CommunityPage = ({ navigation }) => {
             useNativeDriver: false,
             listener: event => {
                 const currentScrollY = event.nativeEvent.contentOffset.y;
-                
-                // Update header elevation based on scroll position
-                if (currentScrollY > 20 && headerShadow._value === 0) {
-                    Animated.timing(headerShadow, {
-                        toValue: 1,
-                        duration: 150,
-                        useNativeDriver: false
-                    }).start();
-                } else if (currentScrollY <= 20 && headerShadow._value === 1) {
-                    Animated.timing(headerShadow, {
-                        toValue: 0,
-                        duration: 150,
-                        useNativeDriver: false
-                    }).start();
-                }
-                
-                // Handle FAB visibility
                 if (currentScrollY > lastScrollY.current + 10) {
                     // Scrolling down - hide FAB
                     Animated.timing(fabAnim, {
                         toValue: 100,
                         duration: 300,
-                        useNativeDriver: true
+                        useNativeDriver: true,
+                        easing: Easing.ease
                     }).start();
                 } else if (currentScrollY < lastScrollY.current - 10) {
                     // Scrolling up - show FAB
                     Animated.timing(fabAnim, {
                         toValue: 0,
                         duration: 300,
-                        useNativeDriver: true
+                        useNativeDriver: true,
+                        easing: Easing.ease
                     }).start();
                 }
-                
                 lastScrollY.current = currentScrollY;
             }
         }
     );
 
-    // Add the missing formatTimestamp function 
-    const formatTimestamp = useCallback((timestamp) => {
-        if (!timestamp) return '';
-        const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
-        const now = new Date();
-        const diffMinutes = Math.floor((now - date) / (1000 * 60));
-        
-        if (diffMinutes < 1) return 'Just now';
-        if (diffMinutes < 60) return `${diffMinutes}m ago`;
-        
-        const diffHours = Math.floor(diffMinutes / 60);
-        if (diffHours < 24) return `${diffHours}h ago`;
-        
-        const diffDays = Math.floor(diffHours / 24);
-        if (diffDays < 7) return `${diffDays}d ago`;
-        
-        return date.toLocaleDateString();
-    }, []);
-
-    // Make sure handleLike is defined
     const handleLike = useCallback(async (postId) => {
         // Get current user email
         const userEmail = auth.currentUser?.email;
@@ -221,12 +135,20 @@ const CommunityPage = ({ navigation }) => {
         // Check if already liked
         const alreadyLiked = postToUpdate.likedUsers?.includes(userEmail);
         
-        // Haptic feedback
-        Haptics.impactAsync(
-            alreadyLiked 
-                ? Haptics.ImpactFeedbackStyle.Light 
-                : Haptics.ImpactFeedbackStyle.Medium
-        );
+        // Create animation for immediate feedback
+        const scaleAnim = new Animated.Value(1);
+        Animated.sequence([
+            Animated.timing(scaleAnim, {
+                toValue: 1.2,
+                duration: 150,
+                useNativeDriver: true,
+            }),
+            Animated.timing(scaleAnim, {
+                toValue: 1,
+                duration: 150,
+                useNativeDriver: true,
+            }),
+        ]).start();
         
         // Update local state first with optimistic update
         setPosts(currentPosts => 
@@ -237,7 +159,8 @@ const CommunityPage = ({ navigation }) => {
                         likes: alreadyLiked ? post.likes - 1 : post.likes + 1,
                         likedUsers: alreadyLiked 
                             ? post.likedUsers.filter(email => email !== userEmail)
-                            : [...(post.likedUsers || []), userEmail]
+                            : [...(post.likedUsers || []), userEmail],
+                        likeAnimation: scaleAnim
                     };
                 }
                 return post;
@@ -248,34 +171,53 @@ const CommunityPage = ({ navigation }) => {
         const postRef = doc(db, 'communityPosts', postId);
       
         try {
+            // Use atomic update operations to avoid race conditions
             await updateDoc(postRef, {
                 likes: alreadyLiked ? increment(-1) : increment(1),
                 likedUsers: alreadyLiked ? arrayRemove(userEmail) : arrayUnion(userEmail)
             });
         } catch (error) {
             console.error('Error updating like:', error);
+            // Revert changes if failed
             fetchPosts();
             Alert.alert("Error", "Failed to update like. Please try again.");
         }
-    }, [posts, fetchPosts]);
+    }, [posts]);
 
-    // Add handleShare function
-    const handleShare = useCallback(async (post) => {
-        try {
-            Haptics.selectionAsync();
-            const postTitle = post.title || 'Check out this community post!';
-            const postLink = `https://your-app.com/posts/${post.id}`;
-            await Share.share({
-                title: postTitle,
-                message: `${postTitle}: ${postLink}`
-            });
-        } catch (error) {
-            console.error('Error sharing post:', error);
+    const handleComment = async (postId, commentText, replyTo = null) => {
+        if (!commentText.trim()) {
+            // Don't submit empty comments
+            return;
         }
-    }, []);
+        
+        // Add loading indicator or disable button while submitting
+        const postRef = doc(db, 'communityPosts', postId);
+        try {
+            await updateDoc(postRef, {
+                comments: arrayUnion({ 
+                    id: Math.random().toString(36).substr(2, 9), // Generate a unique ID
+                    text: commentText, 
+                    author: auth.currentUser.email, 
+                    timestamp: new Date(), 
+                    likes: 0, 
+                    likedUsers: [],
+                    replies: [], 
+                    replyTo: replyTo 
+                })
+            });
+            
+            // Clear input
+            setCommentTexts(prev => ({ ...prev, [postId]: '' }));
+            setReplyToCommentId(null);
+            
+            // Show success feedback (toast or highlight)
+        } catch (error) {
+            console.error('Error adding comment:', error);
+            // Show error feedback to user
+        }
+    };
 
-    // Add handleCommentLike function  
-    const handleCommentLike = useCallback(async (postId, commentId) => {
+    const handleCommentLike = async (postId, commentId) => {
         const postRef = doc(db, 'communityPosts', postId);
         const userEmail = auth.currentUser?.email;
     
@@ -290,12 +232,6 @@ const CommunityPage = ({ navigation }) => {
                 const comment = updatedComments[commentIndex];
                 const likedUsers = comment.likedUsers || [];
     
-                Haptics.impactAsync(
-                    likedUsers.includes(userEmail)
-                        ? Haptics.ImpactFeedbackStyle.Light
-                        : Haptics.ImpactFeedbackStyle.Medium
-                );
-                
                 if (likedUsers.includes(userEmail)) {
                     updatedComments[commentIndex] = {
                         ...comment,
@@ -314,12 +250,80 @@ const CommunityPage = ({ navigation }) => {
             }
         } catch (error) {
             console.error('Error liking comment:', error);
-            Alert.alert("Error", "Failed to like comment. Please try again.");
         }
-    }, []);
+    };
 
-    // Add deleteComment function
-    const deleteComment = useCallback(async (postId, commentId) => {
+    const deletePost = async (postId) => {
+        try {
+            // Show confirmation dialog
+            Alert.alert(
+                "Delete Post",
+                "Are you sure you want to delete this post? This action cannot be undone.",
+                [
+                    {
+                        text: "Cancel",
+                        style: "cancel"
+                    },
+                    { 
+                        text: "Delete", 
+                        onPress: async () => {
+                            // Add loading state
+                            await deleteDoc(doc(db, 'communityPosts', postId));
+                            // Show success message
+                        },
+                        style: "destructive"
+                    }
+                ]
+            );
+        } catch (error) {
+            console.error('Error deleting post:', error);
+            // Show error message
+        }
+    };
+
+    const handleShare = async (post) => {
+        try {
+            const postTitle = post.title || 'Check out this community post!';
+            const postLink = `https://your-app.com/posts/${post.id}`;
+            await Share.share({
+                title: postTitle,
+                message: `${postTitle}: ${postLink}`
+            });
+        } catch (error) {
+            console.error('Error sharing post:', error);
+        }
+    };
+
+    const filteredPosts = useMemo(() => {
+        if (!searchQuery) return posts;
+        
+        return posts.filter(post =>
+            post.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            post.content?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            post.author?.toLowerCase().includes(searchQuery.toLowerCase())
+        );
+    }, [posts, searchQuery]);
+
+    const formatTimestamp = (timestamp) => {
+        if (!timestamp) return '';
+        const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+        const now = new Date();
+        const diffMinutes = Math.floor((now - date) / (1000 * 60));
+        
+        if (diffMinutes < 1) return 'Just now';
+        if (diffMinutes < 60) return `${diffMinutes}m ago`;
+        
+        const diffHours = Math.floor(diffMinutes / 60);
+        if (diffHours < 24) return `${diffHours}h ago`;
+        
+        const diffDays = Math.floor(diffHours / 24);
+        if (diffDays < 7) return `${diffDays}d ago`;
+        
+        return date.toLocaleDateString();
+    };
+
+    const deleteComment = async (postId, commentId) => {
+        // Show confirmation dialog
         Alert.alert(
             "Delete Comment",
             "Are you sure you want to delete this comment?",
@@ -332,17 +336,21 @@ const CommunityPage = ({ navigation }) => {
                     text: "Delete", 
                     onPress: async () => {
                         try {
-                            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-                            
+                            // Get current post data
                             const postRef = doc(db, 'communityPosts', postId);
                             const postDoc = await getDoc(postRef);
                             
                             if (postDoc.exists()) {
+                                // Filter out the comment to delete
                                 const updatedComments = postDoc.data().comments.filter(
                                     comment => comment.id !== commentId
                                 );
                                 
+                                // Update the post with new comments array
                                 await updateDoc(postRef, { comments: updatedComments });
+                                
+                                // Show success feedback
+                                // Visual feedback handled by Firebase listener
                             }
                         } catch (error) {
                             console.error('Error deleting comment:', error);
@@ -353,39 +361,13 @@ const CommunityPage = ({ navigation }) => {
                 }
             ]
         );
-    }, []);
+    };
 
-    // Add deletePost function
-    const deletePost = useCallback(async (postId) => {
-        try {
-            Alert.alert(
-                "Delete Post",
-                "Are you sure you want to delete this post? This action cannot be undone.",
-                [
-                    {
-                        text: "Cancel",
-                        style: "cancel"
-                    },
-                    { 
-                        text: "Delete", 
-                        onPress: async () => {
-                            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-                            await deleteDoc(doc(db, 'communityPosts', postId));
-                        },
-                        style: "destructive"
-                    }
-                ]
-            );
-        } catch (error) {
-            console.error('Error deleting post:', error);
-            Alert.alert("Error", "Failed to delete post. Please try again.");
-        }
-    }, []);
-
-    const renderComment = useCallback((comment, postId) => (
-        <View 
-            style={styles.commentItem} 
+    const renderComment = (comment, postId) => (
+        <Animated.View 
+            style={[styles.commentItem, { opacity: new Animated.Value(1) }]} 
             key={comment.id}
+            entering={SlideInRight.duration(300)}
         >
             <View style={styles.commentHeader}>
                 <Image 
@@ -407,7 +389,6 @@ const CommunityPage = ({ navigation }) => {
                         comment.likedUsers?.includes(auth.currentUser?.email) && styles.commentActionActive
                     ]} 
                     onPress={() => handleCommentLike(postId, comment.id)}
-                    activeOpacity={0.7}
                 >
                     <Icon 
                         name="thumbs-up" 
@@ -426,11 +407,7 @@ const CommunityPage = ({ navigation }) => {
                 
                 <TouchableOpacity 
                     style={styles.commentAction} 
-                    onPress={() => {
-                        setReplyToCommentId(replyToCommentId === comment.id ? null : comment.id);
-                        Haptics.selectionAsync();
-                    }}
-                    activeOpacity={0.7}
+                    onPress={() => setReplyToCommentId(replyToCommentId === comment.id ? null : comment.id)}
                 >
                     <Icon name="reply" size={14} color="#666" />
                     <Text style={styles.commentActionText}>Reply</Text>
@@ -440,7 +417,6 @@ const CommunityPage = ({ navigation }) => {
                     <TouchableOpacity 
                         style={styles.commentAction}
                         onPress={() => deleteComment(postId, comment.id)}
-                        activeOpacity={0.7}
                     >
                         <Icon name="trash-alt" size={14} color="#FF3B30" />
                         <Text style={[styles.commentActionText, {color: '#FF3B30'}]}>Delete</Text>
@@ -449,7 +425,11 @@ const CommunityPage = ({ navigation }) => {
             </View>
             
             {replyToCommentId === comment.id && (
-                <View style={styles.replyInputContainer}>
+                <Animated.View 
+                    style={styles.replyInputContainer}
+                    entering={SlideInDown.duration(200)}
+                    exiting={SlideOutDown.duration(200)}
+                >
                     <Image 
                         source={{ uri: `https://ui-avatars.com/api/?name=${encodeURIComponent(auth.currentUser?.email)}&background=random` }} 
                         style={styles.replyAvatar} 
@@ -460,7 +440,6 @@ const CommunityPage = ({ navigation }) => {
                         value={commentTexts[postId] || ''}
                         onChangeText={(text) => setCommentTexts(prev => ({ ...prev, [postId]: text }))}
                         multiline
-                        placeholderTextColor="#999"
                     />
                     <TouchableOpacity 
                         style={[
@@ -469,72 +448,29 @@ const CommunityPage = ({ navigation }) => {
                         ]} 
                         onPress={() => handleComment(postId, commentTexts[postId], comment.id)}
                         disabled={!commentTexts[postId]?.trim()}
-                        activeOpacity={0.7}
                     >
                         <Icon name="paper-plane" size={16} color="#fff" />
                     </TouchableOpacity>
-                </View>
+                </Animated.View>
             )}
             
             {comment.replies && comment.replies.map(reply => renderComment(reply, postId))}
-        </View>
-    ), [formatTimestamp, replyToCommentId, commentTexts, handleCommentLike, deleteComment, handleComment, auth.currentUser?.email]);
+        </Animated.View>
+    );
 
-    // Add the missing handleComment function
-    const handleComment = useCallback(async (postId, commentText, replyTo = null) => {
-        if (!commentText.trim()) {
-            // Don't submit empty comments
-            return;
-        }
-        
-        try {
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-            
-            // Add loading indicator or disable button while submitting
-            const postRef = doc(db, 'communityPosts', postId);
-            await updateDoc(postRef, {
-                comments: arrayUnion({ 
-                    id: Math.random().toString(36).substr(2, 9), // Generate a unique ID
-                    text: commentText, 
-                    author: auth.currentUser.email, 
-                    timestamp: new Date(), 
-                    likes: 0, 
-                    likedUsers: [],
-                    replies: [], 
-                    replyTo: replyTo 
-                })
-            });
-            
-            // Clear input
-            setCommentTexts(prev => ({ ...prev, [postId]: '' }));
-            setReplyToCommentId(null);
-            
-        } catch (error) {
-            console.error('Error adding comment:', error);
-            Alert.alert("Error", "Failed to add comment. Please try again.");
-        }
-    }, []);
-
-    // Add the missing filteredPosts useMemo
-    const filteredPosts = useMemo(() => {
-        if (!searchQuery) return posts;
-        
-        return posts.filter(post =>
-            post.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            post.content?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            post.author?.toLowerCase().includes(searchQuery.toLowerCase())
-        );
-    }, [posts, searchQuery]);
-
-    // Update renderItem to include the missing parts for post display
-    const renderItem = useCallback(({ item, index }) => {
+    const renderItem = ({ item, index }) => {
         const userEmail = auth.currentUser?.email;
         const isPostOwner = userEmail === item.author;
         const isExpanded = expandedPostId === item.id;
         const isLiked = item.likedUsers?.includes(userEmail);
 
         return (
-            <View style={styles.postCard}>
+            <Animated.View 
+                style={[styles.postCard, { 
+                    transform: [{ scale: new Animated.Value(1) }]
+                }]}
+                entering={FadeIn.duration(300).delay(index * 50)}
+            >
                 <View style={styles.cardHeader}>
                     <Image
                         source={{ 
@@ -548,89 +484,60 @@ const CommunityPage = ({ navigation }) => {
                         <Text style={styles.postTimestamp}>{formatTimestamp(item.timestamp)}</Text>
                     </View>
                     
-                    {isPostOwner && (
-                        <Menu
-                            visible={visibleOptions === item.id}
-                            onRequestClose={() => setVisibleOptions(null)}
-                            anchor={
-                                <TouchableOpacity 
-                                    style={styles.moreButton} 
-                                    onPress={() => {
-                                        setVisibleOptions(visibleOptions === item.id ? null : item.id);
-                                        Haptics.selectionAsync();
-                                    }}
-                                >
-                                    <Icon name="ellipsis-h" size={18} color="#666" />
-                                </TouchableOpacity>
-                            }
-                        >
-                            <MenuItem onPress={() => {
-                                setVisibleOptions(null);
-                                deletePost(item.id);
-                            }}>
-                                <View style={styles.menuItem}>
-                                    <Icon name="trash-alt" size={16} color="#FF3B30" />
-                                    <Text style={styles.menuItemTextDelete || styles.deleteText}>Delete Post</Text>
-                                </View>
-                            </MenuItem>
-                            <MenuItem onPress={() => {
-                                setVisibleOptions(null);
-                                // Edit post function would go here
-                            }}>
-                                <View style={styles.menuItem}>
-                                    <Icon name="edit" size={16} color="#007AFF" />
-                                    <Text style={styles.menuItemText}>Edit Post</Text>
-                                </View>
-                            </MenuItem>
-                        </Menu>
-                    )}
+                    <TouchableOpacity 
+                        style={styles.moreButton} 
+                        onPress={() => setVisibleOptions(visibleOptions === item.id ? null : item.id)}
+                    >
+                        <Icon name="ellipsis-h" size={18} color="#666" />
+                    </TouchableOpacity>
                     
-                    {!isPostOwner && (
-                        <Menu
-                            visible={visibleOptions === item.id}
-                            onRequestClose={() => setVisibleOptions(null)}
-                            anchor={
+                    {visibleOptions === item.id && (
+                        <Animated.View 
+                            style={styles.optionsMenu}
+                            entering={FadeIn.duration(200)}
+                        >
+                            {isPostOwner && (
                                 <TouchableOpacity 
-                                    style={styles.moreButton} 
+                                    style={styles.optionItem} 
                                     onPress={() => {
-                                        setVisibleOptions(visibleOptions === item.id ? null : item.id);
-                                        Haptics.selectionAsync();
+                                        setVisibleOptions(null);
+                                        deletePost(item.id);
                                     }}
                                 >
-                                    <Icon name="ellipsis-h" size={18} color="#666" />
+                                    <Icon name="trash-alt" size={16} color="#FF3B30" />
+                                    <Text style={[styles.optionText, { color: '#FF3B30' }]}>Delete</Text>
                                 </TouchableOpacity>
-                            }
-                        >
-                            <MenuItem onPress={() => {
-                                setVisibleOptions(null);
-                                handleShare(item);
-                            }}>
-                                <View style={styles.menuItem}>
-                                    <Icon name="share" size={16} color="#007AFF" />
-                                    <Text style={styles.menuItemText}>Share</Text>
-                                </View>
-                            </MenuItem>
-                            <MenuItem onPress={() => {
-                                setVisibleOptions(null);
-                                Alert.alert("Report Content", "This feature is coming soon");
-                            }}>
-                                <View style={styles.menuItem}>
-                                    <Icon name="flag" size={16} color="#FF9500" />
-                                    <Text style={styles.menuItemText}>Report</Text>
-                                </View>
-                            </MenuItem>
-                        </Menu>
+                            )}
+                            
+                            <TouchableOpacity 
+                                style={styles.optionItem}
+                                onPress={() => {
+                                    setVisibleOptions(null);
+                                    handleShare(item);
+                                }}
+                            >
+                                <Icon name="share" size={16} color="#007AFF" />
+                                <Text style={styles.optionText}>Share</Text>
+                            </TouchableOpacity>
+                            
+                            <TouchableOpacity 
+                                style={styles.optionItem}
+                                onPress={() => {
+                                    setVisibleOptions(null);
+                                }}
+                            >
+                                <Icon name="flag" size={16} color="#FF9500" />
+                                <Text style={styles.optionText}>Report</Text>
+                            </TouchableOpacity>
+                        </Animated.View>
                     )}
                 </View>
 
                 <Text style={styles.postTitle}>{item.title}</Text>
                 
                 <TouchableOpacity 
-                    onPress={() => {
-                        setExpandedPostId(isExpanded ? null : item.id);
-                        Haptics.selectionAsync();
-                    }}
-                    activeOpacity={0.9}
+                    onPress={() => setExpandedPostId(isExpanded ? null : item.id)}
+                    activeOpacity={0.8}
                 >
                     <Text 
                         style={styles.postContent} 
@@ -639,17 +546,14 @@ const CommunityPage = ({ navigation }) => {
                         {item.content}
                     </Text>
                     
-                    {!isExpanded && item.content?.length > 120 && (
+                    {!isExpanded && item.content.length > 120 && (
                         <Text style={styles.readMore}>Read more</Text>
                     )}
                 </TouchableOpacity>
 
                 {item.imageUrl && (
                     <TouchableOpacity 
-                        onPress={() => {
-                            navigation.navigate('FullScreenImage', { uri: item.imageUrl });
-                            Haptics.selectionAsync();
-                        }}
+                        onPress={() => navigation.navigate('FullScreenImage', { uri: item.imageUrl })}
                         activeOpacity={0.9}
                     >
                         <Image
@@ -662,13 +566,13 @@ const CommunityPage = ({ navigation }) => {
 
                 <View style={styles.interactionStats}>
                     <View style={styles.statItem}>
-                        <Icon name="thumbs-up" size={14} color={isLiked ? "#0066FF" : "#666"} solid={isLiked} />
-                        <Text style={styles.statsText}>{item.likes || 0}</Text>
+                        <Icon name="thumbs-up" size={14} color="#666" />
+                        <Text style={styles.statsText}>{item.likes}</Text>
                     </View>
                     
                     <View style={styles.statItem}>
                         <Icon name="comment" size={14} color="#666" />
-                        <Text style={styles.statsText}>{item.comments?.length || 0} comments</Text>
+                        <Text style={styles.statsText}>{item.comments?.length || 0}</Text>
                     </View>
                 </View>
 
@@ -678,11 +582,10 @@ const CommunityPage = ({ navigation }) => {
                     <TouchableOpacity
                         style={[styles.interactionButton, isLiked && styles.interactionButtonActive]}
                         onPress={() => handleLike(item.id)}
-                        activeOpacity={0.7}
                     >
                         <Icon 
                             name="thumbs-up" 
-                            size={18} 
+                            size={16} 
                             color={isLiked ? "#0066FF" : "#666"} 
                             solid={isLiked}
                         />
@@ -694,7 +597,6 @@ const CommunityPage = ({ navigation }) => {
                     <TouchableOpacity
                         style={styles.interactionButton}
                         onPress={() => setExpandedPostId(isExpanded ? null : item.id)}
-                        activeOpacity={0.7}
                     >
                         <Icon name="comment" size={16} color="#666" />
                         <Text style={styles.interactionText}>Comment</Text>
@@ -703,7 +605,6 @@ const CommunityPage = ({ navigation }) => {
                     <TouchableOpacity
                         style={styles.interactionButton}
                         onPress={() => handleShare(item)}
-                        activeOpacity={0.7}
                     >
                         <Icon name="share" size={16} color="#666" />
                         <Text style={styles.interactionText}>Share</Text>
@@ -711,7 +612,10 @@ const CommunityPage = ({ navigation }) => {
                 </View>
 
                 {isExpanded && (
-                    <View style={styles.expandedContent}>
+                    <Animated.View 
+                        style={styles.expandedContent}
+                        entering={SlideInDown.duration(300)}
+                    >
                         <View style={styles.commentSection}>
                             <Image 
                                 source={{ uri: `https://ui-avatars.com/api/?name=${encodeURIComponent(auth.currentUser?.email)}&background=random` }} 
@@ -724,7 +628,6 @@ const CommunityPage = ({ navigation }) => {
                                     value={commentTexts[item.id] || ''}
                                     onChangeText={(text) => setCommentTexts(prev => ({ ...prev, [item.id]: text }))}
                                     multiline
-                                    placeholderTextColor="#999"
                                 />
                                 <TouchableOpacity 
                                     style={[
@@ -750,58 +653,33 @@ const CommunityPage = ({ navigation }) => {
                                 </View>
                             )}
                         </View>
-                    </View>
+                    </Animated.View>
                 )}
-            </View>
+            </Animated.View>
         );
-    }, [
-        expandedPostId, 
-        handleLike, 
-        handleShare, 
-        renderComment, 
-        commentTexts, 
-        handleComment, 
-        formatTimestamp, 
-        visibleOptions, 
-        deletePost, 
-        auth.currentUser?.email
-    ]);
+    };
 
     return (
         <SafeAreaView style={[styles.container, { paddingTop: insets.top }]}>
             <StatusBar barStyle="dark-content" backgroundColor="#fff" />
             
-            <Animated.View style={[
-                styles.header, 
-                { 
-                    shadowOpacity: headerShadow.interpolate({
-                        inputRange: [0, 1],
-                        outputRange: [0, 0.15]
-                    }),
-                    elevation: headerShadow.interpolate({
-                        inputRange: [0, 1],
-                        outputRange: [0, 5]
-                    })
-                }
-            ]}>
+            <View style={styles.header}>
                 <TouchableOpacity onPress={() => navigation.goBack()}>
                     <Icon name="arrow-left" size={20} color="#333" />
                 </TouchableOpacity>
                 <Text style={styles.headerTitle}>Community</Text>
-                <TouchableOpacity onPress={toggleSearch}>
+                <TouchableOpacity onPress={() => setSearchVisible(!searchVisible)}>
                     <Icon name="search" size={20} color="#333" />
                 </TouchableOpacity>
-            </Animated.View>
+            </View>
 
             <Animated.View 
                 style={[
                     styles.searchContainer,
                     {
-                        maxHeight: searchBarHeight.interpolate({
-                            inputRange: [0, 1],
-                            outputRange: [0, 60]
-                        }),
-                        opacity: searchBarHeight
+                        maxHeight: searchVisible ? 60 : 0,
+                        opacity: searchVisible ? 1 : 0,
+                        overflow: 'hidden'
                     }
                 ]}
             >
@@ -825,7 +703,6 @@ const CommunityPage = ({ navigation }) => {
                 <LoadingScreen message="Loading community posts..." />
             ) : (
                 <FlatList
-                    ref={listRef}
                     data={filteredPosts}
                     renderItem={renderItem}
                     keyExtractor={(item) => item.id}
@@ -864,7 +741,7 @@ const CommunityPage = ({ navigation }) => {
                     ListEmptyComponent={
                         <View style={styles.emptyContainer}>
                             <LottieView
-                                source={{ uri: 'https://assets2.lottiefiles.com/packages/lf20_jyav9bkw.json' }}
+                                source={{ uri: 'https://assets2.lottiefiles.com/packages/lf20_jyav9bkw.json' }}  // Example of an online Lottie file
                                 autoPlay
                                 loop
                                 style={{ width: 150, height: 150 }}
@@ -1380,63 +1257,4 @@ const styles = StyleSheet.create({
     marginTop: 8,
     color: '#666',
   },
-  menuItemTextDelete: {
-    fontSize: 16,
-    marginLeft: 12,
-    color: '#FF3B30',
-  },
-  
-  commentActionTextActive: {
-    color: '#0066FF',
-  },
-  
-  noCommentsContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 30,
-  },
-  
-  noCommentsText: {
-    fontSize: 16,
-    color: '#666',
-    marginTop: 10,
-  },
-  
-  noCommentsSubtext: {
-    fontSize: 14,
-    color: '#999',
-    marginTop: 5,
-  },
-  
-  sendButtonDisabled: {
-    backgroundColor: 'rgba(0,102,255,0.5)',
-  },
-  
-  replyButtonDisabled: {
-    backgroundColor: 'rgba(0,102,255,0.5)',
-  },
-  
-  commentsContainer: {
-    marginTop: 16,
-  },
-  
-  replyAvatar: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    marginRight: 8,
-  },
-  
-  commentMeta: {
-    flex: 1,
-  },
-  
-  moreButton: {
-    padding: 8,
-  },
-  
-  pullToRefresh: {
-    alignItems: 'center',
-    paddingVertical: 20,
-  }
 });

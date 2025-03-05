@@ -7,7 +7,7 @@ import ChatbotScreen from "../screens/features/ChatbotScreen";
 import TestScreen from "../screens/features/testScreen/TestScreen";
 import ResultsScreen from "../screens/features/testScreen/ResultsScreen";
 import PreviousResultsScreen from "../screens/features/testScreen/PreviousResultsScreen";
-import TestIntroScreen from "../screens/features/testScreen/TestIntroScreen";
+import Teststart from "../screens/features/testScreen/TestIntroScreen";
 import SettingsScreen from "../screens/sidepanel/SettingsScreen";
 import { SettingsProvider } from '../context/SettingsContext';
 import CommunityPage from "../screens/features/community/CommunityPage";
@@ -17,16 +17,8 @@ import FeedbackScreen from '../screens/feedback/FeedbackScreen';
 import RelaxScreen from "../screens/relax/RelaxScreen";
 import AgeRangeSelector from "../screens/auth/AgeRangeSelector"; 
 import LoadingScreen from "../screens/loading/LoadingScreen";
-import FeatureRedirector from '../components/FeatureRedirector';
 
-
-
-// Import Intro Screens
-import ChatbotIntroScreen from '../screens/intros/ChatbotIntroScreen';
-import RelaxIntroScreen from '../screens/intros/RelaxIntroScreen';
-import TestIntroIntroScreen from '../screens/intros/TestIntroScreen';
-import GameIntroScreen from '../screens/intros/GameIntroScreen';
-import CommunityIntroScreen from '../screens/intros/CommunityIntroScreen';
+// Remove all intro screen imports
 
 const Stack = createNativeStackNavigator();
 
@@ -39,15 +31,10 @@ const AppNavigator = () => {
         <Stack.Screen name="Home" component={HomeScreen} />
         <Stack.Screen name="Game" component={GameScreen} />
         <Stack.Screen name="Chatbot" component={ChatbotScreen} />
-        
-        
-        
-        {/* Test related screens */}
-        <Stack.Screen name="Teststarting" component={TestIntroScreen} />
+        <Stack.Screen name="Teststarting" component={Teststart} />
         <Stack.Screen name="Test" component={TestScreen} />
         <Stack.Screen name="Results" component={ResultsScreen} />
         <Stack.Screen name="PreviousResults" component={PreviousResultsScreen} />
-        
         <Stack.Screen name="settings" component={SettingsScreen} />
         <Stack.Screen name="Community" component={CommunityPage} />
         <Stack.Screen name="CreatePost" component={CreatePost} />
@@ -56,15 +43,7 @@ const AppNavigator = () => {
         <Stack.Screen name="Relax" component={RelaxScreen} />
         <Stack.Screen name="AgeRangeSelector" component={AgeRangeSelector} />
         
-        {/* Intro Screens */}
-        <Stack.Screen name="ChatbotIntro" component={ChatbotIntroScreen} />
-        <Stack.Screen name="RelaxIntro" component={RelaxIntroScreen} />
-        <Stack.Screen name="TestIntroIntro" component={TestIntroIntroScreen} />
-        <Stack.Screen name="GameIntro" component={GameIntroScreen} />
-        <Stack.Screen name="CommunityIntro" component={CommunityIntroScreen} />
-        
-        {/* Use our dedicated FeatureRedirector component */}
-        <Stack.Screen name="FeatureRedirector" component={FeatureRedirector} />
+        {/* Remove all intro screen routes */}
       </Stack.Navigator>
     </SettingsProvider>
   );
