@@ -37,7 +37,7 @@ const HomeScreen = () => {
   const [isPanelOpen, setIsPanelOpen] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
   const [userProfileImage, setUserProfileImage] = useState(null);
-  
+
   // Animation value for side panel
   const slideAnim = useRef(new Animated.Value(-PANEL_WIDTH)).current;
   const overlayOpacity = useRef(new Animated.Value(0)).current;
@@ -322,7 +322,7 @@ const HomeScreen = () => {
             
             <TouchableOpacity 
               style={[styles.featureCard, styles.secondaryCard]}
-              onPress={() => navigation.navigate('settings')}
+              onPress={() => navigation.navigate('Game')}
             >
               <BlurView intensity={10} style={styles.cardBlur}>
                 <MaterialCommunityIcons name="brain" size={28} color="#FF6B6B" />
