@@ -17,6 +17,7 @@ import FeedbackScreen from '../screens/feedback/FeedbackScreen';
 import RelaxScreen from "../screens/relax/RelaxScreen";
 import AgeRangeSelector from "../screens/auth/AgeRangeSelector"; 
 import LoadingScreen from "../screens/loading/LoadingScreen";
+import GuideScreen from "../screens/GuideScreen";
 
 // Remove all intro screen imports
 
@@ -42,8 +43,7 @@ const AppNavigator = () => {
         <Stack.Screen name="Feedback" component={FeedbackScreen} />
         <Stack.Screen name="Relax" component={RelaxScreen} />
         <Stack.Screen name="AgeRangeSelector" component={AgeRangeSelector} />
-        
-        {/* Remove all intro screen routes */}
+        <Stack.Screen name="Guide" component={GuideScreen} />
       </Stack.Navigator>
     </SettingsProvider>
   );
