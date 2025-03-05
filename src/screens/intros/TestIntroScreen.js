@@ -1,29 +1,31 @@
 import React, { useEffect } from 'react';
 import { BackHandler } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+// Fix the import path for FeatureIntroScreen
 import FeatureIntroScreen from '../../components/FeatureIntroScreen';
 import { markFeatureIntroAsSeenInFirebase } from '../../utils/userFirebaseUtils';
 
+// Use online images instead of Lottie animations
 const testIntroSlides = [
   {
     id: '1',
     title: 'Dyslexia Screening',
     description: 'Welcome to our comprehensive dyslexia screening tool, designed to help identify potential reading difficulties.',
-    lottieUrl: 'https://assets4.lottiefiles.com/packages/lf20_qvhuluad.json', // Brain or reading animation
+    imageUrl: 'https://img.freepik.com/free-vector/creative-brain-concept-illustration_114360-1324.jpg',
     icon: 'book-reader'
   },
   {
     id: '2',
     title: 'Personalized Assessment',
     description: 'Our test adapts to your responses and provides a detailed analysis of your reading patterns.',
-    lottieUrl: 'https://assets5.lottiefiles.com/packages/lf20_qwbjamol.json', // Checklist animation
+    imageUrl: 'https://img.freepik.com/free-vector/checklist-concept-illustration_114360-479.jpg',
     icon: 'clipboard-check'
   },
   {
     id: '3',
     title: 'Track Your Progress',
     description: 'Take the test multiple times to track your improvement over time. View your results history anytime.',
-    lottieUrl: 'https://assets6.lottiefiles.com/packages/lf20_nprn1lbd.json', // Chart growing
+    imageUrl: 'https://img.freepik.com/free-vector/growth-statistics-concept-illustration_114360-5495.jpg',
     icon: 'chart-line'
   },
 ];

@@ -19,6 +19,8 @@ import AgeRangeSelector from "../screens/auth/AgeRangeSelector";
 import LoadingScreen from "../screens/loading/LoadingScreen";
 import FeatureRedirector from '../components/FeatureRedirector';
 
+
+
 // Import Intro Screens
 import ChatbotIntroScreen from '../screens/intros/ChatbotIntroScreen';
 import RelaxIntroScreen from '../screens/intros/RelaxIntroScreen';
@@ -37,6 +39,8 @@ const AppNavigator = () => {
         <Stack.Screen name="Home" component={HomeScreen} />
         <Stack.Screen name="Game" component={GameScreen} />
         <Stack.Screen name="Chatbot" component={ChatbotScreen} />
+        
+        
         
         {/* Test related screens */}
         <Stack.Screen name="Teststarting" component={TestIntroScreen} />

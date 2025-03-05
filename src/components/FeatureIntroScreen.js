@@ -1,320 +1,244 @@
 import React, { useState, useRef } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Image,
-  Dimensions,
-  Animated,
-  FlatList,
-  BackHandler,
-} from 'react-native';
+import { View, StyleSheet, Dimensions, TouchableOpacity, Text, Platform } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import AppIntroSlider from 'react-native-app-intro-slider';
 import { LinearGradient } from 'expo-linear-gradient';
-import LottieView from 'lottie-react-native';
 import Icon from 'react-native-vector-icons/FontAwesome5';
 import { markFeatureIntroAsSeen } from '../utils/FeatureIntroUtils';
-import { markFeatureIntroAsSeenInFirebase } from '../utils/userFirebaseUtils';
+import IntroImage from './IntroImage';
 
 const { width, height } = Dimensions.get('window');
 
-const FeatureIntroScreen = ({ 
-  slides, 
-  featureKey, 
-  onComplete, 
-  colors = ['#a990ff', '#6b66ff']
-}) => {
+const FeatureIntroScreen = (props) => {
+  // Safely handle props to avoid "Cannot convert undefined value to object" error
+  const { 
+    slides = [], 
+    featureKey = 'feature',
+    onComplete = () => {},
+    colors = ['#4158D0', '#C850C0'],
+  } = props || {};
+
+  // Validate slides is an array to prevent errors
+  const validSlides = Array.isArray(slides) ? slides : [];
+  
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [animationErrors, setAnimationErrors] = useState({});
-  const flatListRef = useRef();
-  const scrollX = useRef(new Animated.Value(0)).current;
-  
-  const viewConfig = { viewAreaCoveragePercentThreshold: 50 };
-  
-  const viewableItemsChanged = useRef(({ viewableItems }) => {
-    setCurrentIndex(viewableItems[0]?.index || 0);
-  }).current;
-  
-  const scrollTo = (index) => {
-    if (flatListRef.current) {
-      flatListRef.current.scrollToIndex({ index });
-    }
-  };
-  
-  const handleNext = () => {
-    if (currentIndex < slides.length - 1) {
-      scrollTo(currentIndex + 1);
-    } else {
-      markFeatureAsSeen();
-    }
-  };
+  const sliderRef = useRef(null);
 
-  const markFeatureAsSeen = async () => {
+  // Skip button handler
+  const handleSkip = () => {
     try {
-      console.log(`[FeatureIntro] User completed intro for ${featureKey}`);
+      console.log(`[FeatureIntro] Skipping ${featureKey} intro`);
       
-      // Mark this feature as seen in Firebase
-      await markFeatureIntroAsSeenInFirebase(featureKey);
+      // Mark this intro as seen locally
+      markFeatureIntroAsSeen(featureKey);
       
-      // Continue with navigation
-      onComplete();
+      // Call the onComplete callback provided by the parent
+      if (typeof onComplete === 'function') {
+        onComplete();
+      }
     } catch (error) {
-      console.error(`[FeatureIntro] Error in markFeatureAsSeen for ${featureKey}:`, error);
-      // Still continue even if Firebase operation fails
-      onComplete();
+      console.error(`[FeatureIntro] Error in handleSkip: ${error.message}`);
     }
   };
 
-  const handleSkip = async () => {
-    console.log(`[FeatureIntro] User skipped intro for ${featureKey}`);
-    await markFeatureAsSeen();
+  // Done button handler
+  const handleDone = () => {
+    try {
+      console.log(`[FeatureIntro] Completed ${featureKey} intro`);
+      
+      // Mark this intro as seen locally
+      markFeatureIntroAsSeen(featureKey);
+      
+      // Call the onComplete callback provided by the parent
+      if (typeof onComplete === 'function') {
+        onComplete();
+      }
+    } catch (error) {
+      console.error(`[FeatureIntro] Error in handleDone: ${error.message}`);
+    }
   };
 
-  React.useEffect(() => {
-    const handleBackButton = () => {
-      console.log(`[FeatureIntro] Back button pressed in ${featureKey} intro`);
-      markFeatureAsSeen();
-      return false;
-    };
-
-    const subscription = BackHandler.addEventListener('hardwareBackPress', handleBackButton);
-    return () => subscription.remove();
-  }, [featureKey]);
-
-  React.useEffect(() => {
-    return () => {
-      console.log(`[FeatureIntro] Component unmounting for ${featureKey}`);
-      markFeatureIntroAsSeen(featureKey).catch(err => 
-        console.error(`[FeatureIntro] Error marking ${featureKey} as seen on unmount:`, err)
-      );
-    };
-  }, [featureKey]);
-
-  const handleAnimationError = (itemId) => {
-    setAnimationErrors(prev => ({
-      ...prev,
-      [itemId]: true
-    }));
-  };
-  
-  const renderItem = ({ item }) => (
-    <View style={styles.slide}>
-      <View style={styles.imageContainer}>
-        {item.lottieUrl && !animationErrors[item.id] ? (
-          <LottieView
-            source={{ uri: item.lottieUrl }}
-            autoPlay
-            loop
-            style={styles.lottieImage}
-            onError={() => handleAnimationError(item.id)}
-          />
-        ) : (
-          <View style={styles.iconContainer}>
-            <Icon name={item.icon || "lightbulb"} size={80} color={colors[0]} />
-          </View>
-        )}
-      </View>
-      <View style={styles.textContainer}>
-        <Text style={styles.title}>{item.title}</Text>
-        <Text style={styles.description}>{item.description}</Text>
-      </View>
-    </View>
-  );
-
-  const Indicator = ({ scrollX }) => {
+  // Render each slide
+  const renderItem = ({ item }) => {
+    // Defensive programming to prevent errors from undefined items
+    if (!item) {
+      console.error('[FeatureIntro] Undefined slide item detected');
+      return <View style={styles.slide}></View>;
+    }
+    
+    const { title, description, imageUrl, icon } = item;
+    
     return (
-      <View style={styles.indicatorContainer}>
-        {slides.map((_, index) => {
-          const inputRange = [
-            (index - 1) * width,
-            index * width,
-            (index + 1) * width,
-          ];
-          
-          const scale = scrollX.interpolate({
-            inputRange,
-            outputRange: [0.8, 1.4, 0.8],
-            extrapolate: 'clamp',
-          });
-          
-          const opacity = scrollX.interpolate({
-            inputRange,
-            outputRange: [0.4, 1, 0.4],
-            extrapolate: 'clamp',
-          });
-          
-          return (
-            <Animated.View
-              key={`indicator-${index}`}
-              style={[
-                styles.indicator,
-                {
-                  transform: [{ scale }],
-                  opacity,
-                  backgroundColor: currentIndex === index ? colors[0] : '#ccc',
-                },
-              ]}
-            />
-          );
-        })}
+      <View style={styles.slide}>
+        <View style={styles.iconContainer}>
+          {icon && <Icon name={icon} size={24} color="#FFF" />}
+        </View>
+        
+        <View style={styles.imageContainer}>
+          <IntroImage 
+            source={imageUrl} 
+            style={styles.image} 
+          />
+        </View>
+        
+        <Text style={styles.title}>{title || ''}</Text>
+        <Text style={styles.description}>{description || ''}</Text>
       </View>
     );
   };
 
-  return (
-    <LinearGradient
-      colors={['#ffffff', '#f8f8ff']}
-      style={styles.container}
-    >
-      <TouchableOpacity style={styles.skipButton} onPress={handleSkip}>
-        <Text style={styles.skipText}>Skip</Text>
+  // Custom button component - handles undefined case
+  const renderButton = (label, onPress) => {
+    if (!label || typeof onPress !== 'function') return null;
+    
+    return (
+      <TouchableOpacity style={styles.button} onPress={onPress}>
+        <Text style={styles.buttonText}>{label}</Text>
       </TouchableOpacity>
-      
-      <Animated.FlatList
-        ref={flatListRef}
-        data={slides}
-        renderItem={renderItem}
-        keyExtractor={(item) => item.id}
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        pagingEnabled
-        bounces={false}
-        onScroll={Animated.event(
-          [{ nativeEvent: { contentOffset: { x: scrollX } } }],
-          { useNativeDriver: false }
-        )}
-        onViewableItemsChanged={viewableItemsChanged}
-        viewabilityConfig={viewConfig}
-        scrollEventThrottle={32}
-      />
-      
-      <Indicator scrollX={scrollX} />
-      
-      <LinearGradient
-        colors={colors}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.nextButton}
-      >
-        <TouchableOpacity onPress={handleNext}>
-          <View style={styles.buttonContent}>
-            <Text style={styles.buttonText}>
-              {currentIndex === slides.length - 1 ? 'Get Started' : 'Next'}
-            </Text>
-            <Icon 
-              name={currentIndex === slides.length - 1 ? 'check' : 'arrow-right'} 
-              size={16} 
-              color="#fff" 
-              style={styles.buttonIcon} 
+    );
+  };
+
+  // Next button
+  const renderNextButton = () => renderButton('Next', () => {});
+
+  // Done button
+  const renderDoneButton = () => renderButton('Get Started', handleDone);
+
+  // Skip button
+  const renderSkipButton = () => renderButton('Skip', handleSkip);
+
+  // Return the intro slider with proper error handling
+  try {
+    return (
+      <LinearGradient colors={colors} style={styles.container}>
+        <SafeAreaView style={styles.safeArea}>
+          {validSlides.length > 0 ? (
+            <AppIntroSlider
+              ref={sliderRef}
+              data={validSlides}
+              renderItem={renderItem}
+              onDone={handleDone}
+              showSkipButton={true}
+              onSkip={handleSkip}
+              renderNextButton={renderNextButton}
+              renderDoneButton={renderDoneButton}
+              renderSkipButton={renderSkipButton}
+              onSlideChange={index => setCurrentIndex(index)}
+              dotStyle={styles.dot}
+              activeDotStyle={styles.activeDot}
             />
-          </View>
-        </TouchableOpacity>
+          ) : (
+            <View style={styles.errorContainer}>
+              <Text style={styles.errorText}>Unable to load introduction slides</Text>
+              <TouchableOpacity style={styles.button} onPress={handleSkip}>
+                <Text style={styles.buttonText}>Continue</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+        </SafeAreaView>
       </LinearGradient>
-    </LinearGradient>
-  );
+    );
+  } catch (error) {
+    console.error(`[FeatureIntro] Error rendering intro slider: ${error.message}`);
+    return (
+      <View style={[styles.container, {backgroundColor: '#f8f8f8'}]}>
+        <Text style={styles.errorText}>Something went wrong. Please try again later.</Text>
+        <TouchableOpacity style={styles.button} onPress={handleSkip}>
+          <Text style={styles.buttonText}>Continue</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+  },
+  safeArea: {
+    flex: 1,
   },
   slide: {
-    width,
-    justifyContent: 'center',
+    flex: 1,
     alignItems: 'center',
+    justifyContent: 'center',
+    paddingBottom: 100, // Space for pagination dots and buttons
     paddingHorizontal: 20,
   },
-  imageContainer: {
-    flex: 0.6,
-    justifyContent: 'center',
-    alignItems: 'center',
-    width: width * 0.8,
-    height: height * 0.4,
-  },
   iconContainer: {
-    width: 160,
-    height: 160,
-    borderRadius: 80,
-    backgroundColor: 'rgba(0,0,0,0.05)',
-    justifyContent: 'center',
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: 'rgba(255,255,255,0.2)',
     alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 20,
+  },
+  imageContainer: {
+    width: width * 0.7,
+    height: height * 0.3,
+    marginBottom: 30,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   image: {
     width: '100%',
     height: '100%',
-    resizeMode: 'contain',
-  },
-  lottieImage: {
-    width: '100%',
-    height: '100%',
-  },
-  textContainer: {
-    flex: 0.4,
-    alignItems: 'center',
-    paddingHorizontal: 20,
+    borderRadius: 12,
+    overflow: 'hidden',
   },
   title: {
     fontSize: 28,
     fontWeight: 'bold',
+    color: '#FFFFFF',
     textAlign: 'center',
-    marginBottom: 20,
-    color: '#333',
+    marginBottom: 15,
+    fontFamily: Platform.OS === 'ios' ? 'System' : 'Roboto',
   },
   description: {
     fontSize: 16,
+    color: '#FFFFFF',
     textAlign: 'center',
-    color: '#666',
+    paddingHorizontal: 30,
     lineHeight: 24,
+    fontFamily: Platform.OS === 'ios' ? 'System' : 'Roboto',
   },
-  indicatorContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    marginBottom: 30,
-  },
-  indicator: {
-    height: 10,
-    width: 10,
-    borderRadius: 5,
-    marginHorizontal: 5,
-  },
-  nextButton: {
-    paddingHorizontal: 40,
-    paddingVertical: 15,
-    borderRadius: 30,
-    marginBottom: 50,
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 3,
-  },
-  buttonContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+  button: {
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.3)',
   },
   buttonText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: '600',
-  },
-  buttonIcon: {
-    marginLeft: 10,
-  },
-  skipButton: {
-    position: 'absolute',
-    top: 50,
-    right: 20,
-    padding: 10,
-    zIndex: 10,
-  },
-  skipText: {
-    color: '#666',
+    color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '600',
   },
+  dot: {
+    backgroundColor: 'rgba(255, 255, 255, 0.4)',
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginHorizontal: 4,
+  },
+  activeDot: {
+    backgroundColor: '#FFFFFF',
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+  },
+  errorContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 20,
+  },
+  errorText: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    textAlign: 'center',
+    marginBottom: 20,
+  }
 });
 
 export default FeatureIntroScreen;

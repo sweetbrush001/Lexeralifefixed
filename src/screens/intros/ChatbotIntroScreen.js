@@ -1,30 +1,31 @@
 import React, { useEffect } from 'react';
 import { BackHandler } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+// Fix the import path for FeatureIntroScreen
 import FeatureIntroScreen from '../../components/FeatureIntroScreen';
-import { markFeatureIntroAsSeen } from '../../utils/FeatureIntroUtils';
 import { markFeatureIntroAsSeenInFirebase } from '../../utils/userFirebaseUtils';
 
+// Use online images instead of Lottie animations
 const chatbotSlides = [
   {
     id: '1',
     title: 'Meet Lexera Bot',
     description: 'Your personal AI assistant designed specifically to help with dyslexia-friendly conversations.',
-    lottieUrl: 'https://assets5.lottiefiles.com/packages/lf20_4tvaqupm.json', // Robot wave
+    imageUrl: 'https://img.freepik.com/free-vector/cute-robot-waving-hand-cartoon-vector-icon-illustration-science-technology-icon-concept_138676-4565.jpg',
     icon: 'robot'
   },
   {
     id: '2',
     title: 'Voice Conversations',
     description: 'Speak naturally with Lexera Bot! The voice recognition feature makes communication easier.',
-    lottieUrl: 'https://assets9.lottiefiles.com/packages/lf20_vktmjpuk.json', // Voice recognition
+    imageUrl: 'https://img.freepik.com/free-vector/speech-recognition-abstract-concept-illustration_335657-3854.jpg',
     icon: 'microphone'
   },
   {
     id: '3',
     title: 'Get Answers & Support',
     description: 'Ask questions about dyslexia, get reading tips, or just chat for emotional support whenever you need it.',
-    lottieUrl: 'https://assets5.lottiefiles.com/packages/lf20_ukjcyybw.json', // Question mark
+    imageUrl: 'https://img.freepik.com/free-vector/organic-flat-customer-support-illustration_23-2148899173.jpg',
     icon: 'question-circle'
   },
 ];

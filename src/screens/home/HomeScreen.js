@@ -270,15 +270,18 @@ const HomeScreen = ({ route, navigation }) => {
             />
           </View>
           
-          {/* Community Card */}
-          <FeatureCard
-            title="Community"
-            iconType="feather"
-            iconName="users"
-            cardStyle={styles.fullWidthCard}
-            priority={8}
-            onPress={() => handleFeatureNavigation('community', 'CommunityIntro', 'Community')}
-          />
+          {/* Row 3 */}
+          <View style={styles.featureRow}>
+            
+            <FeatureCard
+              title="Community"
+              iconType="feather"
+              iconName="users"
+              cardStyle={styles.primaryCard}
+              priority={9}
+              onPress={() => handleFeatureNavigation('community', 'CommunityIntro', 'Community')}
+            />
+          </View>
         </View>
 
         {/* Side Panel */}

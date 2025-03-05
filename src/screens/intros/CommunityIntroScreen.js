@@ -3,26 +3,27 @@ import { BackHandler } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import FeatureIntroScreen from '../../components/FeatureIntroScreen';
 
+// Use online images instead of Lottie animations
 const communitySlides = [
   {
     id: '1',
     title: 'Join the Community',
     description: 'Connect with others who understand the dyslexia journey. Share experiences, ask questions, and find support.',
-    lottieUrl: 'https://assets2.lottiefiles.com/packages/lf20_cgjrfdzx.json', // Community animation
+    imageUrl: 'https://img.freepik.com/free-vector/team-concept-illustration_114360-678.jpg',
     icon: 'users'
   },
   {
     id: '2',
     title: 'Share Your Story',
     description: 'Create posts, comment on others experiences, and build meaningful connections in a safe, supportive environment.',
-    lottieUrl: 'https://assets6.lottiefiles.com/packages/lf20_nrfbqbkv.json', // Share animation
+    imageUrl: 'https://img.freepik.com/free-vector/conversation-concept-illustration_114360-1289.jpg',
     icon: 'comment-dots'
   },
   {
     id: '3',
     title: 'Stay Connected',
     description: 'Get notifications about comments, likes, and new posts from people you follow in the community.',
-    lottieUrl: 'https://assets9.lottiefiles.com/packages/lf20_ystsffqy.json', // Notifications
+    imageUrl: 'https://img.freepik.com/free-vector/mobile-notification-concept-illustration_114360-4243.jpg',
     icon: 'bell'
   },
 ];

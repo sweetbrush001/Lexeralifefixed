@@ -5,31 +5,84 @@ const getFeatureKey = (feature) => `@feature_intro_${feature}`;
 const NEW_USER_KEY = '@is_new_user';
 
 /**
- * Check if a user has seen a specific feature intro
+ * Safely marks a feature intro as seen in AsyncStorage
+ * @param {string} featureKey - The key for the feature
+ * @returns {Promise} - Promise resolving when complete
+ */
+export const markFeatureIntroAsSeen = async (featureKey) => {
+  try {
+    if (!featureKey) {
+      console.warn('markFeatureIntroAsSeen called without a feature key');
+      return;
+    }
+    
+    const storageKey = getFeatureKey(featureKey);
+    await AsyncStorage.setItem(storageKey, 'true');
+    console.log(`Marked feature intro as seen: ${featureKey}`);
+  } catch (error) {
+    console.error(`Error marking feature intro as seen: ${error.message}`);
+    // Don't throw, just log
+  }
+};
+
+/**
+ * Checks if a feature intro has been seen before
+ * @param {string} featureKey - The key for the feature
+ * @returns {Promise<boolean>} - Promise resolving to true if seen
  */
 export const hasSeenFeatureIntro = async (featureKey) => {
   try {
-    const key = getFeatureKey(featureKey);
-    const value = await AsyncStorage.getItem(key);
-    console.log(`[FeatureIntro] Checking ${featureKey}: ${value === 'seen' ? 'SEEN' : 'NOT SEEN'}`);
-    return value === 'seen';
+    if (!featureKey) {
+      console.warn('hasSeenFeatureIntro called without a feature key');
+      return false;
+    }
+    
+    const storageKey = getFeatureKey(featureKey);
+    const value = await AsyncStorage.getItem(storageKey);
+    return value === 'true';
   } catch (error) {
-    console.error(`[FeatureIntro] Error checking if seen ${featureKey}:`, error);
+    console.error(`Error checking if feature intro seen: ${error.message}`);
+    return false; // Default to not seen on error
+  }
+};
+
+/**
+ * Reset a specific feature intro so it will show again
+ * @param {string} featureKey - The key for the feature to reset
+ */
+export const resetFeatureIntro = async (featureKey) => {
+  try {
+    if (!featureKey) {
+      console.warn('resetFeatureIntro called without a feature key');
+      return;
+    }
+    
+    const storageKey = getFeatureKey(featureKey);
+    await AsyncStorage.removeItem(storageKey);
+    console.log(`Reset feature intro: ${featureKey}`);
+    return true;
+  } catch (error) {
+    console.error(`Error resetting feature intro: ${error.message}`);
     return false;
   }
 };
 
 /**
- * Mark a feature intro as seen
+ * Reset all feature intros so they will all show again
  */
-export const markFeatureIntroAsSeen = async (featureKey) => {
+export const resetAllFeatureIntros = async () => {
   try {
-    const key = getFeatureKey(featureKey);
-    await AsyncStorage.setItem(key, 'seen');
-    console.log(`[FeatureIntro] Marked ${featureKey} as SEEN`);
-    return true;
+    const keys = await AsyncStorage.getAllKeys();
+    const introKeys = keys.filter(key => key.startsWith('@feature_intro_'));
+    
+    if (introKeys.length > 0) {
+      await AsyncStorage.multiRemove(introKeys);
+      console.log(`Reset ${introKeys.length} feature intros`);
+      return true;
+    }
+    return false;
   } catch (error) {
-    console.error(`[FeatureIntro] Error marking ${featureKey} as seen:`, error);
+    console.error(`Error resetting all feature intros: ${error.message}`);
     return false;
   }
 };
@@ -42,12 +95,7 @@ export const markAsNewUser = async () => {
     await AsyncStorage.setItem(NEW_USER_KEY, 'true');
     
     // For new users, clear any previous intro flags
-    const keys = await AsyncStorage.getAllKeys();
-    const introKeys = keys.filter(key => key.startsWith('@feature_intro_'));
-    
-    if (introKeys.length > 0) {
-      await AsyncStorage.multiRemove(introKeys);
-    }
+    await resetAllFeatureIntros();
     
     console.log('[FeatureIntro] User marked as NEW, all intro flags cleared');
     return true;
@@ -72,7 +120,7 @@ export const isNewUser = async () => {
 };
 
 /**
- * Mark user as not new anymore
+ * Mark user as not new anymore (completed onboarding)
  */
 export const completeNewUserOnboarding = async () => {
   try {
@@ -86,38 +134,33 @@ export const completeNewUserOnboarding = async () => {
 };
 
 /**
- * Debug function to dump all AsyncStorage values
+ * Debug function to dump all AsyncStorage values related to intros
  */
-export const debugAsyncStorage = async () => {
+export const debugIntroStorage = async () => {
   try {
     const keys = await AsyncStorage.getAllKeys();
-    const items = await AsyncStorage.multiGet(keys);
-    console.log('===== AsyncStorage Debug =====');
+    const introKeys = keys.filter(key => 
+      key.startsWith('@feature_intro_') || key === NEW_USER_KEY
+    );
+    
+    if (introKeys.length === 0) {
+      console.log('No intro-related keys found in AsyncStorage');
+      return {};
+    }
+    
+    const items = await AsyncStorage.multiGet(introKeys);
+    const result = {};
+    
+    console.log('===== Feature Intro Storage =====');
     items.forEach(([key, value]) => {
       console.log(`${key}: ${value}`);
+      result[key] = value;
     });
-    console.log('=============================');
-    return items;
+    console.log('================================');
+    
+    return result;
   } catch (error) {
-    console.error('Error debugging AsyncStorage:', error);
-    return [];
-  }
-};
-
-/**
- * Reset all feature intro flags (for testing)
- */
-export const resetAllFeatureIntros = async () => {
-  try {
-    const keys = await AsyncStorage.getAllKeys();
-    const introKeys = keys.filter(key => key.startsWith('@feature_intro_'));
-    if (introKeys.length > 0) {
-      await AsyncStorage.multiRemove(introKeys);
-      console.log(`[FeatureIntro] Reset ${introKeys.length} intro flags`);
-    }
-    return true;
-  } catch (error) {
-    console.error('[FeatureIntro] Error resetting feature intros:', error);
-    return false;
+    console.error('Error debugging intro storage:', error);
+    return {};
   }
 };
