@@ -5,11 +5,13 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSettings } from '../../context/SettingsContext';
 import StyledToggleSwitch from '../../components/StyledToggleSwitch';
+import SlideSelector from '../../components/SlideSelector';
+import FancyRadioGroup from '../../components/FancyRadioGroup'; // Import the new component
 
 const ColorPresets = [
-  { label: 'Black', value: '#000000' },
-  { label: 'Navy', value: '#000080' },
-  { label: 'Dark Gray', value: '#404040' },
+  { label: 'Black', value: '#000000', swatch: true },
+  { label: 'Navy', value: '#000080', swatch: true },
+  { label: 'Gray', value: '#404040', swatch: true },
 ];
 
 const FontSizePresets = [
@@ -87,57 +89,39 @@ const SettingsScreen = () => {
           </View>
         </View>
 
+        {/* Text Color Section with new FancyRadioGroup */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Text Color</Text>
-          <View style={styles.colorPresets}>
-            {ColorPresets.map((color) => (
-              <Pressable
-                key={color.value}
-                style={[
-                  styles.colorButton,
-                  settings.fontColor === color.value && styles.colorButtonSelected,
-                ]}
-                onPress={() => handleSettingChange('fontColor', color.value)}
-              >
-                <View style={[styles.colorSwatch, { backgroundColor: color.value }]} />
-                <Text style={styles.colorLabel}>{color.label}</Text>
-              </Pressable>
-            ))}
-          </View>
+          <Text style={styles.sectionSubtitle}>Choose a color preset:</Text>
+          
+          <FancyRadioGroup
+            options={ColorPresets}
+            value={settings.fontColor}
+            onChange={(value) => handleSettingChange('fontColor', value)}
+            style={styles.colorRadioGroup}
+          />
+          
+          <Text style={styles.sectionSubtitle}>Or enter a custom hex color:</Text>
           <TextInput
             style={styles.input}
             value={settings.fontColor}
             onChangeText={(text) => handleSettingChange('fontColor', text)}
-            placeholder="Or enter custom hex color"
+            placeholder="#000000"
             placeholderTextColor="#666"
           />
         </View>
 
+        {/* Contrast Section with new Slider Selector */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Contrast</Text>
-          <View style={styles.contrastButtons}>
-            {ContrastPresets.map((contrast) => (
-              <Pressable
-                key={contrast.value}
-                style={[
-                  styles.contrastButton,
-                  Math.round(settings.contrast * 10) === Math.round(contrast.value * 10) && 
-                  styles.contrastButtonSelected,
-                ]}
-                onPress={() => handleSettingChange('contrast', contrast.value)}
-              >
-                <Text 
-                  style={[
-                    styles.contrastButtonText,
-                    Math.round(settings.contrast * 10) === Math.round(contrast.value * 10) && 
-                    styles.contrastButtonTextSelected,
-                  ]}
-                >
-                  {contrast.label}
-                </Text>
-              </Pressable>
-            ))}
-          </View>
+          <SlideSelector 
+            options={ContrastPresets}
+            value={settings.contrast}
+            onChange={(value) => handleSettingChange('contrast', value)}
+          />
+          <Text style={styles.helperText}>
+            Adjust contrast to make text easier to read
+          </Text>
         </View>
 
         {/* Dyslexic Friendly Font Toggle */}
@@ -369,6 +353,20 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
     // For shadow on Android
     elevation: 2,
+  },
+  helperText: {
+    fontSize: 14,
+    color: '#666',
+    marginTop: 10,
+    textAlign: 'center',
+  },
+  sectionSubtitle: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 12,
+  },
+  colorRadioGroup: {
+    marginBottom: 16,
   },
 });
 
