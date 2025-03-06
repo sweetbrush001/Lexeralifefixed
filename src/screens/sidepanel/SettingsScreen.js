@@ -1,9 +1,10 @@
-import React, { useMemo } from 'react';
-import { View, Text, StyleSheet, TextInput, ScrollView, Pressable } from 'react-native';
+import React, { useMemo, useRef, useEffect } from 'react';
+import { View, Text, StyleSheet, TextInput, ScrollView, Pressable, Animated, TouchableWithoutFeedback } from 'react-native';
 import { useFonts } from 'expo-font';
 import { MaterialIcons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSettings } from '../../context/SettingsContext';
+import StyledToggleSwitch from '../../components/StyledToggleSwitch';
 
 const ColorPresets = [
   { label: 'Black', value: '#000000' },
@@ -139,27 +140,20 @@ const SettingsScreen = () => {
           </View>
         </View>
 
-        <Pressable
-          style={[
-            styles.accessibilityButton,
-            settings.isDyslexicFriendly && styles.accessibilityButtonActive,
-          ]}
-          onPress={() => handleSettingChange('isDyslexicFriendly', !settings.isDyslexicFriendly)}
-        >
-          <MaterialIcons
-            name={settings.isDyslexicFriendly ? 'check-circle' : 'accessibility-new'}
-            size={24}
-            color={settings.isDyslexicFriendly ? '#fff' : '#007AFF'}
-          />
-          <Text
-            style={[
-              styles.accessibilityButtonText,
-              settings.isDyslexicFriendly && styles.accessibilityButtonTextActive,
-            ]}
-          >
-            Dyslexic Friendly Font
+        {/* Dyslexic Friendly Font Toggle */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Accessibility</Text>
+          <View style={styles.toggleContainer}>
+            <Text style={styles.toggleLabel}>Dyslexic Friendly Font</Text>
+            <StyledToggleSwitch 
+              value={settings.isDyslexicFriendly}
+              onToggle={() => handleSettingChange('isDyslexicFriendly', !settings.isDyslexicFriendly)} 
+            />
+          </View>
+          <Text style={styles.toggleDescription}>
+            Enables OpenDyslexic font designed to increase readability for readers with dyslexia
           </Text>
-        </Pressable>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -337,6 +331,44 @@ const styles = StyleSheet.create({
   },
   accessibilityButtonTextActive: {
     color: '#fff',
+  },
+  // Toggle Switch Styles
+  toggleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  toggleLabel: {
+    fontSize: 16,
+    color: '#333',
+    fontWeight: '500',
+  },
+  toggleDescription: {
+    fontSize: 14,
+    color: '#666',
+    marginTop: 4,
+    lineHeight: 20,
+  },
+  switch: {
+    position: 'relative',
+    width: 56,
+    height: 32,
+    borderRadius: 16,
+    padding: 4,
+  },
+  slider: {
+    width: 24,
+    height: 24,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    // For shadow on iOS
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.15,
+    shadowRadius: 2,
+    // For shadow on Android
+    elevation: 2,
   },
 });
 
