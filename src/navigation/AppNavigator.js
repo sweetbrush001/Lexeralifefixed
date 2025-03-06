@@ -18,8 +18,7 @@ import RelaxScreen from "../screens/relax/RelaxScreen";
 import AgeRangeSelector from "../screens/auth/AgeRangeSelector"; 
 import LoadingScreen from "../screens/loading/LoadingScreen";
 import GuideScreen from "../screens/GuideScreen";
-
-// Remove all intro screen imports
+import HelpSupportScreen from '../screens/help/HelpSupportScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -44,6 +43,7 @@ const AppNavigator = () => {
         <Stack.Screen name="Relax" component={RelaxScreen} />
         <Stack.Screen name="AgeRangeSelector" component={AgeRangeSelector} />
         <Stack.Screen name="Guide" component={GuideScreen} />
+        <Stack.Screen name="help" component={HelpSupportScreen} />
       </Stack.Navigator>
     </SettingsProvider>
   );
