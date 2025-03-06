@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react"; 
 import {
   View,
   Text,
@@ -26,12 +26,14 @@ const TextToSpeechScreen = () => {
   const [imageUri, setImageUri] = useState(null);
   const [loading, setLoading] = useState(false);
   const animation = useRef(new Animated.Value(0)).current;
+  const [highlightedWordIndex, setHighlightedWordIndex] = useState(-1);
+  const [isSpeaking, setIsSpeaking] = useState(false);
 
   useEffect(() => {
     Animated.loop(
       Animated.timing(animation, {
         toValue: 1,
-        duration: 8000, // Adjust for slower/smoother effect
+        duration: 10000, // Slowed down the effect
         easing: Easing.linear,
         useNativeDriver: false,
       })
@@ -121,12 +123,30 @@ const TextToSpeechScreen = () => {
     }
   };
 
-  const speakText = () => {
-    if (text) {
-      Speech.speak(text);
-    } else {
+  const speakTextWithHighlighting = () => {
+    if (!text) {
       Alert.alert("No Text", "Please extract text first.");
+      return;
     }
+
+    setIsSpeaking(true);
+    setHighlightedWordIndex(-1);
+    
+    const words = text.split(" ");
+    
+    words.forEach((word, index) => {
+      setTimeout(() => {
+        setHighlightedWordIndex(index);
+        Speech.speak(word, {
+          onDone: () => {
+            if (index === words.length - 1) {
+              setIsSpeaking(false);
+              setHighlightedWordIndex(-1);
+            }
+          },
+        });
+      }, index * 700); // Slower pace for dyslexia users
+    });
   };
 
   return (
@@ -156,11 +176,23 @@ const TextToSpeechScreen = () => {
       {loading && <ActivityIndicator size="large" color="#FF7043" />}
 
       {text ? (
-        <ScrollView style={styles.textContainer}>
-          <Text style={styles.extractedText}>{text}</Text>
-          <TouchableOpacity onPress={speakText} style={styles.glowButton}>
+        <ScrollView style={[styles.textContainer, isSpeaking && { transform: [{ scale: 1.1 }] }]}>
+          <Text style={styles.extractedText}>
+            {text.split(" ").map((word, index) => (
+              <Text
+                key={index}
+                style={[
+                  highlightedWordIndex === index ? styles.highlightedWord : {},
+                  highlightedWordIndex === index ? styles.enlargedWord : {},
+                ]}
+              >
+                {word}{" "}
+              </Text>
+            ))}
+          </Text>
+          <TouchableOpacity onPress={speakTextWithHighlighting} style={styles.glowButton}>
             <LinearGradient colors={["#ff9966", "#ff5e62"]} style={styles.buttonInner}>
-              <Text style={styles.buttonText}>🔊 Read Extracted Text</Text>
+              <Text style={styles.buttonText}>🔊 Read the Text</Text>
             </LinearGradient>
           </TouchableOpacity>
         </ScrollView>
@@ -219,6 +251,21 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     marginVertical: 10,
     backgroundColor: "#FFFAFA",
+  },
+  highlightedWord: {
+    backgroundColor: "#FF7043",
+    color: "#fff",
+    padding: 2,
+    borderRadius: 3,
+  },
+  enlargedWord: {
+    fontSize: 18, // Slightly larger text for highlighted word
+    transform: [{ scale: 1.2 }],
+  },
+  extractedText: {
+    fontSize: 16,
+    lineHeight: 24,
+    color: "#333",
   },
 });
 
