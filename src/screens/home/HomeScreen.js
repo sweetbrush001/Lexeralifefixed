@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import {
   View,
   TouchableOpacity,
@@ -10,19 +10,21 @@ import {
   Animated,
   Dimensions,
   BackHandler,
-  Text,
+  ActivityIndicator,
 } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
-import { collection, getDocs, doc, getDoc } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
-import { db } from '../../config/firebaseConfig';
 // Import TextReaderRoot and ReadableText
 import TextReaderRoot from '../../components/TextReaderRoot';
 import ReadableText from '../../components/ReadableText';
-// Import the new SidePanel component
+// Import the SidePanel component
 import SidePanel from '../../components/SidePanel';
+// Import our custom hooks
+import { useFirebaseData, useUserData } from '../../hooks/useFirebaseData';
+// Import ProfileImage component
+import ProfileImage from '../../components/ProfileImage';
 
 // Modern icon libraries
 import { Feather } from '@expo/vector-icons';
@@ -33,58 +35,39 @@ const PANEL_WIDTH = width * 0.8;
 
 const HomeScreen = () => {
   const navigation = useNavigation();
-  const [motivationalTexts, setMotivationalTexts] = useState([]);
   const [currentTextIndex, setCurrentTextIndex] = useState(0);
-  const [loading, setLoading] = useState(true);
   const [isPanelOpen, setIsPanelOpen] = useState(false);
-  const [currentUser, setCurrentUser] = useState(null);
-  const [userProfileImage, setUserProfileImage] = useState(null);
 
   // Animation value for side panel
   const slideAnim = useRef(new Animated.Value(-PANEL_WIDTH)).current;
   const overlayOpacity = useRef(new Animated.Value(0)).current;
 
-  // Get current user information including profile image from Firestore
-  useEffect(() => {
-    const fetchUserData = async () => {
-      const auth = getAuth();
-      const user = auth.currentUser;
-      
-      if (user) {
-        try {
-          // First set basic user info from auth
-          setCurrentUser({
-            email: user.email,
-            displayName: user.displayName || 'Lexera User',
-            photoURL: user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.email)}&background=random&color=fff&size=256`
-          });
-          
-          // Then fetch additional data from Firestore
-          const userDocRef = doc(db, "users", user.uid);
-          const docSnap = await getDoc(userDocRef);
-          
-          if (docSnap.exists()) {
-            const userData = docSnap.data();
-            
-            // Update user info with data from Firestore
-            setCurrentUser(prev => ({
-              ...prev,
-              displayName: userData.name || prev.displayName,
-              photoURL: userData.profileImage || prev.photoURL
-            }));
-            
-            if (userData.profileImage) {
-              setUserProfileImage(userData.profileImage);
-            }
-          }
-        } catch (error) {
-          console.error("Error fetching user data:", error);
-        }
-      }
-    };
-    
-    fetchUserData();
-  }, []);
+  // Use our custom hooks for data fetching
+  const { userData, loading: userLoading } = useUserData();
+  const { data: motivationalData, loading: textsLoading, error: textsError } = 
+    useFirebaseData("motivationalTexts");
+
+  // Transform the Firestore data into a simple array of texts
+  const motivationalTexts = useMemo(() => {
+    if (!motivationalData) return [];
+    return motivationalData.map(item => item.text).filter(Boolean);
+  }, [motivationalData]);
+
+  // Fallback texts in case Firebase data is empty or has an error
+  const fallbackTexts = useMemo(() => [
+    "Believe in yourself! Every great achievement starts with the decision to try.",
+    "Don't stop when you're tired. Stop when you're done.",
+    "Success comes from what you do consistently.",
+    "Stay positive, work hard, make it happen."
+  ], []);
+
+  // Determine which texts to use (from Firebase or fallbacks)
+  const textsToUse = useMemo(() => {
+    if (textsError || !motivationalTexts || motivationalTexts.length === 0) {
+      return fallbackTexts;
+    }
+    return motivationalTexts;
+  }, [motivationalTexts, fallbackTexts, textsError]);
 
   // Close panel when back button is pressed
   useFocusEffect(
@@ -102,8 +85,21 @@ const HomeScreen = () => {
     }, [isPanelOpen])
   );
 
-  // Toggle side panel
-  const togglePanel = () => {
+  // Set up interval to change text every 60 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (textsToUse.length > 0) {
+        setCurrentTextIndex((prevIndex) => 
+          (prevIndex + 1) % textsToUse.length
+        );
+      }
+    }, 60000);
+
+    return () => clearInterval(interval);
+  }, [textsToUse]);
+
+  // Memoize toggle panel function to prevent unnecessary re-renders
+  const togglePanel = useCallback(() => {
     if (isPanelOpen) {
       // Close panel
       Animated.parallel([
@@ -136,10 +132,10 @@ const HomeScreen = () => {
         }),
       ]).start();
     }
-  };
+  }, [isPanelOpen, slideAnim, overlayOpacity]);
 
   // Handle logout
-  const handleLogout = () => {
+  const handleLogout = useCallback(() => {
     Alert.alert('Logout', 'Are you sure you want to logout?', [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Logout', onPress: () => {
@@ -150,83 +146,16 @@ const HomeScreen = () => {
         }
       },
     ]);
-  };
-
-  // Fetch motivational texts from Firebase
-  const fetchMotivationalTexts = async () => {
-    try {
-      console.log("Starting to fetch motivational texts...");
-      const querySnapshot = await getDocs(collection(db, "motivationalTexts"));
-      const texts = [];
-      
-      querySnapshot.forEach((doc) => {
-        console.log("Document data:", doc.data());
-        if (doc.data().text) {
-          texts.push(doc.data().text);
-        }
-      });
-      
-      console.log(`Found ${texts.length} motivational texts`);
-      
-      if (texts.length > 0) {
-        setMotivationalTexts(texts);
-      } else {
-        // Fallback texts in case Firebase data is empty
-        setMotivationalTexts([
-          "Believe in yourself! Every great achievement starts with the decision to try.",
-          "Don't stop when you're tired. Stop when you're done.",
-          "Success comes from what you do consistently.",
-          "Stay positive, work hard, make it happen."
-        ]);
-        console.log("Using fallback motivational texts");
-      }
-    } catch (error) {
-      console.error("Error fetching motivational texts: ", error);
-      // Show error alert or fallback to default texts
-      Alert.alert("Data Loading Error", "Could not load motivational texts. Using defaults instead.");
-      
-      // Fallback texts
-      setMotivationalTexts([
-        "Believe in yourself! Every great achievement starts with the decision to try.",
-        "Don't stop when you're tired. Stop when you're done.",
-        "Success comes from what you do consistently.",
-        "Stay positive, work hard, make it happen."
-      ]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Fetch data when component mounts
-  useEffect(() => {
-    fetchMotivationalTexts();
-  }, []);
-
-  // Set up interval to change text every 60 seconds
-  useEffect(() => {
-    const interval = setInterval(() => {
-      if (motivationalTexts.length > 0) {
-        setCurrentTextIndex((prevIndex) => 
-          (prevIndex + 1) % motivationalTexts.length
-        );
-      }
-    }, 60000);
-
-    return () => clearInterval(interval);
-  }, [motivationalTexts]);
+  }, [navigation]);
 
   // Current text to display
-  const currentMotivationalText = motivationalTexts[currentTextIndex] || "Loading inspiration...";
+  const currentMotivationalText = textsToUse[currentTextIndex] || "Loading inspiration...";
 
-  // Generate a profile image URL prioritizing Firestore data
-  const getProfileImage = () => {
-    if (userProfileImage) {
-      return { uri: userProfileImage };
-    } else if (currentUser && currentUser.photoURL) {
-      return { uri: currentUser.photoURL };
-    }
-    return require('../../../assets/profilepic.png');
-  };
+  // Get profile image source
+  const profileImageSource = useMemo(() => {
+    if (!userData) return null;
+    return userData.photoURL ? { uri: userData.photoURL } : null;
+  }, [userData]);
 
   return (
     <TextReaderRoot>
@@ -240,7 +169,6 @@ const HomeScreen = () => {
               source={require('../../../assets/Logo.png')}
               style={styles.logo}
             />
-            {/* App title should NOT be read */}
             <ReadableText style={styles.logoText} readable={false}>
               Lexera Life
             </ReadableText>
@@ -256,19 +184,25 @@ const HomeScreen = () => {
         {/* User Welcome Section - READ WITH PRIORITY 1 */}
         <View style={styles.welcomeSection}>
           <View style={styles.userInfoSection}>
-            {/* Welcome message with highest priority */}
             <ReadableText style={styles.welcomeText} readable={true} priority={1}>
               Hello,
             </ReadableText>
             <ReadableText style={styles.userName} readable={true} priority={2}>
-              {currentUser ? currentUser.displayName : 'Lexera User'}
+              {userLoading ? 'Loading...' : (userData ? userData.displayName : 'Lexera User')}
             </ReadableText>
           </View>
           <TouchableOpacity 
             style={styles.profileButton}
             onPress={() => navigation.navigate('profile')}
           >
-            <Image source={getProfileImage()} style={styles.profilePicture} />
+            {userLoading ? (
+              <ActivityIndicator color="#FF6B6B" size="small" />
+            ) : (
+              <ProfileImage 
+                source={profileImageSource} 
+                style={styles.profilePicture} 
+              />
+            )}
           </TouchableOpacity>
         </View>
 
@@ -279,9 +213,13 @@ const HomeScreen = () => {
           end={{ x: 1, y: 0 }}
           style={styles.messageCard}
         >
-          <ReadableText style={styles.messageText} readable={true} priority={3}>
-            {loading ? "Loading inspiration..." : currentMotivationalText}
-          </ReadableText>
+          {textsLoading ? (
+            <ActivityIndicator color="#FFFFFF" size="small" />
+          ) : (
+            <ReadableText style={styles.messageText} readable={true} priority={3}>
+              {currentMotivationalText}
+            </ReadableText>
+          )}
         </LinearGradient>
 
         {/* Features heading - not read */}
@@ -298,7 +236,6 @@ const HomeScreen = () => {
             >
               <BlurView intensity={10} style={styles.cardBlur}>
                 <MaterialCommunityIcons name="robot" size={28} color="#FF6B6B" />
-                {/* Feature 1 - READ WITH PRIORITY 4 */}
                 <ReadableText style={styles.featureTitle} readable={true} priority={4}>
                   Lexera Bot
                 </ReadableText>
@@ -311,7 +248,6 @@ const HomeScreen = () => {
             >
               <BlurView intensity={10} style={styles.cardBlur}>
                 <MaterialCommunityIcons name="brain" size={28} color="#FF6B6B" />
-                {/* Feature 2 - READ WITH PRIORITY 5 */}
                 <ReadableText style={styles.featureTitle} readable={true} priority={5}>
                   Brain Training
                 </ReadableText>
@@ -327,7 +263,6 @@ const HomeScreen = () => {
             >
               <BlurView intensity={10} style={styles.cardBlur}>
                 <Feather name="clipboard" size={28} color="#FF6B6B" />
-                {/* Feature 3 - READ WITH PRIORITY 6 */}
                 <ReadableText style={styles.featureTitle} readable={true} priority={6}>
                   Dyslexia Test
                 </ReadableText>
@@ -340,7 +275,6 @@ const HomeScreen = () => {
             >
               <BlurView intensity={10} style={styles.cardBlur}>
                 <Feather name="heart" size={28} color="#FF6B6B" />
-                {/* Feature 4 - READ WITH PRIORITY 7 */}
                 <ReadableText style={styles.featureTitle} readable={true} priority={7}>
                   Relax
                 </ReadableText>
@@ -355,7 +289,6 @@ const HomeScreen = () => {
           >
             <BlurView intensity={10} style={styles.cardBlur}>
               <Feather name="users" size={28} color="#FF6B6B" />
-              {/* Feature 5 - READ WITH PRIORITY 8 */}
               <ReadableText style={styles.featureTitle} readable={true} priority={8}>
                 Community
               </ReadableText>
@@ -369,7 +302,7 @@ const HomeScreen = () => {
           slideAnim={slideAnim}
           overlayOpacity={overlayOpacity}
           togglePanel={togglePanel}
-          currentUser={currentUser}
+          currentUser={userData}
           navigation={navigation}
           handleLogout={handleLogout}
         />
@@ -379,7 +312,6 @@ const HomeScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  // ...existing code...
   container: {
     flex: 1,
     backgroundColor: '#f5f5f5',

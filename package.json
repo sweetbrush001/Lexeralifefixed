@@ -13,8 +13,7 @@
     "@expo/vector-icons": "^14.0.2",
     "@motify/components": "^0.18.0",
     "@motify/core": "^0.18.0",
-    "@react-native-async-storage/async-storage": "^1.19.0",
-
+    "@react-native-async-storage/async-storage": "^1.18.2",
     "@react-native-community/slider": "^4.5.5",
     "@react-native-firebase/app": "^21.10.1",
     "@react-native-firebase/firestore": "^21.10.1",
