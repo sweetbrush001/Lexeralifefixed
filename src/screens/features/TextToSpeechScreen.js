@@ -28,6 +28,7 @@ const TextToSpeechScreen = () => {
   const animation = useRef(new Animated.Value(0)).current;
   const [highlightedWordIndex, setHighlightedWordIndex] = useState(-1);
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [isButtonDisabled, setIsButtonDisabled] = useState(false); // To track button disable state
 
   useEffect(() => {
     Animated.loop(
@@ -129,9 +130,13 @@ const TextToSpeechScreen = () => {
       return;
     }
 
+    // Prevent multiple clicks if already speaking
+    if (isSpeaking) return;
+
     setIsSpeaking(true);
+    setIsButtonDisabled(true); // Disable the button while speaking
     setHighlightedWordIndex(-1);
-    
+
     const words = text.split(" ");
     
     words.forEach((word, index) => {
@@ -142,6 +147,7 @@ const TextToSpeechScreen = () => {
             if (index === words.length - 1) {
               setIsSpeaking(false);
               setHighlightedWordIndex(-1);
+              setIsButtonDisabled(false); // Re-enable the button after speech finishes
             }
           },
         });
@@ -190,7 +196,7 @@ const TextToSpeechScreen = () => {
               </Text>
             ))}
           </Text>
-          <TouchableOpacity onPress={speakTextWithHighlighting} style={styles.glowButton}>
+          <TouchableOpacity onPress={speakTextWithHighlighting} style={styles.glowButton} disabled={isButtonDisabled}>
             <LinearGradient colors={["#ff9966", "#ff5e62"]} style={styles.buttonInner}>
               <Text style={styles.buttonText}>🔊 Read the Text</Text>
             </LinearGradient>

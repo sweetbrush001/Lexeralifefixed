@@ -7,10 +7,16 @@ import { LinearGradient } from "expo-linear-gradient";
 const TypeTextScreen = () => {
   const navigation = useNavigation();
   const [typedText, setTypedText] = useState("");
+  const [isSpeaking, setIsSpeaking] = useState(false);  // State to track speaking status
 
   const speakTypedText = () => {
     if (typedText.trim()) {
-      Speech.speak(typedText);
+      setIsSpeaking(true);  // Disable the button when speech starts
+      Speech.speak(typedText, {
+        onDone: () => {
+          setIsSpeaking(false);  // Enable the button after speech is done
+        },
+      });
     } else {
       alert("Please enter text to read aloud.");
     }
@@ -26,7 +32,11 @@ const TypeTextScreen = () => {
         value={typedText}
         onChangeText={setTypedText}
       />
-      <TouchableOpacity onPress={speakTypedText} style={styles.glowButton}>
+      <TouchableOpacity
+        onPress={speakTypedText}
+        style={[styles.glowButton, isSpeaking ? styles.disabledButton : null]}  // Disable the button while speaking
+        disabled={isSpeaking}  // Disable the button during speech
+      >
         <LinearGradient colors={["#ff9966", "#ff5e62"]} style={styles.buttonInner}>
           <Text style={styles.buttonText}>🔊 Read Typed Text</Text>
         </LinearGradient>
@@ -68,6 +78,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.5,
     shadowRadius: 15,
     elevation: 10,
+  },
+  disabledButton: {
+    opacity: 0.5, // Make the button semi-transparent when disabled
   },
   buttonInner: {
     paddingVertical: 15,
