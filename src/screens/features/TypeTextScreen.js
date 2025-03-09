@@ -1,20 +1,30 @@
 import React, { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet } from "react-native";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import * as Speech from "expo-speech";
 import { LinearGradient } from "expo-linear-gradient";
 
 const TypeTextScreen = () => {
   const navigation = useNavigation();
   const [typedText, setTypedText] = useState("");
-  const [isSpeaking, setIsSpeaking] = useState(false);  // State to track speaking status
+  const [isSpeaking, setIsSpeaking] = useState(false); // State to track speaking status
+
+  // Stop speech when navigating away
+  useFocusEffect(
+    React.useCallback(() => {
+      return () => {
+        Speech.stop();
+        setIsSpeaking(false);
+      };
+    }, [])
+  );
 
   const speakTypedText = () => {
     if (typedText.trim()) {
-      setIsSpeaking(true);  // Disable the button when speech starts
+      setIsSpeaking(true); // Disable the button when speech starts
       Speech.speak(typedText, {
         onDone: () => {
-          setIsSpeaking(false);  // Enable the button after speech is done
+          setIsSpeaking(false); // Enable the button after speech is done
         },
       });
     } else {
@@ -34,8 +44,8 @@ const TypeTextScreen = () => {
       />
       <TouchableOpacity
         onPress={speakTypedText}
-        style={[styles.glowButton, isSpeaking ? styles.disabledButton : null]}  // Disable the button while speaking
-        disabled={isSpeaking}  // Disable the button during speech
+        style={[styles.glowButton, isSpeaking ? styles.disabledButton : null]} // Disable the button while speaking
+        disabled={isSpeaking} // Disable the button during speech
       >
         <LinearGradient colors={["#ff9966", "#ff5e62"]} style={styles.buttonInner}>
           <Text style={styles.buttonText}>🔊 Read Typed Text</Text>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react"; 
+import React, { useState, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -30,23 +30,38 @@ const TextToSpeechScreen = () => {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isButtonDisabled, setIsButtonDisabled] = useState(false); // To track button disable state
 
+  const speechTimeouts = useRef([]); // Ref to store timeouts for clearing them on navigation
+
   useEffect(() => {
     Animated.loop(
       Animated.timing(animation, {
         toValue: 1,
-        duration: 10000, // Slowed down the effect
+        duration: 10000, 
         easing: Easing.linear,
         useNativeDriver: false,
       })
     ).start();
-  }, []);
+
+    // Stop speech when navigating away from the page
+    const unsubscribe = navigation.addListener('beforeRemove', () => {
+      if (isSpeaking) {
+        Speech.stop();  // Stop the speech immediately
+        setIsSpeaking(false);  // Set the state accordingly
+        // Clear any pending timeouts to stop the speech immediately
+        speechTimeouts.current.forEach(timeout => clearTimeout(timeout));
+        speechTimeouts.current = []; // Reset the timeouts array
+      }
+    });
+
+    return unsubscribe;  // Cleanup the listener on unmount
+  }, [navigation, isSpeaking]);
 
   const gradientColors = animation.interpolate({
     inputRange: [0, 0.5, 1],
     outputRange: [
-      "rgba(255, 182, 193, 1)", // Light Pink
-      "rgba(173, 216, 230, 1)", // Light Blue
-      "rgba(221, 160, 221, 1)", // Plum
+      "rgba(255, 182, 193, 1)", 
+      "rgba(173, 216, 230, 1)", 
+      "rgba(221, 160, 221, 1)", 
     ],
   });
 
@@ -140,9 +155,10 @@ const TextToSpeechScreen = () => {
     const words = text.split(" ");
     
     words.forEach((word, index) => {
-      setTimeout(() => {
+      const timeout = setTimeout(() => {
         setHighlightedWordIndex(index);
         Speech.speak(word, {
+          rate: 1.5, // Increased speech rate for faster reading
           onDone: () => {
             if (index === words.length - 1) {
               setIsSpeaking(false);
@@ -151,7 +167,9 @@ const TextToSpeechScreen = () => {
             }
           },
         });
-      }, index * 700); // Slower pace for dyslexia users
+      }, index * 500); // Reduced delay between words for faster reading
+
+      speechTimeouts.current.push(timeout); // Store the timeout for later cleanup
     });
   };
 
@@ -189,7 +207,7 @@ const TextToSpeechScreen = () => {
                 key={index}
                 style={[
                   highlightedWordIndex === index ? styles.highlightedWord : {},
-                  highlightedWordIndex === index ? styles.enlargedWord : {},
+                  highlightedWordIndex === index ? styles.smallerWord : {},
                 ]}
               >
                 {word}{" "}
@@ -264,9 +282,8 @@ const styles = StyleSheet.create({
     padding: 2,
     borderRadius: 3,
   },
-  enlargedWord: {
-    fontSize: 18, // Slightly larger text for highlighted word
-    transform: [{ scale: 1.2 }],
+  smallerWord: {
+    fontSize: 14, // Smaller font size for highlighted word
   },
   extractedText: {
     fontSize: 16,
