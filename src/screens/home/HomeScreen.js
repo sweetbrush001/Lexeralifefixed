@@ -298,6 +298,24 @@ const HomeScreen = () => {
             </TouchableOpacity>
           </View>
           
+          {/* Row 3 */}
+          <View style={styles.featureRow}>
+            <TouchableOpacity 
+              style={[styles.featureCard, styles.primaryCard]}
+              onPress={() => navigation.navigate('ReadAssist')}
+            >
+              <BlurView intensity={10} style={styles.cardBlur}>
+                <Feather name="book-open" size={28} color="#FF6B6B" />
+                <ReadableText style={styles.featureTitle} readable={true} priority={8}>
+                  Text Reader
+                </ReadableText>
+              </BlurView>
+            </TouchableOpacity>
+            
+            {/* Adding an empty view for layout balance */}
+            <View style={[styles.featureCard, styles.secondaryCard, { opacity: 0 }]} />
+          </View>
+          
           {/* Community Card (Full Width) */}
           <TouchableOpacity 
             style={[styles.featureCard, styles.fullWidthCard]}
@@ -305,7 +323,7 @@ const HomeScreen = () => {
           >
             <BlurView intensity={10} style={styles.cardBlur}>
               <Feather name="users" size={28} color="#FF6B6B" />
-              <ReadableText style={styles.featureTitle} readable={true} priority={8}>
+              <ReadableText style={styles.featureTitle} readable={true} priority={9}>
                 Community
               </ReadableText>
             </BlurView>

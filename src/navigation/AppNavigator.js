@@ -19,6 +19,8 @@ import AgeRangeSelector from "../screens/auth/AgeRangeSelector";
 import LoadingScreen from "../screens/loading/LoadingScreen";
 import GuideScreen from "../screens/GuideScreen";
 import HelpSupportScreen from '../screens/help/HelpSupportScreen';
+import ReadAssistScreen from "../screens/ReadAssistScreen";
+import TypeTextScreen from "../screens/TypeTextScreen";
 
 const Stack = createNativeStackNavigator();
 
@@ -44,6 +46,8 @@ const AppNavigator = () => {
         <Stack.Screen name="AgeRangeSelector" component={AgeRangeSelector} />
         <Stack.Screen name="Guide" component={GuideScreen} />
         <Stack.Screen name="help" component={HelpSupportScreen} />
+        <Stack.Screen name="ReadAssist" component={ReadAssistScreen} />
+        <Stack.Screen name="TypeTextScreen" component={TypeTextScreen} /> 
       </Stack.Navigator>
     </SettingsProvider>
   );
