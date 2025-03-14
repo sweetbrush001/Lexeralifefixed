@@ -102,6 +102,12 @@ const ChatbotScreen = () => {
   
   const scrollViewRef = useRef();
   const textStyle = useTextStyle();
+  // Create a filtered style that excludes fontSize from the settings
+  const filteredTextStyle = useMemo(() => {
+    const { fontSize, ...otherStyles } = textStyle;
+    return otherStyles;
+  }, [textStyle]);
+  
   const textReader = useTextReader();
   const fadeAnim = useRef(new Animated.Value(1)).current;
   const { width } = Dimensions.get('window');
@@ -737,6 +743,21 @@ const ChatbotScreen = () => {
     setShowHistoryModal(false);
   }, [currentConversationId, isDeletingConversation]);
   
+  // Combine the message style with the filtered text style from settings
+  const getBotMessageStyle = useMemo(() => {
+    return {
+      ...styles.botMessageText,
+      ...filteredTextStyle, // Apply everything except fontSize
+    };
+  }, [filteredTextStyle]);
+
+  const getUserMessageStyle = useMemo(() => {
+    return {
+      ...styles.userMessageText,
+      ...filteredTextStyle, // Apply everything except fontSize
+    };
+  }, [filteredTextStyle]);
+
   // Improved chat message component with readability
   const ChatMessage = ({ message, index }) => {
     // Calculate priority based on message position
@@ -765,7 +786,7 @@ const ChatbotScreen = () => {
           ]}
         >
           <ReadableText 
-            style={message.isBot ? styles.botMessageText : styles.userMessageText} 
+            style={message.isBot ? getBotMessageStyle : getUserMessageStyle} 
             readable={true} 
             priority={priority}
           >
@@ -780,9 +801,19 @@ const ChatbotScreen = () => {
   const QuickResponsesSection = () => {
     if (!showQuickResponses) return null;
     
+    // Apply filtered style to quick response text
+    const quickResponseTextStyle = {
+      ...styles.quickResponseText,
+      ...filteredTextStyle,
+    };
+    
     return (
       <View style={styles.quickResponsesContainer}>
-        <ReadableText style={styles.quickResponsesTitle} readable={true} priority={messages.length + 1}>
+        <ReadableText 
+          style={{...styles.quickResponsesTitle, ...filteredTextStyle}} 
+          readable={true} 
+          priority={messages.length + 1}
+        >
           Try asking:
         </ReadableText>
         <ScrollView 
@@ -797,7 +828,7 @@ const ChatbotScreen = () => {
               onPress={() => handleQuickResponse(response)}
             >
               <ReadableText 
-                style={styles.quickResponseText} 
+                style={quickResponseTextStyle} 
                 readable={true} 
                 priority={messages.length + index + 2}
               >
@@ -1384,7 +1415,7 @@ const ChatbotScreen = () => {
             <View style={styles.inputWrapper}>
               {/* Paperclip icon removed */}
               <TextInput
-                style={[styles.input, textStyle]}
+                style={[styles.input, filteredTextStyle]} // Use filtered style here
                 placeholder="Type your message..."
                 placeholderTextColor="#999"
                 value={inputText}
