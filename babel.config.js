@@ -1,6 +1,5 @@
-// babel.config.js
 export default {
-  presets: ['@react-native/babel-preset'],
+  presets: ['babel-preset-expo'],
   plugins: [
     ['module:react-native-dotenv', {
       moduleName: '@env',
