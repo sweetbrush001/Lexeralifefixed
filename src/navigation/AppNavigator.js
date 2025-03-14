@@ -21,6 +21,7 @@ import GuideScreen from "../screens/GuideScreen";
 import HelpSupportScreen from '../screens/help/HelpSupportScreen';
 import ReadAssistScreen from "../screens/ReadAssistScreen";
 import TypeTextScreen from "../screens/TypeTextScreen";
+import WordBuilderGame from "../screens/games/WordBuilderGame";
 
 const Stack = createNativeStackNavigator();
 
@@ -47,7 +48,8 @@ const AppNavigator = () => {
         <Stack.Screen name="Guide" component={GuideScreen} />
         <Stack.Screen name="help" component={HelpSupportScreen} />
         <Stack.Screen name="ReadAssist" component={ReadAssistScreen} />
-        <Stack.Screen name="TypeTextScreen" component={TypeTextScreen} /> 
+        <Stack.Screen name="TypeTextScreen" component={TypeTextScreen} />
+        <Stack.Screen name="WordBuilderGame" component={WordBuilderGame} />
       </Stack.Navigator>
     </SettingsProvider>
   );

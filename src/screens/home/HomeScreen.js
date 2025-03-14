@@ -260,7 +260,7 @@ const HomeScreen = () => {
             
             <TouchableOpacity 
               style={[styles.featureCard, styles.secondaryCard]}
-              onPress={() => navigation.navigate('Guide')}
+              onPress={() => navigation.navigate('WordBuilderGame')}
             >
               <BlurView intensity={10} style={styles.cardBlur}>
                 <MaterialCommunityIcons name="brain" size={28} color="#FF6B6B" />
