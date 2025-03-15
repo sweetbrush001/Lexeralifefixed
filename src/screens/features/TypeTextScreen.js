@@ -32,6 +32,11 @@ const TypeTextScreen = () => {
     }
   };
 
+  const stopReading = () => {
+    Speech.stop();
+    setIsSpeaking(false); // Reset state when stopping manually
+  };
+
   return (
     <LinearGradient colors={["#ff9a9e", "#fad0c4"]} style={styles.container}>
       <Text style={styles.header}>Type Your Text</Text>
@@ -42,13 +47,26 @@ const TypeTextScreen = () => {
         value={typedText}
         onChangeText={setTypedText}
       />
+      
+      {/* Read Text Button */}
       <TouchableOpacity
         onPress={speakTypedText}
-        style={[styles.glowButton, isSpeaking ? styles.disabledButton : null]} // Disable the button while speaking
-        disabled={isSpeaking} // Disable the button during speech
+        style={[styles.glowButton, isSpeaking ? styles.disabledButton : null]}
+        disabled={isSpeaking}
       >
         <LinearGradient colors={["#ff9966", "#ff5e62"]} style={styles.buttonInner}>
           <Text style={styles.buttonText}>🔊 Read Typed Text</Text>
+        </LinearGradient>
+      </TouchableOpacity>
+
+      {/* Stop Reading Button */}
+      <TouchableOpacity
+        onPress={stopReading}
+        style={[styles.glowButton, !isSpeaking ? styles.disabledButton : null]} 
+        disabled={!isSpeaking} 
+      >
+        <LinearGradient colors={["#ff5e62", "#d9534f"]} style={styles.buttonInner}>
+          <Text style={styles.buttonText}>⏹️ Stop Reading</Text>
         </LinearGradient>
       </TouchableOpacity>
     </LinearGradient>
