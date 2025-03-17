@@ -211,14 +211,14 @@ const TextToSpeechScreen = () => {
             ))}
           </Text>
 
-          <TouchableOpacity onPress={speakTextWithHighlighting} style={styles.glowButton} disabled={isButtonDisabled}>
+          <TouchableOpacity onPress={speakTextWithHighlighting} style={[styles.glowButton, styles.smallButton]} disabled={isButtonDisabled}>
             <LinearGradient colors={["#ff9966", "#ff5e62"]} style={styles.buttonInner}>
               <Text style={styles.buttonText}>🔊 Read the Text</Text>
             </LinearGradient>
           </TouchableOpacity>
 
-          <TouchableOpacity onPress={stopSpeech} style={styles.glowButton}>
-            <LinearGradient colors={["#ff9966", "#ff5e62"]} style={styles.buttonInner}>
+          <TouchableOpacity onPress={stopSpeech} style={[styles.glowButton, styles.smallButton]}>
+          <LinearGradient colors={["#ff9966", "#ff5e62"]} style={[styles.buttonInner, styles.smallButtonInner]}>
               <Text style={styles.buttonText}>⏹ Stop</Text>
             </LinearGradient>
           </TouchableOpacity>
@@ -250,6 +250,24 @@ const styles = StyleSheet.create({
     shadowRadius: 15,
     elevation: 10,
   },
+  buttonContainer: {
+    alignItems: 'center', 
+    justifyContent: 'center',
+    width: '100%', 
+  },
+  smallButton: {
+    width: "60%",  
+    marginVertical: 10, 
+    alignSelf: 'center', 
+  },
+  smallButtonInner: {
+    paddingVertical: 8,  
+    borderRadius: 20,  
+  },
+  smallButtonText: {
+    fontSize: 14,  
+    textAlign: 'center',
+  },  
   buttonInner: {
     paddingVertical: 15,
     borderRadius: 30,
