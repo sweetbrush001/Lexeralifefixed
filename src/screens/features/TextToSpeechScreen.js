@@ -191,11 +191,13 @@ const TextToSpeechScreen = () => {
         </LinearGradient>
       </TouchableOpacity>
 
-      <TouchableOpacity onPress={() => navigation.navigate("TypeTextScreen")} style={styles.glowButton}>
-        <LinearGradient colors={["#00c6ff", "#0072ff"]} style={styles.buttonInner}>
-          <Text style={styles.buttonText}>📝 Type a Text</Text>
-        </LinearGradient>
-      </TouchableOpacity>
+      {!imageUri && !text && (
+        <TouchableOpacity onPress={() => navigation.navigate("TypeTextScreen")} style={styles.glowButton}>
+          <LinearGradient colors={["#00c6ff", "#0072ff"]} style={styles.buttonInner}>
+            <Text style={styles.buttonText}>📝 Type a Text</Text>
+          </LinearGradient>
+        </TouchableOpacity>
+      )}
 
       {imageUri && <Image source={{ uri: imageUri }} style={styles.preview} />}
 
