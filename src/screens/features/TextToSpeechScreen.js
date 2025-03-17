@@ -28,9 +28,9 @@ const TextToSpeechScreen = () => {
   const animation = useRef(new Animated.Value(0)).current;
   const [highlightedWordIndex, setHighlightedWordIndex] = useState(-1);
   const [isSpeaking, setIsSpeaking] = useState(false);
-  const [isButtonDisabled, setIsButtonDisabled] = useState(false); // To track button disable state
-
-  const speechTimeouts = useRef([]); // Ref to store timeouts for clearing them on navigation
+  const [isButtonDisabled, setIsButtonDisabled] = useState(false);
+  
+  const speechTimeouts = useRef([]);
 
   useEffect(() => {
     Animated.loop(
@@ -42,18 +42,11 @@ const TextToSpeechScreen = () => {
       })
     ).start();
 
-    // Stop speech when navigating away from the page
-    const unsubscribe = navigation.addListener('beforeRemove', () => {
-      if (isSpeaking) {
-        Speech.stop();  // Stop the speech immediately
-        setIsSpeaking(false);  // Set the state accordingly
-        // Clear any pending timeouts to stop the speech immediately
-        speechTimeouts.current.forEach(timeout => clearTimeout(timeout));
-        speechTimeouts.current = []; // Reset the timeouts array
-      }
+    const unsubscribe = navigation.addListener("beforeRemove", () => {
+      stopSpeech();
     });
 
-    return unsubscribe;  // Cleanup the listener on unmount
+    return unsubscribe;
   }, [navigation, isSpeaking]);
 
   const gradientColors = animation.interpolate({
@@ -145,11 +138,10 @@ const TextToSpeechScreen = () => {
       return;
     }
 
-    // Prevent multiple clicks if already speaking
     if (isSpeaking) return;
 
     setIsSpeaking(true);
-    setIsButtonDisabled(true); // Disable the button while speaking
+    setIsButtonDisabled(true);
     setHighlightedWordIndex(-1);
 
     const words = text.split(" ");
@@ -158,19 +150,29 @@ const TextToSpeechScreen = () => {
       const timeout = setTimeout(() => {
         setHighlightedWordIndex(index);
         Speech.speak(word, {
-          rate: 1.5, // Increased speech rate for faster reading
+          rate: 1.5,
           onDone: () => {
             if (index === words.length - 1) {
               setIsSpeaking(false);
               setHighlightedWordIndex(-1);
-              setIsButtonDisabled(false); // Re-enable the button after speech finishes
+              setIsButtonDisabled(false);
             }
           },
         });
-      }, index * 500); // Reduced delay between words for faster reading
+      }, index * 500);
 
-      speechTimeouts.current.push(timeout); // Store the timeout for later cleanup
+      speechTimeouts.current.push(timeout);
     });
+  };
+
+  const stopSpeech = () => {
+    Speech.stop();
+    setIsSpeaking(false);
+    setHighlightedWordIndex(-1);
+    setIsButtonDisabled(false);
+
+    speechTimeouts.current.forEach(timeout => clearTimeout(timeout));
+    speechTimeouts.current = [];
   };
 
   return (
@@ -203,20 +205,21 @@ const TextToSpeechScreen = () => {
         <ScrollView style={[styles.textContainer, isSpeaking && { transform: [{ scale: 1.1 }] }]}>
           <Text style={styles.extractedText}>
             {text.split(" ").map((word, index) => (
-              <Text
-                key={index}
-                style={[
-                  highlightedWordIndex === index ? styles.highlightedWord : {},
-                  highlightedWordIndex === index ? styles.smallerWord : {},
-                ]}
-              >
+              <Text key={index} style={highlightedWordIndex === index ? styles.highlightedWord : {}}>
                 {word}{" "}
               </Text>
             ))}
           </Text>
+
           <TouchableOpacity onPress={speakTextWithHighlighting} style={styles.glowButton} disabled={isButtonDisabled}>
             <LinearGradient colors={["#ff9966", "#ff5e62"]} style={styles.buttonInner}>
               <Text style={styles.buttonText}>🔊 Read the Text</Text>
+            </LinearGradient>
+          </TouchableOpacity>
+
+          <TouchableOpacity onPress={stopSpeech} style={styles.glowButton}>
+            <LinearGradient colors={["#ff9966", "#ff5e62"]} style={styles.buttonInner}>
+              <Text style={styles.buttonText}>⏹ Stop</Text>
             </LinearGradient>
           </TouchableOpacity>
         </ScrollView>
