@@ -165,6 +165,28 @@ const GamesScreen = () => {
               </View>
             </BlurView>
           </TouchableOpacity>
+
+          {/* Pattern Match Game Card */}
+          <TouchableOpacity 
+            style={styles.gameCard}
+            onPress={() => navigation.navigate('PatternMatchGame')}
+          >
+            <BlurView intensity={10} style={styles.cardBlur}>
+              <View style={styles.gameCardContent}>
+                <View style={styles.gameIconContainer}>
+                  <MaterialCommunityIcons name="pattern" size={32} color="#FF6B6B" />
+                </View>
+                <View style={styles.gameInfo}>
+                  <ReadableText style={[styles.gameTitle, fontStyle]} readable={true} priority={12}>
+                    Pattern Match
+                  </ReadableText>
+                  <ReadableText style={[styles.gameDescription, fontStyle]} readable={true} priority={13}>
+                    Improve cognitive skills by identifying patterns and sequences.
+                  </ReadableText>
+                </View>
+              </View>
+            </BlurView>
+          </TouchableOpacity>
         </ScrollView>
       </SafeAreaView>
     </TextReaderRoot>
