@@ -10,12 +10,15 @@ import {
   Animated,
   Image,
   Alert,
+  Modal,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import { Feather } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Audio } from 'expo-av';
 
 // Import TextReaderRoot and ReadableText for accessibility
 import TextReaderRoot from '../../components/TextReaderRoot';
@@ -59,7 +62,7 @@ const cardThemes = {
 const MemoryMatchGame = () => {
   const navigation = useNavigation();
   const textStyle = useTextStyle();
-  // Add the state here inside the component
+  // Basic game state
   const [currentTheme, setCurrentTheme] = useState('animals');
   const [cards, setCards] = useState([]);
   const [flippedIndices, setFlippedIndices] = useState([]);
@@ -70,16 +73,179 @@ const MemoryMatchGame = () => {
   const [score, setScore] = useState(0);
   const [level, setLevel] = useState(1);
   
+  // New game enhancement states
+  const [timer, setTimer] = useState(0);
+  const [isTimerRunning, setIsTimerRunning] = useState(false);
+  const [difficulty, setDifficulty] = useState('medium'); // easy, medium, hard
+  const [hintsRemaining, setHintsRemaining] = useState(3);
+  const [isPaused, setIsPaused] = useState(false);
+  const [highScores, setHighScores] = useState([]);
+  const [soundEnabled, setSoundEnabled] = useState(true);
+  
+  // Sound effect refs
+  const flipSoundRef = useRef(null);
+  const matchSoundRef = useRef(null);
+  const successSoundRef = useRef(null);
+  const errorSoundRef = useRef(null);
+  
+  // Timer interval ref
+  const timerIntervalRef = useRef(null);
+  
   // Get card images based on current theme
   const cardImages = cardThemes[currentTheme];
   
   const flipAnimation = useRef({}).current;
   const bounceAnim = useRef(new Animated.Value(1)).current;
   
+  // Load high scores on mount
+  useEffect(() => {
+    loadHighScores();
+    setupSounds();
+    
+    return () => {
+      cleanupSounds();
+      if (timerIntervalRef.current) {
+        clearInterval(timerIntervalRef.current);
+      }
+    };
+  }, []);
+  
   // Initialize game
   useEffect(() => {
     initializeGame();
-  }, [level]);
+  }, [level, difficulty]);
+  
+  // Timer effect
+  useEffect(() => {
+    if (isTimerRunning) {
+      timerIntervalRef.current = setInterval(() => {
+        setTimer((prevTimer) => prevTimer + 1);
+      }, 1000);
+    } else if (timerIntervalRef.current) {
+      clearInterval(timerIntervalRef.current);
+    }
+    
+    return () => {
+      if (timerIntervalRef.current) {
+        clearInterval(timerIntervalRef.current);
+      }
+    };
+  }, [isTimerRunning]);
+  
+  // Setup sound effects - modified to try online sources if local fails
+  const setupSounds = async () => {
+    try {
+      // Safely try to load each sound file with error handling
+      try {
+        const { sound: flipSound } = await Audio.Sound.createAsync(
+          require('../../../assets/Sounds/flipcard-91468.mp3')
+        );
+        flipSoundRef.current = flipSound;
+      } catch (error) {
+        console.log('Error loading flip sound:', error);
+      }
+      
+      try {
+        const { sound: matchSound } = await Audio.Sound.createAsync(
+          require('../../../assets/Sounds/yipee-45360.mp3')
+        );
+        matchSoundRef.current = matchSound;
+      } catch (error) {
+        console.log('Error loading match sound:', error);
+      }
+      
+      try {
+        const { sound: successSound } = await Audio.Sound.createAsync(
+          require('../../../assets/Sounds/tada-military-2-183973.mp3')
+        );
+        successSoundRef.current = successSound;
+      } catch (error) {
+        console.log('Error loading success sound:', error);
+      }
+      
+      try {
+        const { sound: errorSound } = await Audio.Sound.createAsync(
+          require('../../../assets/Sounds/error-10-206498.mp3')
+        );
+        errorSoundRef.current = errorSound;
+      } catch (error) {
+        console.log('Error loading error sound:', error);
+      }
+    } catch (error) {
+      console.log('Error in setupSounds:', error);
+      // Make sure sound is disabled if we can't load sounds
+      setSoundEnabled(false);
+    }
+  };
+  
+  // Cleanup sounds on unmount
+  const cleanupSounds = async () => {
+    if (flipSoundRef.current) {
+      await flipSoundRef.current.unloadAsync();
+    }
+    if (matchSoundRef.current) {
+      await matchSoundRef.current.unloadAsync();
+    }
+    if (successSoundRef.current) {
+      await successSoundRef.current.unloadAsync();
+    }
+    if (errorSoundRef.current) {
+      await errorSoundRef.current.unloadAsync();
+    }
+  };
+  
+  // Play sound effect - updated to include better error handling for online sounds
+  const playSound = async (soundRef) => {
+    if (soundEnabled && soundRef && soundRef.current) {
+      try {
+        await soundRef.current.replayAsync();
+      } catch (error) {
+        console.log('Error playing sound:', error);
+        // If there's an error playing sound, disable sound feature
+        setSoundEnabled(false);
+      }
+    }
+  };
+  
+  // Load high scores from storage
+  const loadHighScores = async () => {
+    try {
+      const storedScores = await AsyncStorage.getItem('memoryMatchHighScores');
+      if (storedScores) {
+        setHighScores(JSON.parse(storedScores));
+      }
+    } catch (error) {
+      console.log('Error loading high scores:', error);
+    }
+  };
+  
+  // Save high score
+  const saveHighScore = async (newScore) => {
+    try {
+      const updatedScores = [...highScores, {
+        score: newScore,
+        date: new Date().toISOString(),
+        theme: currentTheme,
+        level,
+        difficulty,
+        time: timer
+      }];
+      
+      // Sort by score (descending) and keep only top 10
+      updatedScores.sort((a, b) => b.score - a.score);
+      const topScores = updatedScores.slice(0, 10);
+      
+      await AsyncStorage.setItem('memoryMatchHighScores', JSON.stringify(topScores));
+      setHighScores(topScores);
+      
+      // Check if this is a new high score (in top 3)
+      if (updatedScores.findIndex(s => s.score === newScore) < 3) {
+        Alert.alert("New High Score!", `Congratulations! You've achieved a new high score of ${newScore}!`);
+      }
+    } catch (error) {
+      console.log('Error saving high score:', error);
+    }
+  };
   
   const initializeGame = () => {
     // Reset game state
@@ -88,9 +254,22 @@ const MemoryMatchGame = () => {
     setMoves(0);
     setGameStarted(false);
     setGameCompleted(false);
+    setTimer(0);
+    setIsTimerRunning(false);
+    setIsPaused(false);
     
-    // Determine number of pairs based on level
-    const numPairs = Math.min(level + 2, cardImages.length);
+    // Reset hints based on difficulty
+    setHintsRemaining(difficulty === 'easy' ? 5 : difficulty === 'medium' ? 3 : 1);
+    
+    // Determine number of pairs based on level and difficulty
+    const basePairs = Math.min(level + 2, cardImages.length);
+    let numPairs = basePairs;
+    
+    if (difficulty === 'easy') {
+      numPairs = Math.max(3, basePairs - 1);
+    } else if (difficulty === 'hard') {
+      numPairs = Math.min(cardImages.length, basePairs + 1);
+    }
     
     // Create pairs of cards
     let selectedCards = cardImages.slice(0, numPairs);
@@ -138,9 +317,13 @@ const MemoryMatchGame = () => {
   };
   
   const handleCardPress = (index) => {
-    // Start game on first card flip
+    // Don't allow interaction when paused
+    if (isPaused) return;
+    
+    // Start game and timer on first card flip
     if (!gameStarted) {
       setGameStarted(true);
+      setIsTimerRunning(true);
     }
     
     // Ignore if card is already flipped or matched
@@ -154,6 +337,9 @@ const MemoryMatchGame = () => {
     
     // Provide haptic feedback
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    
+    // Play flip sound
+    playSound(flipSoundRef);
     
     // Flip the card
     flipCard(index, true);
@@ -173,12 +359,19 @@ const MemoryMatchGame = () => {
       if (firstCard.matchId === secondCard.matchId) {
         // Match found
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        playSound(matchSoundRef);
         
         // Update matched pairs
         setMatchedPairs([...matchedPairs, firstCard.matchId]);
         
-        // Update score
-        setScore(score + 10);
+        // Update score - vary points based on difficulty but with lower base points
+        const difficultyMultiplier = 
+          difficulty === 'easy' ? 1 : 
+          difficulty === 'medium' ? 1.5 : 2;
+        
+        // Reduce base points from 10 to 5
+        const pointsEarned = Math.round(5 * difficultyMultiplier);
+        setScore(score + pointsEarned);
         
         // Animate success
         Animated.sequence([
@@ -209,6 +402,7 @@ const MemoryMatchGame = () => {
       } else {
         // No match
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+        playSound(errorSoundRef);
         
         // Flip cards back after delay
         setTimeout(() => {
@@ -237,16 +431,34 @@ const MemoryMatchGame = () => {
   
   const handleGameComplete = () => {
     setGameCompleted(true);
+    setIsTimerRunning(false);
+    playSound(successSoundRef);
     
-    // Calculate final score based on moves and level
-    const finalScore = score + (level * 20) - (moves * 2);
+    // Calculate final score with more balanced calculations
+    // Reduce time bonus value
+    const timeBonus = Math.max(0, 100 - timer); // Faster = more points, reduced from 300 to 100
+    const difficultyMultiplier = 
+      difficulty === 'easy' ? 1 : 
+      difficulty === 'medium' ? 1.5 : 2;
+    
+    // Apply smaller level bonus and lower penalty for moves
+    const levelBonus = level * 10; // Reduced from 20 to 10
+    const movesPenalty = Math.min(score / 2, moves); // Cap moves penalty at half the current score
+    
+    const finalScore = Math.round(
+      (score + levelBonus - movesPenalty + timeBonus) * difficultyMultiplier
+    );
+    
     setScore(Math.max(finalScore, 0));
+    
+    // Save high score
+    saveHighScore(Math.max(finalScore, 0));
     
     // Show completion alert
     setTimeout(() => {
       Alert.alert(
         "Level Complete!",
-        `You completed level ${level} with ${moves} moves and scored ${Math.max(finalScore, 0)} points!`,
+        `You completed level ${level} with ${moves} moves in ${formatTime(timer)}.\n\nFinal Score: ${Math.max(finalScore, 0)} points!`,
         [
           { 
             text: "Next Level", 
@@ -262,6 +474,52 @@ const MemoryMatchGame = () => {
         ]
       );
     }, 500);
+  };
+  
+  // Use hints to reveal cards briefly
+  const useHint = () => {
+    if (hintsRemaining <= 0 || isPaused || gameCompleted) return;
+    
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+    setHintsRemaining(hintsRemaining - 1);
+    
+    // Reveal all unmatched cards
+    const unmatchedCards = cards.filter(card => !matchedPairs.includes(card.matchId));
+    const unmatchedIndices = unmatchedCards.map(card => 
+      cards.findIndex(c => c.id === card.id)
+    );
+    
+    // Flip all unmatched cards
+    unmatchedIndices.forEach(index => {
+      flipCard(index, true);
+    });
+    
+    // Flip them back after 1 second
+    setTimeout(() => {
+      unmatchedIndices.forEach(index => {
+        if (!flippedIndices.includes(index) && !matchedPairs.includes(cards[index].matchId)) {
+          flipCard(index, false);
+        }
+      });
+    }, 1000);
+  };
+  
+  // Toggle pause game
+  const togglePause = () => {
+    setIsPaused(!isPaused);
+    setIsTimerRunning(!!gameStarted && !isPaused);
+  };
+  
+  // Format time (seconds to MM:SS)
+  const formatTime = (seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+  
+  // Toggle sound
+  const toggleSound = () => {
+    setSoundEnabled(!soundEnabled);
   };
   
   const renderCard = (card, index) => {
@@ -342,7 +600,12 @@ const MemoryMatchGame = () => {
           <ReadableText style={styles.headerTitle} readable={true} priority={1}>
             Memory Match
           </ReadableText>
-          <View style={styles.placeholder} />
+          <TouchableOpacity 
+            style={styles.soundButton}
+            onPress={toggleSound}
+          >
+            <Feather name={soundEnabled ? "volume-2" : "volume-x"} size={24} color="#FF6B6B" />
+          </TouchableOpacity>
         </View>
         
         {/* Game Info */}
@@ -360,10 +623,10 @@ const MemoryMatchGame = () => {
           
           <View style={styles.levelContainer}>
             <ReadableText style={styles.levelLabel} readable={true} priority={4}>
-              Level
+              Level {level}
             </ReadableText>
-            <ReadableText style={styles.levelValue} readable={true} priority={5}>
-              {level}
+            <ReadableText style={styles.timeValue} readable={true} priority={5}>
+              {formatTime(timer)}
             </ReadableText>
           </View>
           
@@ -377,17 +640,59 @@ const MemoryMatchGame = () => {
           </View>
         </View>
         
-        {/* Game Instructions */}
-        <LinearGradient
-          colors={['#FF9F9F', '#FF6B6B']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
-          style={styles.instructionsCard}
-        >
-          <ReadableText style={styles.instructionsText} readable={true} priority={8}>
-            Flip cards to find matching pairs. Complete the level with fewer moves for a higher score!
-          </ReadableText>
-        </LinearGradient>
+        {/* Game Controls */}
+        <View style={styles.gameControls}>
+          <TouchableOpacity
+            style={styles.controlButton}
+            onPress={togglePause}
+          >
+            <Feather name={isPaused ? "play" : "pause"} size={20} color="#fff" />
+            <ReadableText style={styles.controlButtonText} readable={true}>
+              {isPaused ? "Resume" : "Pause"}
+            </ReadableText>
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            style={[styles.controlButton, hintsRemaining <= 0 && styles.disabledButton]} 
+            onPress={useHint}
+            disabled={hintsRemaining <= 0}
+          >
+            <Feather name="eye" size={20} color="#fff" />
+            <ReadableText style={styles.controlButtonText} readable={true}>
+              Hint ({hintsRemaining})
+            </ReadableText>
+          </TouchableOpacity>
+        </View>
+        
+        {/* Difficulty Selector */}
+        <View style={styles.difficultyContainer}>
+          <TouchableOpacity 
+            style={[styles.difficultyButton, difficulty === 'easy' && styles.activeButton]}
+            onPress={() => setDifficulty('easy')}
+          >
+            <ReadableText style={styles.difficultyText} readable={true}>
+              Easy
+            </ReadableText>
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            style={[styles.difficultyButton, difficulty === 'medium' && styles.activeButton]}
+            onPress={() => setDifficulty('medium')}
+          >
+            <ReadableText style={styles.difficultyText} readable={true}>
+              Medium
+            </ReadableText>
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            style={[styles.difficultyButton, difficulty === 'hard' && styles.activeButton]}
+            onPress={() => setDifficulty('hard')}
+          >
+            <ReadableText style={styles.difficultyText} readable={true}>
+              Hard
+            </ReadableText>
+          </TouchableOpacity>
+        </View>
         
         {/* Game Board */}
         <View style={styles.gameBoard}>
@@ -448,6 +753,57 @@ const MemoryMatchGame = () => {
             Reset Game
           </ReadableText>
         </TouchableOpacity>
+        
+        {/* Pause Modal */}
+        <Modal
+          transparent={true}
+          visible={isPaused}
+          animationType="fade"
+          onRequestClose={togglePause}
+        >
+          <View style={styles.modalOverlay}>
+            <BlurView intensity={50} style={styles.modalBlur}>
+              <View style={styles.pauseModalContent}>
+                <ReadableText style={styles.pauseTitle} readable={true}>
+                  Game Paused
+                </ReadableText>
+                
+                <TouchableOpacity 
+                  style={styles.pauseButton}
+                  onPress={togglePause}
+                >
+                  <Feather name="play" size={24} color="#fff" />
+                  <ReadableText style={styles.pauseButtonText} readable={true}>
+                    Resume Game
+                  </ReadableText>
+                </TouchableOpacity>
+                
+                <TouchableOpacity 
+                  style={styles.pauseButton}
+                  onPress={() => {
+                    togglePause();
+                    initializeGame();
+                  }}
+                >
+                  <Feather name="refresh-cw" size={24} color="#fff" />
+                  <ReadableText style={styles.pauseButtonText} readable={true}>
+                    Restart Level
+                  </ReadableText>
+                </TouchableOpacity>
+                
+                <TouchableOpacity 
+                  style={[styles.pauseButton, styles.exitButton]}
+                  onPress={() => navigation.goBack()}
+                >
+                  <Feather name="x" size={24} color="#fff" />
+                  <ReadableText style={styles.pauseButtonText} readable={true}>
+                    Exit Game
+                  </ReadableText>
+                </TouchableOpacity>
+              </View>
+            </BlurView>
+          </View>
+        </Modal>
       </SafeAreaView>
     </TextReaderRoot>
   );
@@ -481,13 +837,23 @@ const styles = StyleSheet.create({
     shadowRadius: 3,
     elevation: 2,
   },
+  soundButton: {
+    width: 44,
+    height: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 22,
+    backgroundColor: '#fff',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 2,
+  },
   headerTitle: {
     fontSize: 22,
     fontWeight: 'bold',
     color: '#333',
-  },
-  placeholder: {
-    width: 44,
   },
   gameInfo: {
     flexDirection: 'row',
@@ -513,6 +879,11 @@ const styles = StyleSheet.create({
   },
   scoreValue: {
     fontSize: 20,
+    fontWeight: 'bold',
+    color: '#FF6B6B',
+  },
+  timeValue: {
+    fontSize: 16,
     fontWeight: 'bold',
     color: '#FF6B6B',
   },
@@ -557,6 +928,50 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: 'bold',
     color: '#333',
+  },
+  gameControls: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    marginBottom: 10,
+  },
+  controlButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FF6B6B',
+    paddingVertical: 8,
+    paddingHorizontal: 15,
+    borderRadius: 20,
+    flex: 0.48,
+  },
+  controlButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    marginLeft: 5,
+  },
+  disabledButton: {
+    backgroundColor: '#ccc',
+  },
+  difficultyContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    marginBottom: 10,
+  },
+  difficultyButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 15,
+    borderRadius: 20,
+    backgroundColor: '#f0f0f0',
+    flex: 0.3,
+    alignItems: 'center',
+  },
+  difficultyText: {
+    fontWeight: '500',
+  },
+  activeButton: {
+    backgroundColor: '#FF6B6B',
   },
   instructionsCard: {
     marginHorizontal: 20,
@@ -685,6 +1100,54 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '500',
     color: '#333',
+  },
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalBlur: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  pauseModalContent: {
+    width: width * 0.8,
+    backgroundColor: 'rgba(255,255,255,0.9)',
+    borderRadius: 20,
+    padding: 20,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
+    elevation: 5,
+  },
+  pauseTitle: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    marginBottom: 20,
+    color: '#333',
+  },
+  pauseButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FF6B6B',
+    width: '100%',
+    paddingVertical: 15,
+    borderRadius: 10,
+    marginBottom: 15,
+  },
+  pauseButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 18,
+    marginLeft: 10,
+  },
+  exitButton: {
+    backgroundColor: '#FF4757',
   },
 });
 

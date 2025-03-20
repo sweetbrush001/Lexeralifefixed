@@ -26,6 +26,16 @@ import { useTextStyle } from '../../hooks/useTextStyle';
 
 const { width, height } = Dimensions.get('window');
 
+// Helper function to shuffle array (Fisher-Yates algorithm)
+const shuffleArray = (array) => {
+  const newArray = [...array];
+  for (let i = newArray.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+  }
+  return newArray;
+};
+
 // Letter data with confusing pairs for dyslexic users
 const letterData = [
   // Level 1: Basic letters
@@ -84,6 +94,7 @@ const LetterRecognitionGame = () => {
   const [timeRemaining, setTimeRemaining] = useState(30); // 30 seconds per level
   const [gameActive, setGameActive] = useState(false);
   const [streakCount, setStreakCount] = useState(0); // Track consecutive correct answers
+  const [shuffledOptions, setShuffledOptions] = useState([]);
   
   const bounceAnim = useRef(new Animated.Value(1)).current;
   const shakeAnim = useRef(new Animated.Value(0)).current;
@@ -92,6 +103,13 @@ const LetterRecognitionGame = () => {
   
   // Current question
   const currentQuestion = letterData[level]?.[currentQuestionIndex];
+  
+  // Shuffle options when question changes
+  useEffect(() => {
+    if (currentQuestion) {
+      setShuffledOptions(shuffleArray(currentQuestion.options));
+    }
+  }, [currentQuestionIndex, level]);
   
   // Reset game when level changes
   useEffect(() => {
@@ -499,7 +517,7 @@ const LetterRecognitionGame = () => {
         {/* Options */}
         {currentQuestion && (
           <View style={styles.optionsContainer}>
-            {currentQuestion.options.map((option, index) => (
+            {shuffledOptions.map((option, index) => (
               <TouchableOpacity
                 key={index}
                 style={[
