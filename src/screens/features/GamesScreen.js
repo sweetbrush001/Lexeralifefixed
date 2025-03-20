@@ -187,6 +187,28 @@ const GamesScreen = () => {
               </View>
             </BlurView>
           </TouchableOpacity>
+          
+          {/* Word Flow Game Card */}
+          <TouchableOpacity 
+            style={styles.gameCard}
+            onPress={() => navigation.navigate('WordFlowGame')}
+          >
+            <BlurView intensity={10} style={styles.cardBlur}>
+              <View style={styles.gameCardContent}>
+                <View style={styles.gameIconContainer}>
+                  <MaterialCommunityIcons name="brain" size={32} color="#FF6B6B" />
+                </View>
+                <View style={styles.gameInfo}>
+                  <ReadableText style={[styles.gameTitle, fontStyle]} readable={true} priority={14}>
+                    Word Flow
+                  </ReadableText>
+                  <ReadableText style={[styles.gameDescription, fontStyle]} readable={true} priority={15}>
+                    Advanced brain training with word associations and cognitive challenges.
+                  </ReadableText>
+                </View>
+              </View>
+            </BlurView>
+          </TouchableOpacity>
         </ScrollView>
       </SafeAreaView>
     </TextReaderRoot>

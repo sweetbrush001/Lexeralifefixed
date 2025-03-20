@@ -25,6 +25,7 @@ import LetterRecognitionGame from "../screens/games/LetterRecognitionGame";
 import MemoryMatchGame from "../screens/games/MemoryMatchGame";
 import SpellingChallengeGame from "../screens/games/SpellingChallengeGame";
 import PatternMatchGame from "../screens/games/PatternMatchGame";
+import WordFlowGame from "../screens/games/WordFlowGame";
 import GamesScreen from "../screens/features/GamesScreen";
 
 const Stack = createNativeStackNavigator();
@@ -58,6 +59,7 @@ const AppNavigator = () => {
         <Stack.Screen name="MemoryMatchGame" component={MemoryMatchGame} />
         <Stack.Screen name="SpellingChallengeGame" component={SpellingChallengeGame} />
         <Stack.Screen name="PatternMatchGame" component={PatternMatchGame} />
+        <Stack.Screen name="WordFlowGame" component={WordFlowGame} />
       </Stack.Navigator>
     </SettingsProvider>
   );
