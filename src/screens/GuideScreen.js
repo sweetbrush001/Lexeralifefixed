@@ -78,7 +78,7 @@ const GuideScreen = () => {
             <View style={styles.logoContainer}>
               <Ionicons name="book" size={28} color="#FFFFFF" style={styles.logoIcon} />
               {/* Fix: Ensure we're passing valid text */}
-              <Text style={[styles.title, fontStyle]}>{'Lexera Life'}</Text>
+              <Text style={[styles.title, fontStyle]}>{'LexeraLife'}</Text>
             </View>
             {/* Fix: Ensure we're passing valid text */}
             <Text style={[styles.subtitle, fontStyle]}>{'Empowering your dyslexia journey'}</Text>
@@ -116,37 +116,37 @@ const GuideScreen = () => {
         {/* Welcome Section */}
         <View style={styles.welcomeSection}>
           {/* Fix: Ensure we're passing valid text */}
-          <Text style={[styles.welcomeTitle, fontStyle]}>{'Welcome to Lexera Life'}</Text>
+          <Text style={[styles.welcomeTitle, fontStyle]}>{'Welcome to LexeraLife'}</Text>
           <Text style={[styles.welcomeDescription, fontStyle]}>
-            {'Our app is thoughtfully designed to support your dyslexia journey through specialized tools, customizable features, and an inclusive learning environment.'}
+            {'Our app is specifically designed to assist those with dyslexia in improving their cognitive skills, learning, and well-being through specialized tools, customizable features, and an inclusive learning environment.'}
           </Text>
         </View>
 
         {/* Features Grid Section with improved orange colors */}
         <View style={styles.featuresSection}>
-          <Text style={[styles.sectionTitle, fontStyle]}>{'Our Features'}</Text>
+          <Text style={[styles.sectionTitle, fontStyle]}>{'Key Features'}</Text>
           
           <View style={styles.featuresGrid}>
             <FeatureCard 
-              icon="game-controller" 
-              title="Cognitive Games" 
-              description="Improve reading through adaptive learning games"
+              icon="chatbubble-ellipses" 
+              title="LexeraBot" 
+              description="AI assistant for instant help & practice"
               color="#FF7F50"
               fontStyle={fontStyle}
             />
             
             <FeatureCard 
-              icon="chatbubble-ellipses" 
-              title="AI Assistant" 
-              description="Personalized reading & writing help"
+              icon="game-controller" 
+              title="Brain Games" 
+              description="Mini-games to improve cognitive skills"
               color="#FF8C61"
               fontStyle={fontStyle}
             />
             
             <FeatureCard 
               icon="clipboard" 
-              title="Assessments" 
-              description="Track progress with personalized insights"
+              title="Screening Test" 
+              description="dyslexia recognising test"
               color="#FF9F72"
               fontStyle={fontStyle}
             />
@@ -178,8 +178,8 @@ const GuideScreen = () => {
                 resizeMode="cover"
               />
               <View style={styles.galleryCardContent}>
-                <Text style={[styles.galleryCardTitle, fontStyle]}>Personalized Learning</Text>
-                <Text style={[styles.galleryCardDescription, fontStyle]}>Adaptive tools that grow with you</Text>
+                <Text style={[styles.galleryCardTitle, fontStyle]}>Relaxation</Text>
+                <Text style={[styles.galleryCardDescription, fontStyle]}>Calming music to reduce stress and improve focus</Text>
               </View>
             </View>
             
@@ -190,8 +190,8 @@ const GuideScreen = () => {
                 resizeMode="cover"
               />
               <View style={styles.galleryCardContent}>
-                <Text style={[styles.galleryCardTitle, fontStyle]}>Reading Support</Text>
-                <Text style={[styles.galleryCardDescription, fontStyle]}>Tools that make text accessible</Text>
+                <Text style={[styles.galleryCardTitle, fontStyle]}>Text-to-Speech</Text>
+                <Text style={[styles.galleryCardDescription, fontStyle]}>Listen to any text for easier reading</Text>
               </View>
             </View>
             
@@ -202,8 +202,8 @@ const GuideScreen = () => {
                 resizeMode="cover"
               />
               <View style={styles.galleryCardContent}>
-                <Text style={[styles.galleryCardTitle, fontStyle]}>Skill Building</Text>
-                <Text style={[styles.galleryCardDescription, fontStyle]}>Develop confidence through practice</Text>
+                <Text style={[styles.galleryCardTitle, fontStyle]}>Customizable UI</Text>
+                <Text style={[styles.galleryCardDescription, fontStyle]}>Personalize your experience with adjustable fonts and colors</Text>
               </View>
             </View>
           </ScrollView>
@@ -224,25 +224,25 @@ const GuideScreen = () => {
             
             <TipItem 
               icon="text" 
-              tip="OpenDyslexic and other specialized fonts"
+              tip="OpenDyslexic font"
               fontStyle={fontStyle}
             />
             
             <TipItem 
               icon="resize" 
-              tip="Adjustable text size, spacing and line height"
+              tip="Adjustable text size"
               fontStyle={fontStyle}
             />
             
             <TipItem 
               icon="color-palette" 
-              tip="Customizable color themes to reduce visual stress"
+              tip="Customizable colours to reduce visual stress"
               fontStyle={fontStyle}
             />
             
             <TipItem 
               icon="headset" 
-              tip="Text-to-speech with adjustable reading speed"
+              tip="Text-to-speech "
               fontStyle={fontStyle}
             />
           </LinearGradient>

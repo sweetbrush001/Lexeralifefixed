@@ -22,11 +22,22 @@ import ReadableText from '../../components/ReadableText';
 // Import useTextStyle hook for applying text styling from settings
 import { useTextStyle } from '../../hooks/useTextStyle';
 
+// Import useSettings hook for accessing font settings
+import { useSettings } from '../../context/SettingsContext';
+
 const { width } = Dimensions.get('window');
 
 const GamesScreen = () => {
   const navigation = useNavigation();
   const textStyle = useTextStyle();
+  
+  // Get settings from context
+  const { settings } = useSettings();
+  
+  // Create font style object based on settings
+  const fontStyle = {
+    fontFamily: settings.isDyslexicFriendly ? 'OpenDyslexic-Regular' : undefined,
+  };
 
   return (
     <TextReaderRoot>
@@ -41,7 +52,7 @@ const GamesScreen = () => {
           >
             <Feather name="arrow-left" size={24} color="#FF6B6B" />
           </TouchableOpacity>
-          <ReadableText style={styles.headerTitle} readable={true} priority={1}>
+          <ReadableText style={[styles.headerTitle, fontStyle]} readable={true} priority={1}>
             Brain Training Games
           </ReadableText>
           <View style={styles.placeholder} />
@@ -54,12 +65,12 @@ const GamesScreen = () => {
           end={{ x: 1, y: 0 }}
           style={styles.introCard}
         >
-          <ReadableText style={styles.introText} readable={true} priority={2}>
+          <ReadableText style={[styles.introText, fontStyle]} readable={true} priority={2}>
             Train your brain with fun games designed to improve cognitive skills and help with dyslexia.
           </ReadableText>
         </LinearGradient>
 
-        <ReadableText style={styles.sectionTitle} readable={true} priority={3}>
+        <ReadableText style={[styles.sectionTitle, fontStyle]} readable={true} priority={3}>
           Available Games
         </ReadableText>
 
@@ -78,10 +89,10 @@ const GamesScreen = () => {
                   <MaterialCommunityIcons name="puzzle" size={32} color="#FF6B6B" />
                 </View>
                 <View style={styles.gameInfo}>
-                  <ReadableText style={styles.gameTitle} readable={true} priority={4}>
+                  <ReadableText style={[styles.gameTitle, fontStyle]} readable={true} priority={4}>
                     Word Builder
                   </ReadableText>
-                  <ReadableText style={styles.gameDescription} readable={true} priority={5}>
+                  <ReadableText style={[styles.gameDescription, fontStyle]} readable={true} priority={5}>
                     Build words by arranging syllables in the correct order.
                   </ReadableText>
                 </View>
@@ -100,10 +111,10 @@ const GamesScreen = () => {
                   <MaterialCommunityIcons name="cards" size={32} color="#FF6B6B" />
                 </View>
                 <View style={styles.gameInfo}>
-                  <ReadableText style={styles.gameTitle} readable={true} priority={6}>
+                  <ReadableText style={[styles.gameTitle, fontStyle]} readable={true} priority={6}>
                     Memory Match
                   </ReadableText>
-                  <ReadableText style={styles.gameDescription} readable={true} priority={7}>
+                  <ReadableText style={[styles.gameDescription, fontStyle]} readable={true} priority={7}>
                     Test your memory by matching pairs of cards.
                   </ReadableText>
                 </View>
@@ -122,10 +133,10 @@ const GamesScreen = () => {
                   <MaterialCommunityIcons name="alphabetical" size={32} color="#FF6B6B" />
                 </View>
                 <View style={styles.gameInfo}>
-                  <ReadableText style={styles.gameTitle} readable={true} priority={8}>
+                  <ReadableText style={[styles.gameTitle, fontStyle]} readable={true} priority={8}>
                     Letter Recognition
                   </ReadableText>
-                  <ReadableText style={styles.gameDescription} readable={true} priority={9}>
+                  <ReadableText style={[styles.gameDescription, fontStyle]} readable={true} priority={9}>
                     Practice identifying letters and their sounds.
                   </ReadableText>
                 </View>
@@ -144,10 +155,10 @@ const GamesScreen = () => {
                   <MaterialCommunityIcons name="text-box" size={32} color="#FF6B6B" />
                 </View>
                 <View style={styles.gameInfo}>
-                  <ReadableText style={styles.gameTitle} readable={true} priority={10}>
+                  <ReadableText style={[styles.gameTitle, fontStyle]} readable={true} priority={10}>
                     Spelling Challenge
                   </ReadableText>
-                  <ReadableText style={styles.gameDescription} readable={true} priority={11}>
+                  <ReadableText style={[styles.gameDescription, fontStyle]} readable={true} priority={11}>
                     Test and improve your spelling skills with fun challenges.
                   </ReadableText>
                 </View>

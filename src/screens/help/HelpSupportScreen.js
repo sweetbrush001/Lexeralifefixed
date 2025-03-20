@@ -72,7 +72,7 @@ const HelpSupportScreen = ({ navigation }) => {
       title: 'Email Support',
       description: 'Get help via email within 24 hours',
       icon: 'mail',
-      action: () => Linking.openURL('mailto:support@lexeralife.com')
+      action: () => Linking.openURL('mailto:support@lexeralife.live')
     },
     {
       id: 'chat',
@@ -86,7 +86,7 @@ const HelpSupportScreen = ({ navigation }) => {
       title: 'User Guide',
       description: 'Detailed instructions for all features',
       icon: 'book-open',
-      action: () => navigation.navigate('UserGuide')
+      action: () => navigation.navigate('Guide')
     },
     {
       id: 'feedback',
@@ -193,28 +193,6 @@ const HelpSupportScreen = ({ navigation }) => {
           ))}
         </View>
         
-        {/* Video Tutorials - Now using online images */}
-        <Text style={[styles.sectionTitle, fontStyle]}>Video Tutorials</Text>
-        <View style={styles.videoSection}>
-          {videoTutorials.map(tutorial => (
-            <TouchableOpacity 
-              key={tutorial.id} 
-              style={styles.videoCard} 
-              onPress={() => Linking.openURL(tutorial.url)}
-            >
-              <View style={styles.videoThumbnail}>
-                <Image 
-                  source={{ uri: tutorial.thumbnail }} 
-                  style={styles.thumbnailImage}
-                />
-                <View style={styles.playButton}>
-                  <Feather name="play" size={24} color="#fff" />
-                </View>
-              </View>
-              <Text style={[styles.videoTitle, fontStyle]}>{tutorial.title}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
 
         {/* Community Support Card with Online Image */}
         <View style={styles.communityCard}>
@@ -242,9 +220,9 @@ const HelpSupportScreen = ({ navigation }) => {
             Need more help? Contact us directly at{' '}
             <Text 
               style={[styles.emailLink, fontStyle]}
-              onPress={() => Linking.openURL('mailto:help@lexeralife.com')}
+              onPress={() => Linking.openURL('mailto:support@lexeralife.live')}
             >
-              help@lexeralife.com
+              support@lexeralife.live
             </Text>
           </Text>
         </View>

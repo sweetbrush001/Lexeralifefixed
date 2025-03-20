@@ -2,7 +2,6 @@ import React from "react";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import AuthNavigator from "./AuthNavigator";
 import HomeScreen from "../screens/home/HomeScreen";
-import GameScreen from "../screens/features/GameScreen";
 import ChatbotScreen from "../screens/features/ChatbotScreen";
 import TestScreen from "../screens/features/testScreen/TestScreen";
 import ResultsScreen from "../screens/features/testScreen/ResultsScreen";
@@ -19,7 +18,7 @@ import AgeRangeSelector from "../screens/auth/AgeRangeSelector";
 import LoadingScreen from "../screens/loading/LoadingScreen";
 import GuideScreen from "../screens/GuideScreen";
 import HelpSupportScreen from '../screens/help/HelpSupportScreen';
-import ReadAssistScreen from "../screens/ReadAssistScreen";
+import ReadAssistScreen from "../screens/TextToSpeechScreen";
 import TypeTextScreen from "../screens/TypeTextScreen";
 import WordBuilderGame from "../screens/games/WordBuilderGame";
 import LetterRecognitionGame from "../screens/games/LetterRecognitionGame";
@@ -36,7 +35,6 @@ const AppNavigator = () => {
         <Stack.Screen name="Loading" component={LoadingScreen} />
         <Stack.Screen name="Auth" component={AuthNavigator} />
         <Stack.Screen name="Home" component={HomeScreen} />
-        <Stack.Screen name="Game" component={GameScreen} />
         <Stack.Screen name="Chatbot" component={ChatbotScreen} />
         <Stack.Screen name="Teststarting" component={Teststart} />
         <Stack.Screen name="Test" component={TestScreen} />

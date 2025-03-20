@@ -11,6 +11,7 @@ import {
   Dimensions,
   BackHandler,
   ActivityIndicator,
+  ScrollView,
 } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -197,138 +198,152 @@ const HomeScreen = () => {
           </TouchableOpacity>
         </View>
         
-        {/* User Welcome Section - READ WITH PRIORITY 1 */}
-        <View style={styles.welcomeSection}>
-          <View style={styles.userInfoSection}>
-            <ReadableText style={styles.welcomeText} readable={true} priority={1}>
-              Hello,
-            </ReadableText>
-            <ReadableText style={styles.userName} readable={true} priority={2}>
-              {userLoading ? 'Loading...' : (userData ? userData.displayName : 'Lexera User')}
-            </ReadableText>
-          </View>
-          <TouchableOpacity 
-            style={styles.profileButton}
-            onPress={() => navigation.navigate('profile')}
-          >
-            {userLoading ? (
-              <ActivityIndicator color="#FF6B6B" size="small" />
-            ) : (
-              <ProfileImage 
-                source={profileImageSource} 
-                style={styles.profilePicture} 
-              />
-            )}
-          </TouchableOpacity>
-        </View>
-
-        {/* Motivational Card - READ WITH PRIORITY 3 */}
-        <LinearGradient
-          colors={['#FF9F9F', '#FF6B6B']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
-          style={styles.messageCard}
+        {/* Scrollable Content Area */}
+        <ScrollView 
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
         >
-          {textsLoading ? (
-            <ActivityIndicator color="#FFFFFF" size="small" />
-          ) : (
-            <ReadableText style={motivationalTextStyle} readable={true} priority={3}>
-              {currentMotivationalText}
-            </ReadableText>
-          )}
-        </LinearGradient>
-
-        {/* Features heading - not read */}
-        <ReadableText style={styles.sectionTitle} readable={false}>
-          Features
-        </ReadableText>
-        
-        <View style={styles.featureGrid}>
-          {/* Row 1 */}
-          <View style={styles.featureRow}>
-            <TouchableOpacity 
-              style={[styles.featureCard, styles.primaryCard]}
-              onPress={() => navigation.navigate('Chatbot')}
-            >
-              <BlurView intensity={10} style={styles.cardBlur}>
-                <MaterialCommunityIcons name="robot" size={28} color="#FF6B6B" />
-                <ReadableText style={styles.featureTitle} readable={true} priority={4}>
-                  Lexera Bot
-                </ReadableText>
-              </BlurView>
-            </TouchableOpacity>
-            
-            <TouchableOpacity 
-              style={[styles.featureCard, styles.secondaryCard]}
-              onPress={() => navigation.navigate('Games')}
-            >
-              <BlurView intensity={10} style={styles.cardBlur}>
-                <MaterialCommunityIcons name="brain" size={28} color="#FF6B6B" />
-                <ReadableText style={styles.featureTitle} readable={true} priority={5}>
-                  Brain Training
-                </ReadableText>
-              </BlurView>
-            </TouchableOpacity>
-          </View>
-          
-          {/* Row 2 */}
-          <View style={styles.featureRow}>
-            <TouchableOpacity 
-              style={[styles.featureCard, styles.secondaryCard]}
-              onPress={() => navigation.navigate('Teststarting')}
-            >
-              <BlurView intensity={10} style={styles.cardBlur}>
-                <Feather name="clipboard" size={28} color="#FF6B6B" />
-                <ReadableText style={styles.featureTitle} readable={true} priority={6}>
-                  Dyslexia Test
-                </ReadableText>
-              </BlurView>
-            </TouchableOpacity>
-            
-            <TouchableOpacity 
-              style={[styles.featureCard, styles.primaryCard]}
-              onPress={() => navigation.navigate('Relax')}
-            >
-              <BlurView intensity={10} style={styles.cardBlur}>
-                <Feather name="heart" size={28} color="#FF6B6B" />
-                <ReadableText style={styles.featureTitle} readable={true} priority={7}>
-                  Relax
-                </ReadableText>
-              </BlurView>
-            </TouchableOpacity>
-          </View>
-          
-          {/* Row 3 */}
-          <View style={styles.featureRow}>
-            <TouchableOpacity 
-              style={[styles.featureCard, styles.primaryCard]}
-              onPress={() => navigation.navigate('ReadAssist')}
-            >
-              <BlurView intensity={10} style={styles.cardBlur}>
-                <Feather name="book-open" size={28} color="#FF6B6B" />
-                <ReadableText style={styles.featureTitle} readable={true} priority={8}>
-                  Text Reader
-                </ReadableText>
-              </BlurView>
-            </TouchableOpacity>
-            
-            {/* Adding an empty view for layout balance */}
-            <View style={[styles.featureCard, styles.secondaryCard, { opacity: 0 }]} />
-          </View>
-          
-          {/* Community Card (Full Width) */}
-          <TouchableOpacity 
-            style={[styles.featureCard, styles.fullWidthCard]}
-            onPress={() => navigation.navigate('Community')}
-          >
-            <BlurView intensity={10} style={styles.cardBlur}>
-              <Feather name="users" size={28} color="#FF6B6B" />
-              <ReadableText style={styles.featureTitle} readable={true} priority={9}>
-                Community
+          {/* User Welcome Section - READ WITH PRIORITY 1 */}
+          <View style={styles.welcomeSection}>
+            <View style={styles.userInfoSection}>
+              <ReadableText style={styles.welcomeText} readable={true} priority={1}>
+                Hello,
               </ReadableText>
-            </BlurView>
-          </TouchableOpacity>
-        </View>
+              <ReadableText style={styles.userName} readable={true} priority={2}>
+                {userLoading ? 'Loading...' : (userData ? userData.displayName : 'Lexera User')}
+              </ReadableText>
+            </View>
+            <TouchableOpacity 
+              style={styles.profileButton}
+              onPress={() => navigation.navigate('profile')}
+            >
+              {userLoading ? (
+                <ActivityIndicator color="#FF6B6B" size="small" />
+              ) : (
+                <ProfileImage 
+                  source={profileImageSource} 
+                  style={styles.profilePicture} 
+                />
+              )}
+            </TouchableOpacity>
+          </View>
+
+          {/* Motivational Card - READ WITH PRIORITY 3 */}
+          <LinearGradient
+            colors={['#FF9F9F', '#FF6B6B']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.messageCard}
+          >
+            {textsLoading ? (
+              <ActivityIndicator color="#FFFFFF" size="small" />
+            ) : (
+              <ReadableText style={motivationalTextStyle} readable={true} priority={3}>
+                {currentMotivationalText}
+              </ReadableText>
+            )}
+          </LinearGradient>
+
+          {/* Features section */}
+          <View style={styles.featuresSection}>
+            <ReadableText style={styles.sectionTitle} readable={false}>
+              Features
+            </ReadableText>
+            
+            <View style={styles.featureGrid}>
+              {/* Feature Cards - Arranged in a 2x3 grid */}
+              <TouchableOpacity 
+                style={styles.featureCard}
+                onPress={() => navigation.navigate('Chatbot')}
+                activeOpacity={0.7}
+              >
+                <BlurView intensity={10} style={styles.cardBlur}>
+                  <View style={styles.iconContainer}>
+                    <MaterialCommunityIcons name="robot" size={30} color="#FF6B6B" />
+                  </View>
+                  <ReadableText style={styles.featureTitle} readable={true} priority={4}>
+                    Lexera Bot
+                  </ReadableText>
+                </BlurView>
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={styles.featureCard}
+                onPress={() => navigation.navigate('Games')}
+                activeOpacity={0.7}
+              >
+                <BlurView intensity={10} style={styles.cardBlur}>
+                  <View style={styles.iconContainer}>
+                    <MaterialCommunityIcons name="brain" size={30} color="#FF6B6B" />
+                  </View>
+                  <ReadableText style={styles.featureTitle} readable={true} priority={5}>
+                    Brain Training
+                  </ReadableText>
+                </BlurView>
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={styles.featureCard}
+                onPress={() => navigation.navigate('Teststarting')}
+                activeOpacity={0.7}
+              >
+                <BlurView intensity={10} style={styles.cardBlur}>
+                  <View style={styles.iconContainer}>
+                    <Feather name="clipboard" size={30} color="#FF6B6B" />
+                  </View>
+                  <ReadableText style={styles.featureTitle} readable={true} priority={6}>
+                    Dyslexia Test
+                  </ReadableText>
+                </BlurView>
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={styles.featureCard}
+                onPress={() => navigation.navigate('Relax')}
+                activeOpacity={0.7}
+              >
+                <BlurView intensity={10} style={styles.cardBlur}>
+                  <View style={styles.iconContainer}>
+                    <Feather name="heart" size={30} color="#FF6B6B" />
+                  </View>
+                  <ReadableText style={styles.featureTitle} readable={true} priority={7}>
+                    Relax
+                  </ReadableText>
+                </BlurView>
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={styles.featureCard}
+                onPress={() => navigation.navigate('ReadAssist')}
+                activeOpacity={0.7}
+              >
+                <BlurView intensity={10} style={styles.cardBlur}>
+                  <View style={styles.iconContainer}>
+                    <Feather name="book-open" size={30} color="#FF6B6B" />
+                  </View>
+                  <ReadableText style={styles.featureTitle} readable={true} priority={8}>
+                    Text Reader
+                  </ReadableText>
+                </BlurView>
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={styles.featureCard}
+                onPress={() => navigation.navigate('Community')}
+                activeOpacity={0.7}
+              >
+                <BlurView intensity={10} style={styles.cardBlur}>
+                  <View style={styles.iconContainer}>
+                    <Feather name="users" size={30} color="#FF6B6B" />
+                  </View>
+                  <ReadableText style={styles.featureTitle} readable={true} priority={9}>
+                    Community
+                  </ReadableText>
+                </BlurView>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </ScrollView>
 
         {/* Side Panel Component */}
         <SidePanel 
@@ -349,6 +364,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f5f5f5',
+  },
+  scrollContent: {
+    paddingBottom: 20,
   },
   header: {
     flexDirection: 'row',
@@ -449,6 +467,7 @@ const styles = StyleSheet.create({
   featureGrid: {
     paddingHorizontal: 20,
     flex: 1,
+    marginTop: 5, // Add a small top margin for spacing
   },
   featureRow: {
     flexDirection: 'row',
@@ -456,7 +475,7 @@ const styles = StyleSheet.create({
     marginBottom: 15,
   },
   featureCard: {
-    borderRadius: 20,
+    borderRadius: 16, // Slightly reduced border radius
     overflow: 'hidden',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -466,35 +485,88 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.8)',
   },
   cardBlur: {
-    padding: 20,
+    padding: 18, // Slightly reduced padding
     alignItems: 'center',
     justifyContent: 'center',
     height: '100%',
   },
   primaryCard: {
-    width: '48%',
-    height: 120,
+    width: '48.5%', // Slightly adjusted width
+    height: 130, // Increased height slightly
     backgroundColor: '#FAF3F0',
   },
   secondaryCard: {
-    width: '48%',
-    height: 120,
+    width: '48.5%', // Slightly adjusted width
+    height: 130, // Increased height slightly
     backgroundColor: '#FFFFFF',
   },
-  fullWidthCard: {
-    width: '100%',
-    height: 100,
-    marginBottom: 15,
-    backgroundColor: '#F8E8E8',
+  iconContainer: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: 'rgba(255, 107, 107, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 10,
   },
   featureTitle: {
     fontSize: 16,
     fontWeight: '600',
     color: '#333',
-    marginTop: 10,
     textAlign: 'center',
   },
   // Removed the side panel styles since they're now in the SidePanel component
+  featuresSection: {
+    paddingHorizontal: 20,
+    marginTop: 10,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#333',
+    marginTop: 10,
+    marginBottom: 15,
+  },
+  // New grid layout - 2x3 grid
+  featureGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+  },
+  featureCard: {
+    width: '48%', // Almost half of the container width
+    height: 120,
+    borderRadius: 16,
+    overflow: 'hidden',
+    marginBottom: 15,
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  cardBlur: {
+    padding: 15,
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: '100%',
+  },
+  iconContainer: {
+    width: 55,
+    height: 55,
+    borderRadius: 27.5,
+    backgroundColor: 'rgba(255, 107, 107, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  featureTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#333',
+    textAlign: 'center',
+  },
 });
 
 export default HomeScreen;

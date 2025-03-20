@@ -47,9 +47,9 @@ import {
 import { db, auth } from '../../config/firebaseConfig';
 import NetInfo from '@react-native-community/netinfo'; // Add this import for network detection
 
-const API_KEY = 'AIzaSyC4z7SclIMM4IUQJeEo_-DkesMuSlwgMsk';
-const modelname = 'tunedModels/lexerabotdyslexiadataset-nwcwefqh293';
-const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/${modelname}:generateContent?key=${API_KEY}`;
+const API_KEY = 'AIzaSyAbJuxOQJ_gcTZtMY6hWg_1jYI-Q05zAdY';
+const modelname = 'gemini-2.0-flash';
+const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${API_KEY}`;
 
 // Predefined quick responses
 const QUICK_RESPONSES = [
