@@ -11,10 +11,11 @@ import {
   SafeAreaView,
   ImageBackground,
   StatusBar,
+  Alert
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
-import { db } from "../../../config/firebaseConfig";
-import { collection, getDocs } from "firebase/firestore";
+import { db, auth } from "../../../config/firebaseConfig";
+import { collection, getDocs, doc, getDoc } from "firebase/firestore";
 import { MaterialIcons, Ionicons, FontAwesome5 } from "@expo/vector-icons";
 import { useTextStyle } from '../../../hooks/useTextStyle';
 import * as Haptics from 'expo-haptics';
@@ -29,6 +30,8 @@ const DyslexiaTestScreen = () => {
   const [answers, setAnswers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [userAgeRange, setUserAgeRange] = useState(null);
+  const [loadingProgress, setLoadingProgress] = useState(20); // Initial loading state
   const navigation = useNavigation();
   const questionAnim = useRef(new Animated.Value(0)).current;
   const fadeAnim = useRef(new Animated.Value(1)).current;
@@ -41,23 +44,136 @@ const DyslexiaTestScreen = () => {
   const [totalQuestions, setTotalQuestions] = useState(0);
   
   useEffect(() => {
-    const fetchQuestions = async () => {
+    // Start loading animation
+    const loadingInterval = setInterval(() => {
+      setLoadingProgress(prev => {
+        if (prev >= 70) clearInterval(loadingInterval);
+        return Math.min(prev + 5, 70);
+      });
+    }, 200);
+
+    // First fetch the user's age range
+    const fetchUserAgeRange = async () => {
       try {
-        const querySnapshot = await getDocs(collection(db, "questions"));
-        const fetchedCategories = querySnapshot.docs.map((doc) => doc.data());
-        
-        if (fetchedCategories.length === 0) {
-          setError("No questions found. Please try again later.");
-        } else {
-          setCategories(fetchedCategories);
-          
-          // Calculate total questions for progress tracking
-          const total = fetchedCategories.reduce(
-            (acc, cat) => acc + cat.questions.length, 
-            0
-          );
-          setTotalQuestions(total);
+        // Check if user is logged in
+        const currentUser = auth.currentUser;
+        if (!currentUser) {
+          setError("You must be logged in to take the test.");
+          setLoading(false);
+          clearInterval(loadingInterval);
+          return;
         }
+
+        console.log("Checking user age range...");
+        // Get user document from Firestore
+        const userDoc = await getDoc(doc(db, "users", currentUser.uid));
+        
+        // Check if user document exists and has ageRange field
+        if (!userDoc.exists()) {
+          console.log("User document doesn't exist");
+          setLoading(false);
+          clearInterval(loadingInterval);
+          
+          setTimeout(() => {
+            Alert.alert(
+              "Age Range Needed",
+              "Please select your age range to get personalized questions.",
+              [{ text: "OK", onPress: () => navigation.replace("AgeRangeSelector") }]
+            );
+          }, 300);
+          return;
+        }
+        
+        const userData = userDoc.data();
+        if (!userData.ageRange) {
+          console.log("No age range in user data");
+          setLoading(false);
+          clearInterval(loadingInterval);
+          
+          setTimeout(() => {
+            Alert.alert(
+              "Age Range Needed",
+              "Please select your age range to get personalized questions.",
+              [{ text: "OK", onPress: () => navigation.replace("AgeRangeSelector") }]
+            );
+          }, 300);
+          return;
+        }
+
+        // We have confirmed user has an age range, now proceed
+        console.log(`User age range found: ${userData.ageRange}`);
+        setUserAgeRange(userData.ageRange);
+        
+        // ONLY fetch questions if we have a valid age range
+        await fetchQuestionsByAgeRange(userData.ageRange);
+        
+      } catch (error) {
+        console.error("Error fetching user age range:", error);
+        setError("Failed to load your profile. Please try again.");
+        setLoading(false);
+        clearInterval(loadingInterval);
+      }
+    };
+
+    // Function to fetch questions by age range
+    const fetchQuestionsByAgeRange = async (ageRange) => {
+      if (!ageRange) {
+        console.error("Attempted to fetch questions without a valid age range");
+        setError("Missing age range information. Please try again.");
+        setLoading(false);
+        return;
+      }
+
+      try {
+        console.log(`Fetching questions for age range: ${ageRange}`);
+        setLoadingProgress(80);
+        const querySnapshot = await getDocs(collection(db, "ageRangeQuestions"));
+        const allQuestions = querySnapshot.docs.map(doc => doc.data());
+        
+        // Find the questions that match the user's age range
+        const matchingQuestions = allQuestions.find(q => q.ageRange === ageRange);
+        
+        if (!matchingQuestions) {
+          setError(`No questions found for age range: ${ageRange}`);
+          setLoading(false);
+          return;
+        }
+        
+        // Transform the questions into the format expected by the test screen
+        // The current format uses categories, so we'll create a single category
+        const formattedQuestions = [
+          {
+            category: "Reading & Writing",
+            questions: matchingQuestions.questions.slice(0, 3)
+          },
+          {
+            category: "Phonological Processing",
+            questions: matchingQuestions.questions.slice(3, 6)
+          },
+          {
+            category: "Memory & Recall",
+            questions: matchingQuestions.questions.slice(6, 9)
+          },
+          {
+            category: "Directional & Spatial Awareness",
+            questions: matchingQuestions.questions.slice(9, 11)
+          },
+          {
+            category: "Concentration & Processing Speed",
+            questions: matchingQuestions.questions.slice(11)
+          }
+        ];
+        
+        setCategories(formattedQuestions);
+        
+        // Calculate total questions for progress tracking
+        const total = formattedQuestions.reduce(
+          (acc, cat) => acc + cat.questions.length, 
+          0
+        );
+        setTotalQuestions(total);
+        setLoadingProgress(100);
+        
       } catch (error) {
         console.error("Error fetching questions:", error);
         setError("Unable to load test questions. Please check your connection and try again.");
@@ -66,8 +182,11 @@ const DyslexiaTestScreen = () => {
       }
     };
     
-    fetchQuestions();
-  }, []);
+    // Start the process
+    fetchUserAgeRange();
+    
+    return () => clearInterval(loadingInterval);
+  }, [navigation]);
 
   useEffect(() => {
     // Animate question appearance
@@ -145,11 +264,27 @@ const DyslexiaTestScreen = () => {
 
   const handleExit = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    // Show confirmation dialog
-    navigation.navigate("ConfirmExit", {
-      onConfirm: () => navigation.navigate("Home"),
-      message: "Are you sure you want to exit the test? Your progress will be lost."
-    });
+    
+    // Show confirmation dialog using Alert
+    Alert.alert(
+      "Exit Test",
+      "Are you sure you want to exit the test? Your progress will be lost.",
+      [
+        {
+          text: "Cancel",
+          style: "cancel"
+        },
+        {
+          text: "Exit",
+          style: "destructive",
+          onPress: () => {
+            // Navigate to Teststarting screen when confirmed
+            navigation.navigate("Teststarting");
+          }
+        }
+      ],
+      { cancelable: true }
+    );
   };
 
   const calculateProgress = () => {
@@ -158,11 +293,13 @@ const DyslexiaTestScreen = () => {
   };
 
   const getCurrentQuestionNumber = () => {
-    if (!categories.length) return 0;
+    if (!categories.length || categoryIndex >= categories.length) return 0;
     
     let previousCategoriesQuestions = 0;
     for (let i = 0; i < categoryIndex; i++) {
-      previousCategoriesQuestions += categories[i].questions.length;
+      if (categories[i] && categories[i].questions) {
+        previousCategoriesQuestions += categories[i].questions.length;
+      }
     }
     
     return previousCategoriesQuestions + questionIndex + 1;
@@ -183,11 +320,7 @@ const DyslexiaTestScreen = () => {
               <Text style={[styles.loadingText, textStyle]}>Preparing your assessment...</Text>
               <View style={styles.loadingProgressBar}>
                 <Animated.View style={[styles.loadingProgressFill, {
-                  width: new Animated.Value(0).interpolate({
-                    inputRange: [0, 100],
-                    outputRange: ['0%', '100%'],
-                    extrapolate: 'clamp',
-                  })
+                  width: `${loadingProgress}%`
                 }]} />
               </View>
             </View>
@@ -315,91 +448,104 @@ const DyslexiaTestScreen = () => {
         </View>
 
         <View style={styles.contentContainer}>
-          <Animated.View
-            style={[
-              styles.questionCard,
-              {
-                opacity: fadeAnim,
-                transform: [
-                  { scale: questionAnim },
-                  {
-                    translateY: questionAnim.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [50, 0],
-                    }),
-                  },
-                ],
-              },
-            ]}
-          >
-            <View style={styles.categoryBadge}>
-              <FontAwesome5 
-                name={getCategoryIcon(categories[categoryIndex].category)} 
-                size={14} 
-                color="#1976D2" 
-                style={styles.categoryIcon}
-              />
-              <Text style={[styles.categoryText, textStyle]}>
-                {categories[categoryIndex].category}
+          {/* Only render the question card if categories and the current category exist */}
+          {categories.length > 0 && categories[categoryIndex] ? (
+            <Animated.View
+              style={[
+                styles.questionCard,
+                {
+                  opacity: fadeAnim,
+                  transform: [
+                    { scale: questionAnim },
+                    {
+                      translateY: questionAnim.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [50, 0],
+                      }),
+                    },
+                  ],
+                },
+              ]}
+            >
+              <View style={styles.categoryBadge}>
+                <FontAwesome5 
+                  name={getCategoryIcon(categories[categoryIndex].category)} 
+                  size={14} 
+                  color="#1976D2" 
+                  style={styles.categoryIcon}
+                />
+                <Text style={[styles.categoryText, textStyle]}>
+                  {categories[categoryIndex].category}
+                </Text>
+              </View>
+              
+              <Text style={[styles.questionText, textStyle]}>
+                {categories[categoryIndex].questions && 
+                 categories[categoryIndex].questions[questionIndex]}
               </Text>
+            </Animated.View>
+          ) : (
+            // Show a loading indicator if categories aren't ready yet
+            <View style={styles.loadingFallback}>
+              <ActivityIndicator size="large" color="#1976D2" />
+              <Text style={[styles.loadingText, textStyle]}>Loading questions...</Text>
             </View>
-            
-            <Text style={[styles.questionText, textStyle]}>
-              {categories[categoryIndex].questions[questionIndex]}
-            </Text>
-          </Animated.View>
+          )}
 
-          <View style={styles.buttonContainer}>
-            <Animated.View 
-              style={{ 
-                transform: [{ scale: buttonScaleYes }],
-                flex: 1,
-                marginRight: 8
-              }}
-            >
-              <TouchableOpacity 
-                style={[styles.button, styles.yesButton]} 
-                onPress={() => handleAnswer(true)}
-                accessibilityLabel="Yes"
-                accessibilityHint="Select if your answer is yes"
+          {/* Only show buttons if we have valid data */}
+          {categories.length > 0 && categories[categoryIndex] && (
+            <View style={styles.buttonContainer}>
+              <Animated.View 
+                style={{ 
+                  transform: [{ scale: buttonScaleYes }],
+                  flex: 1,
+                  marginRight: 8
+                }}
               >
-                <LinearGradient 
-                  colors={['#66BB6A', '#43A047']} 
-                  style={styles.buttonGradient}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
+                <TouchableOpacity 
+                  style={[styles.button, styles.yesButton]} 
+                  onPress={() => handleAnswer(true)}
+                  accessibilityLabel="Yes"
+                  accessibilityHint="Select if your answer is yes"
                 >
-                  <MaterialIcons name="check" size={24} color="white" />
-                  <Text style={[styles.buttonText, textStyle]}>Yes</Text>
-                </LinearGradient>
-              </TouchableOpacity>
-            </Animated.View>
+                  <LinearGradient 
+                    colors={['#66BB6A', '#43A047']} 
+                    style={styles.buttonGradient}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                  >
+                    <MaterialIcons name="check" size={24} color="white" />
+                    <Text style={[styles.buttonText, textStyle]}>Yes</Text>
+                  </LinearGradient>
+                </TouchableOpacity>
+              </Animated.View>
 
-            <Animated.View 
-              style={{ 
-                transform: [{ scale: buttonScaleNo }],
-                flex: 1,
-                marginLeft: 8
-              }}
-            >
-              <TouchableOpacity 
-                style={[styles.button, styles.noButton]} 
-                onPress={() => handleAnswer(false)}
-                accessibilityLabel="No"
-                accessibilityHint="Select if your answer is no"
+              <Animated.View 
+                style={{ 
+                  transform: [{ scale: buttonScaleNo }],
+                  flex: 1,
+                  marginLeft: 8
+                }}
               >
-                <LinearGradient 
-                  colors={['#EF5350', '#E53935']} 
-                  style={styles.buttonGradient}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
+                <TouchableOpacity 
+                  style={[styles.button, styles.noButton]} 
+                  onPress={() => handleAnswer(false)}
+                  accessibilityLabel="No"
+                  accessibilityHint="Select if your answer is no"
                 >
-                  <MaterialIcons name="close" size={24} color="white" />
-                  <Text style={[styles.buttonText, textStyle]}>No</Text>
-                </LinearGradient>
-              </TouchableOpacity>
-            </Animated.View>
-          </View>
+                  <LinearGradient 
+                    colors={['#EF5350', '#E53935']} 
+                    style={styles.buttonGradient}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                  >
+                    <MaterialIcons name="close" size={24} color="white" />
+                    <Text style={[styles.buttonText, textStyle]}>No</Text>
+                  </LinearGradient>
+                </TouchableOpacity>
+              </Animated.View>
+            </View>
+          )}
           
           {/* Add help text */}
           <View style={styles.helpContainer}>
@@ -712,7 +858,22 @@ const styles = StyleSheet.create({
     color: "#546E7A",
     marginLeft: 6,
     fontWeight: "500",
-  }
+  },
+  loadingFallback: {
+    backgroundColor: "white",
+    borderRadius: 24,
+    padding: 28,
+    width: width - 40,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 8,
+    marginBottom: 30,
+    minHeight: 200,
+  },
 });
 
 export default DyslexiaTestScreen;
