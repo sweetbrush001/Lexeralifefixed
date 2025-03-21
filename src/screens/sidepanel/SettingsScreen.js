@@ -1,12 +1,13 @@
 import React, { useMemo, useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, TextInput, ScrollView, Pressable, Animated, TouchableWithoutFeedback } from 'react-native';
+import { View, Text, StyleSheet, TextInput, ScrollView, Pressable, Animated, TouchableWithoutFeedback, TouchableOpacity } from 'react-native';
 import { useFonts } from 'expo-font';
-import { MaterialIcons } from '@expo/vector-icons';
+import { MaterialIcons, Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSettings } from '../../context/SettingsContext';
 import StyledToggleSwitch from '../../components/StyledToggleSwitch';
 import SlideSelector from '../../components/SlideSelector';
-import FancyRadioGroup from '../../components/FancyRadioGroup'; // Import the new component
+import FancyRadioGroup from '../../components/FancyRadioGroup';
+import { useNavigation } from '@react-navigation/native';
 
 const ColorPresets = [
   { label: 'Black', value: '#000000', swatch: true },
@@ -32,6 +33,7 @@ const SettingsScreen = () => {
   const [fontsLoaded] = useFonts({
     'OpenDyslexic-Regular': require('../../../assets/fonts/OpenDyslexic3-Regular.ttf'),
   });
+  const navigation = useNavigation();
 
   const handleSettingChange = (key, value) => {
     updateSettings({
@@ -60,6 +62,17 @@ const SettingsScreen = () => {
 
   return (
     <SafeAreaView style={styles.container}>
+      <View style={styles.header}>
+        <TouchableOpacity 
+          style={styles.backButton} 
+          onPress={() => navigation.goBack()}
+        >
+          <Ionicons name="arrow-back" size={24} color="#333" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Settings</Text>
+        <View style={styles.placeholderView} />
+      </View>
+      
       <ScrollView showsVerticalScrollIndicator={false}>
         {previewText}
 
@@ -367,6 +380,29 @@ const styles = StyleSheet.create({
   },
   colorRadioGroup: {
     marginBottom: 16,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#DEDEDE',
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#1A1A1A',
+    flex: 1,
+    textAlign: 'center',
+  },
+  backButton: {
+    padding: 8,
+  },
+  placeholderView: {
+    width: 40, // Match the width of the back button for balanced layout
   },
 });
 

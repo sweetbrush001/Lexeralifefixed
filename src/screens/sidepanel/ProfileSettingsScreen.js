@@ -15,6 +15,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
 import { auth, db } from '../../config/firebaseConfig';
+import { useNavigation } from '@react-navigation/native';
 
 export default function ProfileSettingsScreen() {
   const [profileImage, setProfileImage] = useState(null);
@@ -24,6 +25,7 @@ export default function ProfileSettingsScreen() {
   const [location, setLocation] = useState('');
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const navigation = useNavigation();
 
   const currentUser = auth.currentUser;
 
@@ -149,6 +151,12 @@ export default function ProfileSettingsScreen() {
     >
       <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
         <View style={styles.header}>
+          <TouchableOpacity 
+            style={styles.backButton} 
+            onPress={() => navigation.goBack()}
+          >
+            <Ionicons name="arrow-back" size={24} color="#333" />
+          </TouchableOpacity>
           <Text style={styles.title}>Profile Settings</Text>
           <TouchableOpacity 
             style={[styles.editButton, isEditing && styles.saveButtonColor]} 
@@ -227,182 +235,186 @@ export default function ProfileSettingsScreen() {
 }
 
 const styles = StyleSheet.create({
-  // Use your existing styles from your ProfileSettingsScreen.js file.
-  
-    container: {
-      flex: 1,
-      backgroundColor: '#f5f7fa',
-    },
-    contentContainer: {
-      paddingBottom: 40,
-    },
-    header: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      paddingHorizontal: 20,
-      paddingTop: 60,
-      paddingBottom: 20,
-      backgroundColor: '#fff',
-      borderBottomWidth: 1,
-      borderBottomColor: '#eaecef',
-    },
-    title: {
-      fontSize: 24,
-      fontWeight: 'bold',
-      color: '#333',
-    },
-    editButton: {
-      backgroundColor: '#5c6bc0',
-      paddingHorizontal: 15,
-      paddingVertical: 8,
-      borderRadius: 20,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 3,
-      elevation: 2,
-    },
-    saveButtonColor: {
-      backgroundColor: '#4caf50',
-    },
-    savingButton: {
-      backgroundColor: '#9e9e9e',
-    },
-    editButtonText: {
-      color: '#fff',
-      fontWeight: '600',
-    },
-    card: {
-      backgroundColor: '#fff',
-      borderRadius: 15,
-      margin: 20,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.1,
-      shadowRadius: 8,
-      elevation: 5,
-      overflow: 'hidden',
-    },
-    profileImageContainer: {
-      alignItems: 'center',
-      justifyContent: 'center',
-      marginVertical: 30,
-      backgroundColor: '#f9f9f9',
-      paddingVertical: 20,
-      borderBottomWidth: 1,
-      borderBottomColor: '#eaecef',
-    },
-    profileImage: {
-      width: 140,
-      height: 140,
-      borderRadius: 70,
-      borderWidth: 3,
-      borderColor: '#5c6bc0',
-    },
-    profileImagePlaceholder: {
-      width: 140,
-      height: 140,
-      borderRadius: 70,
-      backgroundColor: '#e6e9f0',
-      justifyContent: 'center',
-      alignItems: 'center',
-      borderWidth: 3,
-      borderColor: '#5c6bc0',
-    },
-    cameraIconContainer: {
-      position: 'absolute',
-      bottom: 0,
-      right: 0,
-      backgroundColor: '#5c6bc0',
-      width: 40,
-      height: 40,
-      borderRadius: 20,
-      justifyContent: 'center',
-      alignItems: 'center',
-      borderWidth: 3,
-      borderColor: '#fff',
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.2,
-      shadowRadius: 3,
-      elevation: 3,
-    },
-    changePhotoButton: {
-      marginTop: 12,
-      backgroundColor: '#f0f2f5',
-      paddingHorizontal: 15,
-      paddingVertical: 8,
-      borderRadius: 20,
-    },
-    changePhotoText: {
-      color: '#5c6bc0',
-      fontSize: 16,
-      fontWeight: '500',
-    },
-    formContainer: {
-      padding: 20,
-    },
-    fieldContainer: {
-      marginBottom: 24,
-    },
-    labelContainer: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      marginBottom: 8,
-    },
-    iconContainer: {
-      marginRight: 8,
-    },
-    fieldLabel: {
-      fontSize: 16,
-      fontWeight: '600',
-      color: '#555',
-    },
-    fieldValue: {
-      fontSize: 16,
-      color: '#333',
-      paddingVertical: 12,
-      paddingHorizontal: 12,
-      backgroundColor: '#f9f9f9',
-      borderRadius: 8,
-      borderWidth: 1,
-      borderColor: '#eaecef',
-    },
-    textInput: {
-      fontSize: 16,
-      borderWidth: 1,
-      borderColor: '#ddd',
-      borderRadius: 8,
-      paddingHorizontal: 12,
-      paddingVertical: 12,
-      color: '#333',
-      backgroundColor: '#f9f9f9',
-    },
-    multilineInput: {
-      height: 120,
-      textAlignVertical: 'top',
-    },
-    saveButton: {
-      backgroundColor: '#5c6bc0',
-      paddingVertical: 14,
-      borderRadius: 10,
-      alignItems: 'center',
-      marginTop: 20,
-      flexDirection: 'row',
-      justifyContent: 'center',
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 3,
-      elevation: 2,
-    },
-    saveButtonText: {
-      color: '#fff',
-      fontSize: 16,
-      fontWeight: '600',
-    },
-    saveIcon: {
-      marginRight: 8,
-    }
+  container: {
+    flex: 1,
+    backgroundColor: '#f5f7fa',
+  },
+  contentContainer: {
+    paddingBottom: 40,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingTop: 60,
+    paddingBottom: 20,
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#eaecef',
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#333',
+    flex: 1,
+    textAlign: 'center',
+  },
+  backButton: {
+    padding: 8,
+    borderRadius: 20,
+  },
+  editButton: {
+    backgroundColor: '#5c6bc0',
+    paddingHorizontal: 15,
+    paddingVertical: 8,
+    borderRadius: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  saveButtonColor: {
+    backgroundColor: '#4caf50',
+  },
+  savingButton: {
+    backgroundColor: '#9e9e9e',
+  },
+  editButtonText: {
+    color: '#fff',
+    fontWeight: '600',
+  },
+  card: {
+    backgroundColor: '#fff',
+    borderRadius: 15,
+    margin: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 5,
+    overflow: 'hidden',
+  },
+  profileImageContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginVertical: 30,
+    backgroundColor: '#f9f9f9',
+    paddingVertical: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eaecef',
+  },
+  profileImage: {
+    width: 140,
+    height: 140,
+    borderRadius: 70,
+    borderWidth: 3,
+    borderColor: '#5c6bc0',
+  },
+  profileImagePlaceholder: {
+    width: 140,
+    height: 140,
+    borderRadius: 70,
+    backgroundColor: '#e6e9f0',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 3,
+    borderColor: '#5c6bc0',
+  },
+  cameraIconContainer: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    backgroundColor: '#5c6bc0',
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 3,
+    borderColor: '#fff',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 3,
+  },
+  changePhotoButton: {
+    marginTop: 12,
+    backgroundColor: '#f0f2f5',
+    paddingHorizontal: 15,
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
+  changePhotoText: {
+    color: '#5c6bc0',
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  formContainer: {
+    padding: 20,
+  },
+  fieldContainer: {
+    marginBottom: 24,
+  },
+  labelContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  iconContainer: {
+    marginRight: 8,
+  },
+  fieldLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#555',
+  },
+  fieldValue: {
+    fontSize: 16,
+    color: '#333',
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    backgroundColor: '#f9f9f9',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#eaecef',
+  },
+  textInput: {
+    fontSize: 16,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    color: '#333',
+    backgroundColor: '#f9f9f9',
+  },
+  multilineInput: {
+    height: 120,
+    textAlignVertical: 'top',
+  },
+  saveButton: {
+    backgroundColor: '#5c6bc0',
+    paddingVertical: 14,
+    borderRadius: 10,
+    alignItems: 'center',
+    marginTop: 20,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  saveButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  saveIcon: {
+    marginRight: 8,
+  }
 });
