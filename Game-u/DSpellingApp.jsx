@@ -149,68 +149,148 @@ const DSpellingGame = ({ onBackToHome }) => {
   };
 
   // Completely rewrite the setupGame function to ensure letters are properly generated
-const setupGame = () => {
-  if (availableWords && availableWords.length > 0) {
+  const setupGame = () => {
+    if (availableWords && availableWords.length > 0) {
+      // First, reset any existing letter state
+      setLetters([]);
+      setBlanks([]);
+      setDroppedLetters([]);
+      setRevealedHint('');
+      setBlankPositions({}); // Reset blank positions
+
+      // Randomly select a word from availableWords
+      const randomIndex = Math.floor(Math.random() * availableWords.length);
+      const wordData = availableWords[randomIndex];
+
+      // Remove this word from availableWords to prevent repetition
+      const updatedAvailableWords = [...availableWords];
+      updatedAvailableWords.splice(randomIndex, 1);
+      setAvailableWords(updatedAvailableWords);
+
+      // Set current word data
+      setCurrentWord(wordData.word);
+      setCurrentImage(wordData.image);
+      setCurrentHint(wordData.hint);
+
+      // Update progress based on words used
+      const totalWords = GAME_DATA[difficulty].length;
+      const wordsCompleted = GAME_DATA[difficulty].length - updatedAvailableWords.length;
+      setProgress((wordsCompleted / totalWords) * 100);
+
+      // Generate a fresh set of 15 letters that includes all word letters
+      const wordLetters = wordData.word.split('');
+
+      // Create blank spaces for the word
+      const blankSpaces = wordLetters.map((letter, index) => ({
+        id: `blank-${index}`,
+        letter: letter,
+        filled: false,
+        filledWithLetterId: null,
+      }));
+
+      setBlanks(blankSpaces);
+
+      // IMPORTANT: We generate letters in a separate step to avoid state timing issues
+      setTimeout(() => {
+        // Generate fresh letter set with all required letters for the word
+        const freshLetters = generateLetterSet(wordLetters);
+
+        // Set these letters with default positions (they'll be positioned later)
+        setLetters(freshLetters.map(letter => ({
+          ...letter,
+          hasBeenPositioned: false,
+          position: new Animated.ValueXY({ x: -100, y: -100 }),
+          originalPosition: { x: -100, y: -100 }
+        })));
+
+        // Position the letters after they're set in state
+        setTimeout(() => {
+          if (letterPlaygroundLayout.width) {
+            positionLetters();
+          } else {
+            setTimeout(positionLetters, 300);
+          }
+        }, 100);
+      }, 50);
+
+      // Speak the word
+      if (!isMuted) {
+        Speech.speak(wordData.word, {
+          language: 'en',
+          pitch: 1.0,
+          rate: 0.75,
+        });
+      }
+    } else {
+      endGame();
+    }
+  };
+
+  // Update setupGameWithWords with similar changes
+  const setupGameWithWords = (words) => {
+    // Make sure we have words available
+    if (!words || words.length === 0) {
+      console.error("No words available for this difficulty!");
+      return;
+    }
+
     // First, reset any existing letter state
     setLetters([]);
     setBlanks([]);
     setDroppedLetters([]);
     setRevealedHint('');
     setBlankPositions({}); // Reset blank positions
-    
-    // Randomly select a word from availableWords
-    const randomIndex = Math.floor(Math.random() * availableWords.length);
-    const wordData = availableWords[randomIndex];
 
-    // Remove this word from availableWords to prevent repetition
-    const updatedAvailableWords = [...availableWords];
-    updatedAvailableWords.splice(randomIndex, 1);
-    setAvailableWords(updatedAvailableWords);
+    // Set available words state for future reference
+    setAvailableWords(words);
+
+    // Randomly select a word from words parameter (not from state)
+    const randomIndex = Math.floor(Math.random() * words.length);
+    const wordData = words[randomIndex];
+
+    // Remove this word from words to prevent repetition
+    const updatedWords = [...words];
+    updatedWords.splice(randomIndex, 1);
+
+    // Update availableWords state with the remaining words
+    setAvailableWords(updatedWords);
 
     // Set current word data
     setCurrentWord(wordData.word);
     setCurrentImage(wordData.image);
     setCurrentHint(wordData.hint);
 
-    // Update progress based on words used
-    const totalWords = GAME_DATA[difficulty].length;
-    const wordsCompleted = GAME_DATA[difficulty].length - updatedAvailableWords.length;
-    setProgress((wordsCompleted / totalWords) * 100);
-
-    // Generate a fresh set of 15 letters that includes all word letters
-    const wordLetters = wordData.word.split('');
-    
     // Create blank spaces for the word
+    const wordLetters = wordData.word.split('');
     const blankSpaces = wordLetters.map((letter, index) => ({
       id: `blank-${index}`,
       letter: letter,
       filled: false,
       filledWithLetterId: null,
     }));
-    
+
     setBlanks(blankSpaces);
-    
-    // IMPORTANT: We generate letters in a separate step to avoid state timing issues
+
+    // Update progress based on words used
+    const totalWords = GAME_DATA[difficulty].length;
+    const wordsCompleted = GAME_DATA[difficulty].length - updatedWords.length;
+    setProgress((wordsCompleted / totalWords) * 100);
+
+    // Generate letters in a separate step with timeout to ensure state consistency
     setTimeout(() => {
-      // Generate fresh letter set with all required letters for the word
+      // Generate fresh letter set with all required letters
       const freshLetters = generateLetterSet(wordLetters);
-      
-      // Set these letters with default positions (they'll be positioned later)
+
+      // Set letters with default positions
       setLetters(freshLetters.map(letter => ({
         ...letter,
         hasBeenPositioned: false,
         position: new Animated.ValueXY({ x: -100, y: -100 }),
         originalPosition: { x: -100, y: -100 }
       })));
-      
-      // Position the letters after they're set in state
-      setTimeout(() => {
-        if (letterPlaygroundLayout.width) {
-          positionLetters();
-        } else {
-          setTimeout(positionLetters, 300);
-        }
-      }, 100);
+
+      // Position letters after they're set in state
+      setTimeout(positionLetters, 100);
     }, 50);
 
     // Speak the word
@@ -221,249 +301,169 @@ const setupGame = () => {
         rate: 0.75,
       });
     }
-  } else {
-    endGame();
-  }
-};
+  };
 
-// Update setupGameWithWords with similar changes
-const setupGameWithWords = (words) => {
-  // Make sure we have words available
-  if (!words || words.length === 0) {
-    console.error("No words available for this difficulty!");
-    return;
-  }
+  // Remove the duplicate positionLetters function and replace with a single implementation
+  // Removed duplicate declaration of positionLetters
 
-  // First, reset any existing letter state
-  setLetters([]);
-  setBlanks([]);
-  setDroppedLetters([]);
-  setRevealedHint('');
-  setBlankPositions({}); // Reset blank positions
-  
-  // Set available words state for future reference
-  setAvailableWords(words);
+  // Fix the generateLetterSet function to add proper error handling and unique IDs
+  const generateLetterSet = (wordLetters) => {
+    try {
+      console.log("Generating letter set for word:", wordLetters.join(''));
 
-  // Randomly select a word from words parameter (not from state)
-  const randomIndex = Math.floor(Math.random() * words.length);
-  const wordData = words[randomIndex];
+      // Force uppercase for consistency
+      const uppercaseWordLetters = wordLetters.map(letter => letter.toUpperCase());
 
-  // Remove this word from words to prevent repetition
-  const updatedWords = [...words];
-  updatedWords.splice(randomIndex, 1);
+      // Create required letter objects - one for each letter in the word
+      const wordLetterObjects = [];
 
-  // Update availableWords state with the remaining words
-  setAvailableWords(updatedWords);
+      // Generate a unique timestamp for this generation to avoid ID collisions
+      const timestamp = Date.now();
 
-  // Set current word data
-  setCurrentWord(wordData.word);
-  setCurrentImage(wordData.image);
-  setCurrentHint(wordData.hint);
-
-  // Create blank spaces for the word
-  const wordLetters = wordData.word.split('');
-  const blankSpaces = wordLetters.map((letter, index) => ({
-    id: `blank-${index}`,
-    letter: letter,
-    filled: false,
-    filledWithLetterId: null,
-  }));
-  
-  setBlanks(blankSpaces);
-  
-  // Update progress based on words used
-  const totalWords = GAME_DATA[difficulty].length;
-  const wordsCompleted = GAME_DATA[difficulty].length - updatedWords.length;
-  setProgress((wordsCompleted / totalWords) * 100);
-  
-  // Generate letters in a separate step with timeout to ensure state consistency
-  setTimeout(() => {
-    // Generate fresh letter set with all required letters
-    const freshLetters = generateLetterSet(wordLetters);
-    
-    // Set letters with default positions
-    setLetters(freshLetters.map(letter => ({
-      ...letter,
-      hasBeenPositioned: false,
-      position: new Animated.ValueXY({ x: -100, y: -100 }),
-      originalPosition: { x: -100, y: -100 }
-    })));
-    
-    // Position letters after they're set in state
-    setTimeout(positionLetters, 100);
-  }, 50);
-
-  // Speak the word
-  if (!isMuted) {
-    Speech.speak(wordData.word, {
-      language: 'en',
-      pitch: 1.0,
-      rate: 0.75,
-    });
-  }
-};
-
-// Remove the duplicate positionLetters function and replace with a single implementation
-// Removed duplicate declaration of positionLetters
-
-// Fix the generateLetterSet function to add proper error handling and unique IDs
-const generateLetterSet = (wordLetters) => {
-  try {
-    console.log("Generating letter set for word:", wordLetters.join(''));
-    
-    // Force uppercase for consistency
-    const uppercaseWordLetters = wordLetters.map(letter => letter.toUpperCase());
-    
-    // Create required letter objects - one for each letter in the word
-    const wordLetterObjects = [];
-    
-    // Generate a unique timestamp for this generation to avoid ID collisions
-    const timestamp = Date.now();
-    
-    uppercaseWordLetters.forEach((letter, index) => {
-      wordLetterObjects.push({
-        id: `word-${index}-${timestamp}-${Math.random().toString(36).substring(2, 6)}`,
-        letter: letter,
-        position: new Animated.ValueXY({ x: 0, y: 0 }),
-        originalPosition: { x: 0, y: 0 },
-        inDropZone: false,
-        used: false,
-        isDragging: false,
+      uppercaseWordLetters.forEach((letter, index) => {
+        wordLetterObjects.push({
+          id: `word-${index}-${timestamp}-${Math.random().toString(36).substring(2, 6)}`,
+          letter: letter,
+          position: new Animated.ValueXY({ x: 0, y: 0 }),
+          originalPosition: { x: 0, y: 0 },
+          inDropZone: false,
+          used: false,
+          isDragging: false,
+        });
       });
-    });
-    
-    // Add extra random letters to reach exactly 15 letters total
-    const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-    const extraLetterCount = 15 - wordLetterObjects.length;
-    
-    // Track letter frequencies to avoid too many duplicates
-    const letterCounts = {};
-    uppercaseWordLetters.forEach(letter => {
-      letterCounts[letter] = (letterCounts[letter] || 0) + 1;
-    });
-    
-    // Common letters that appear frequently in words
-    const commonLetters = 'ETAOINRSHDLUC';
-    
-    // Generate "near" letters to the word letters
-    const nearLetters = uppercaseWordLetters.flatMap(letter => {
-      const charCode = letter.charCodeAt(0);
-      const nearChars = [];
-      
-      // Get letters before and after in the alphabet
-      for (let offset = -2; offset <= 2; offset++) {
-        if (offset === 0) continue;
-        const newChar = String.fromCharCode(charCode + offset);
-        if (newChar >= 'A' && newChar <= 'Z') {
-          nearChars.push(newChar);
+
+      // Add extra random letters to reach exactly 15 letters total
+      const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+      const extraLetterCount = 15 - wordLetterObjects.length;
+
+      // Track letter frequencies to avoid too many duplicates
+      const letterCounts = {};
+      uppercaseWordLetters.forEach(letter => {
+        letterCounts[letter] = (letterCounts[letter] || 0) + 1;
+      });
+
+      // Common letters that appear frequently in words
+      const commonLetters = 'ETAOINRSHDLUC';
+
+      // Generate "near" letters to the word letters
+      const nearLetters = uppercaseWordLetters.flatMap(letter => {
+        const charCode = letter.charCodeAt(0);
+        const nearChars = [];
+
+        // Get letters before and after in the alphabet
+        for (let offset = -2; offset <= 2; offset++) {
+          if (offset === 0) continue;
+          const newChar = String.fromCharCode(charCode + offset);
+          if (newChar >= 'A' && newChar <= 'Z') {
+            nearChars.push(newChar);
+          }
         }
-      }
-      return nearChars;
-    });
-    
-    // Create extra letters
-    const extraLetters = [];
-    
-    for (let i = 0; i < extraLetterCount; i++) {
-      let randomLetter;
-      
-      // 30% chance to duplicate a letter from the word
-      if (Math.random() < 0.3 && uppercaseWordLetters.length > 0) {
-        randomLetter = uppercaseWordLetters[Math.floor(Math.random() * uppercaseWordLetters.length)];
-      } 
-      // 40% chance to use a letter that's "near" the word letters
-      else if (Math.random() < 0.7 && nearLetters.length > 0) {
-        randomLetter = nearLetters[Math.floor(Math.random() * nearLetters.length)];
-      }
-      // 20% chance to use a common letter
-      else if (Math.random() < 0.9) {
-        randomLetter = commonLetters[Math.floor(Math.random() * commonLetters.length)];
-      }
-      // 10% chance to use a completely random letter
-      else {
-        randomLetter = alphabet[Math.floor(Math.random() * alphabet.length)];
-      }
-      
-      // Limit duplicates to maximum 3 of each letter
-      const letterCount = letterCounts[randomLetter] || 0;
-      if (letterCount >= 3) {
-        const availableLetters = alphabet.split('').filter(l => !letterCounts[l] || letterCounts[l] < 2);
-        if (availableLetters.length > 0) {
-          randomLetter = availableLetters[Math.floor(Math.random() * availableLetters.length)];
-        }
-      }
-      
-      // Update letter count
-      letterCounts[randomLetter] = (letterCounts[randomLetter] || 0) + 1;
-      
-      // Create the extra letter object with unique ID
-      extraLetters.push({
-        id: `extra-${i}-${timestamp}-${Math.random().toString(36).substring(2, 6)}`,
-        letter: randomLetter,
-        position: new Animated.ValueXY({ x: 0, y: 0 }),
-        originalPosition: { x: 0, y: 0 },
-        inDropZone: false,
-        used: false,
-        isDragging: false,
+        return nearChars;
       });
-    }
-    
-    // Combine and shuffle all letters
-    const allLetters = [...wordLetterObjects, ...extraLetters];
-    const shuffledLetters = allLetters.sort(() => Math.random() - 0.5);
-    
-    console.log("Generated letter set:", shuffledLetters.map(l => l.letter).join(''));
-    
-    return shuffledLetters;
-  } catch (err) {
-    console.log("Error generating letter set:", err);
-    // Return a fallback set of letters in case of error
-    return fallbackLetterSet(wordLetters);
-  }
-};
 
-// Add a fallback letter generation function in case the main one fails
-const fallbackLetterSet = (wordLetters) => {
-  try {
-    const timestamp = Date.now();
-    const letters = [];
-    
-    // Add word letters
-    wordLetters.forEach((letter, index) => {
-      letters.push({
-        id: `fallback-word-${index}-${timestamp}`,
-        letter: letter.toUpperCase(),
-        position: new Animated.ValueXY({ x: 0, y: 0 }),
-        originalPosition: { x: 0, y: 0 },
-        inDropZone: false,
-        used: false,
-        isDragging: false,
-      });
-    });
-    
-    // Add some basic extra letters to reach 15
-    const extraNeeded = 15 - wordLetters.length;
-    const basicLetters = 'AEIOUBCDFGHLMNPRST';
-    
-    for (let i = 0; i < extraNeeded; i++) {
-      const randomIndex = Math.floor(Math.random() * basicLetters.length);
-      letters.push({
-        id: `fallback-extra-${i}-${timestamp}`,
-        letter: basicLetters[randomIndex],
-        position: new Animated.ValueXY({ x: 0, y: 0 }),
-        originalPosition: { x: 0, y: 0 },
-        inDropZone: false,
-        used: false,
-        isDragging: false,
-      });
+      // Create extra letters
+      const extraLetters = [];
+
+      for (let i = 0; i < extraLetterCount; i++) {
+        let randomLetter;
+
+        // 30% chance to duplicate a letter from the word
+        if (Math.random() < 0.3 && uppercaseWordLetters.length > 0) {
+          randomLetter = uppercaseWordLetters[Math.floor(Math.random() * uppercaseWordLetters.length)];
+        }
+        // 40% chance to use a letter that's "near" the word letters
+        else if (Math.random() < 0.7 && nearLetters.length > 0) {
+          randomLetter = nearLetters[Math.floor(Math.random() * nearLetters.length)];
+        }
+        // 20% chance to use a common letter
+        else if (Math.random() < 0.9) {
+          randomLetter = commonLetters[Math.floor(Math.random() * commonLetters.length)];
+        }
+        // 10% chance to use a completely random letter
+        else {
+          randomLetter = alphabet[Math.floor(Math.random() * alphabet.length)];
+        }
+
+        // Limit duplicates to maximum 3 of each letter
+        const letterCount = letterCounts[randomLetter] || 0;
+        if (letterCount >= 3) {
+          const availableLetters = alphabet.split('').filter(l => !letterCounts[l] || letterCounts[l] < 2);
+          if (availableLetters.length > 0) {
+            randomLetter = availableLetters[Math.floor(Math.random() * availableLetters.length)];
+          }
+        }
+
+        // Update letter count
+        letterCounts[randomLetter] = (letterCounts[randomLetter] || 0) + 1;
+
+        // Create the extra letter object with unique ID
+        extraLetters.push({
+          id: `extra-${i}-${timestamp}-${Math.random().toString(36).substring(2, 6)}`,
+          letter: randomLetter,
+          position: new Animated.ValueXY({ x: 0, y: 0 }),
+          originalPosition: { x: 0, y: 0 },
+          inDropZone: false,
+          used: false,
+          isDragging: false,
+        });
+      }
+
+      // Combine and shuffle all letters
+      const allLetters = [...wordLetterObjects, ...extraLetters];
+      const shuffledLetters = allLetters.sort(() => Math.random() - 0.5);
+
+      console.log("Generated letter set:", shuffledLetters.map(l => l.letter).join(''));
+
+      return shuffledLetters;
+    } catch (err) {
+      console.log("Error generating letter set:", err);
+      // Return a fallback set of letters in case of error
+      return fallbackLetterSet(wordLetters);
     }
-    
-    return letters.sort(() => Math.random() - 0.5);
-  } catch (err) {
-    console.log("Fallback letter generation failed:", err);
-    return [];
-  }
-};
+  };
+
+  // Add a fallback letter generation function in case the main one fails
+  const fallbackLetterSet = (wordLetters) => {
+    try {
+      const timestamp = Date.now();
+      const letters = [];
+
+      // Add word letters
+      wordLetters.forEach((letter, index) => {
+        letters.push({
+          id: `fallback-word-${index}-${timestamp}`,
+          letter: letter.toUpperCase(),
+          position: new Animated.ValueXY({ x: 0, y: 0 }),
+          originalPosition: { x: 0, y: 0 },
+          inDropZone: false,
+          used: false,
+          isDragging: false,
+        });
+      });
+
+      // Add some basic extra letters to reach 15
+      const extraNeeded = 15 - wordLetters.length;
+      const basicLetters = 'AEIOUBCDFGHLMNPRST';
+
+      for (let i = 0; i < extraNeeded; i++) {
+        const randomIndex = Math.floor(Math.random() * basicLetters.length);
+        letters.push({
+          id: `fallback-extra-${i}-${timestamp}`,
+          letter: basicLetters[randomIndex],
+          position: new Animated.ValueXY({ x: 0, y: 0 }),
+          originalPosition: { x: 0, y: 0 },
+          inDropZone: false,
+          used: false,
+          isDragging: false,
+        });
+      }
+
+      return letters.sort(() => Math.random() - 0.5);
+    } catch (err) {
+      console.log("Fallback letter generation failed:", err);
+      return [];
+    }
+  };
 
   // New function to position letters once playground is measured
   // Replace the existing positionLetters function with this implementation
@@ -476,7 +476,7 @@ const fallbackLetterSet = (wordLetters) => {
 
     // Add strict padding to keep letters away from the edges
     const padding = 25;
-    
+
     // Get container dimensions
     const containerWidth = letterPlaygroundLayout.width;
     const containerHeight = letterPlaygroundLayout.height || 210;
@@ -484,35 +484,35 @@ const fallbackLetterSet = (wordLetters) => {
     // Calculate usable area
     const usableWidth = containerWidth - (padding * 2);
     const usableHeight = containerHeight - (padding * 2);
-    
+
     // For 15 letters, use 5 columns for optimal layout
     const maxColumns = 5;
     const rows = Math.ceil(letters.length / maxColumns);
-    
+
     // Calculate spacing between letters (no random jitter)
     const horizontalSpacing = usableWidth / maxColumns;
     const verticalSpacing = usableHeight / rows;
-    
+
     // Create updated letters array with stable positions
     const updatedLetters = [];
-    
+
     // Check if positions have already been set (to prevent constant repositioning)
     const needsPositioning = !letters[0].hasBeenPositioned;
-    
+
     letters.forEach((letter, index) => {
       // Only update positions if it's the initial positioning
       if (needsPositioning) {
         const col = index % maxColumns;
         const row = Math.floor(index / maxColumns);
-        
+
         // Calculate base position with precise centering (no random values)
-        const x = padding + (col * horizontalSpacing) + (horizontalSpacing/2 - letterWidth/2);
-        const y = padding + (row * verticalSpacing) + (verticalSpacing/2 - letterHeight/2);
-        
+        const x = padding + (col * horizontalSpacing) + (horizontalSpacing / 2 - letterWidth / 2);
+        const y = padding + (row * verticalSpacing) + (verticalSpacing / 2 - letterHeight / 2);
+
         // Set position with no jitter for stability
         const newPosition = { x, y };
         letter.position.setValue(newPosition);
-        
+
         updatedLetters.push({
           ...letter,
           originalPosition: newPosition,
@@ -531,7 +531,7 @@ const fallbackLetterSet = (wordLetters) => {
         }
       }
     });
-    
+
     // Only update state if we needed positioning
     if (needsPositioning) {
       setLetters(updatedLetters);
@@ -550,42 +550,42 @@ const fallbackLetterSet = (wordLetters) => {
   const handleTouchBlank = (blank) => {
     // Only process if the blank is filled
     if (!blank.filled || !blank.filledWithLetterId) return;
-    
+
     // Find the letter that's in this blank
     const filledLetter = letters.find(l => l.id === blank.filledWithLetterId);
-    
+
     if (filledLetter) {
       // Play feedback
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       if (!isMuted) {
         playSound(SOUNDS.drop);
       }
-      
+
       // Update the blank state
       const updatedBlanks = blanks.map(b =>
         b.id === blank.id ? { ...b, filled: false, filledWithLetterId: null } : b
       );
       setBlanks(updatedBlanks);
-      
+
       // Update the letter state - reset to original position and appearance
       const updatedLetters = letters.map(l =>
-        l.id === filledLetter.id ? 
-        { 
-          ...l, 
-          used: false,         // Clear used flag to remove green styling
-          inDropZone: false,   // Clear drop zone flag
-          isDragging: false    // Ensure not marked as dragging
-        } : l
+        l.id === filledLetter.id ?
+          {
+            ...l,
+            used: false,         // Clear used flag to remove green styling
+            inDropZone: false,   // Clear drop zone flag
+            isDragging: false    // Ensure not marked as dragging
+          } : l
       );
       setLetters(updatedLetters);
-      
+
       // Animate the letter back to its original position
       Animated.spring(filledLetter.position, {
         toValue: filledLetter.originalPosition,
         friction: 5,
         useNativeDriver: false
       }).start();
-      
+
       // Remove from droppedLetters array
       setDroppedLetters(prev => prev.filter(l => l.blankId !== blank.id));
     }
@@ -604,15 +604,15 @@ const fallbackLetterSet = (wordLetters) => {
     return PanResponder.create({
       // Prevent interaction with letters that are already in use (in a blank)
       onStartShouldSetPanResponder: () => !letter.used, // Only allow interaction if not used
-      
+
       onPanResponderGrant: (e, gestureState) => {
         // Reset dragging state
         isDragging = false;
-        
+
         // Store initial position
         initialMoveX = gestureState.moveX;
         initialMoveY = gestureState.moveY;
-        
+
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
         // Make the letter appear above all other elements when dragging
@@ -632,12 +632,12 @@ const fallbackLetterSet = (wordLetters) => {
         // Check if this is an actual drag (moved beyond threshold)
         const dx = Math.abs(gestureState.moveX - initialMoveX);
         const dy = Math.abs(gestureState.moveY - initialMoveY);
-        
+
         // Only set isDragging once we've exceeded the threshold
         if (!isDragging && (dx > DRAG_THRESHOLD || dy > DRAG_THRESHOLD)) {
           isDragging = true;
         }
-        
+
         // Update position
         letter.position.x.setValue(gestureState.dx);
         letter.position.y.setValue(gestureState.dy);
@@ -752,127 +752,127 @@ const fallbackLetterSet = (wordLetters) => {
   };
 
   // Update the checkDropZone function to add error handling
-// Removed duplicate declaration of checkDropZone to avoid redeclaration error
+  // Removed duplicate declaration of checkDropZone to avoid redeclaration error
 
-// Update the checkDropZone function with a more robust approach
-// Removed duplicate declaration of checkDropZone to avoid redeclaration error
+  // Update the checkDropZone function with a more robust approach
+  // Removed duplicate declaration of checkDropZone to avoid redeclaration error
 
-// Completely revise the checkDropZone function to allow filling blanks in any order
-const checkDropZone = (letter, gesture) => {
-  try {
-    // Find all empty blanks
-    const emptyBlanks = blanks.filter(blank => !blank.filled);
-    
-    if (emptyBlanks.length === 0) {
-      console.log("No empty blanks available");
+  // Completely revise the checkDropZone function to allow filling blanks in any order
+  const checkDropZone = (letter, gesture) => {
+    try {
+      // Find all empty blanks
+      const emptyBlanks = blanks.filter(blank => !blank.filled);
+
+      if (emptyBlanks.length === 0) {
+        console.log("No empty blanks available");
+        return false;
+      }
+
+      // Get drop position
+      const dropX = gesture.moveX;
+      const dropY = gesture.moveY;
+
+      // Define the valid drop area (vertical range)
+      const screenHeight = Dimensions.get('window').height;
+      const dropAreaTop = 250;
+      const dropAreaBottom = screenHeight * 0.65;
+
+      // Check if the drop is within vertical bounds of the blanks area
+      if (dropY >= dropAreaTop && dropY <= dropAreaBottom) {
+        console.log("Drop detected in valid vertical range");
+
+        // Get reference to the blank container for coordinate estimation
+        const screenWidth = Dimensions.get('window').width;
+        const blankWidth = 35; // From our styles
+        const margin = 5; // From our styles
+        const totalBlanksWidth = blanks.length * (blankWidth + margin * 2);
+        const startX = (screenWidth - totalBlanksWidth) / 2;
+
+        // Find the closest blank based on horizontal position
+        let targetBlankIndex = -1;
+        let closestDistance = Infinity;
+
+        // Compare drop position to estimated position of each blank
+        emptyBlanks.forEach((blank) => {
+          // Get the index of this blank in the original blanks array
+          const blankIndex = blanks.findIndex(b => b.id === blank.id);
+
+          // Calculate estimated center position of this blank
+          const blankCenterX = startX + (blankIndex * (blankWidth + margin * 2)) + (blankWidth / 2) + margin;
+
+          // Calculate horizontal distance
+          const distance = Math.abs(dropX - blankCenterX);
+
+          // If this is closer than current closest, update
+          if (distance < closestDistance) {
+            closestDistance = distance;
+            targetBlankIndex = blankIndex;
+          }
+        });
+
+        // Make sure we found a valid blank
+        if (targetBlankIndex >= 0) {
+          const targetBlank = blanks[targetBlankIndex];
+
+          // Update the blank state
+          const updatedBlanks = blanks.map(b =>
+            b.id === targetBlank.id ?
+              { ...b, filled: true, filledWithLetterId: letter.id } :
+              b
+          );
+
+          // Add to dropped letters array
+          setDroppedLetters(prev => [
+            ...prev,
+            {
+              letterId: letter.id,
+              letter: letter.letter,
+              blankId: targetBlank.id
+            }
+          ]);
+
+          // Update the letter state
+          const updatedLetters = letters.map(l =>
+            l.id === letter.id ?
+              { ...l, used: true, inDropZone: true } :
+              l
+          );
+
+          // Return letter to its original position
+          Animated.spring(letter.position, {
+            toValue: letter.originalPosition,
+            friction: 5,
+            useNativeDriver: false
+          }).start();
+
+          setBlanks(updatedBlanks);
+          setLetters(updatedLetters);
+
+          // Play feedback
+          if (!isMuted) {
+            playSound(SOUNDS.drop);
+          }
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+
+          // Check if all blanks are filled
+          const allFilled = updatedBlanks.every(blank => blank.filled);
+          if (allFilled) {
+            setTimeout(() => {
+              checkAnswer();
+            }, 500);
+          }
+
+          return true;
+        }
+      }
+
+      console.log("Drop outside of valid range or no close blank found");
+      return false;
+    } catch (err) {
+      console.log("Error in checkDropZone:", err);
       return false;
     }
-    
-    // Get drop position
-    const dropX = gesture.moveX;
-    const dropY = gesture.moveY;
-    
-    // Define the valid drop area (vertical range)
-    const screenHeight = Dimensions.get('window').height;
-    const dropAreaTop = 250;
-    const dropAreaBottom = screenHeight * 0.65;
-    
-    // Check if the drop is within vertical bounds of the blanks area
-    if (dropY >= dropAreaTop && dropY <= dropAreaBottom) {
-      console.log("Drop detected in valid vertical range");
-      
-      // Get reference to the blank container for coordinate estimation
-      const screenWidth = Dimensions.get('window').width;
-      const blankWidth = 35; // From our styles
-      const margin = 5; // From our styles
-      const totalBlanksWidth = blanks.length * (blankWidth + margin * 2);
-      const startX = (screenWidth - totalBlanksWidth) / 2;
-      
-      // Find the closest blank based on horizontal position
-      let targetBlankIndex = -1;
-      let closestDistance = Infinity;
-      
-      // Compare drop position to estimated position of each blank
-      emptyBlanks.forEach((blank) => {
-        // Get the index of this blank in the original blanks array
-        const blankIndex = blanks.findIndex(b => b.id === blank.id);
-        
-        // Calculate estimated center position of this blank
-        const blankCenterX = startX + (blankIndex * (blankWidth + margin * 2)) + (blankWidth / 2) + margin;
-        
-        // Calculate horizontal distance
-        const distance = Math.abs(dropX - blankCenterX);
-        
-        // If this is closer than current closest, update
-        if (distance < closestDistance) {
-          closestDistance = distance;
-          targetBlankIndex = blankIndex;
-        }
-      });
-      
-      // Make sure we found a valid blank
-      if (targetBlankIndex >= 0) {
-        const targetBlank = blanks[targetBlankIndex];
-        
-        // Update the blank state
-        const updatedBlanks = blanks.map(b => 
-          b.id === targetBlank.id ? 
-          { ...b, filled: true, filledWithLetterId: letter.id } : 
-          b
-        );
-        
-        // Add to dropped letters array
-        setDroppedLetters(prev => [
-          ...prev,
-          {
-            letterId: letter.id,
-            letter: letter.letter,
-            blankId: targetBlank.id
-          }
-        ]);
-        
-        // Update the letter state
-        const updatedLetters = letters.map(l => 
-          l.id === letter.id ? 
-          { ...l, used: true, inDropZone: true } : 
-          l
-        );
-        
-        // Return letter to its original position
-        Animated.spring(letter.position, {
-          toValue: letter.originalPosition,
-          friction: 5,
-          useNativeDriver: false
-        }).start();
-        
-        setBlanks(updatedBlanks);
-        setLetters(updatedLetters);
-        
-        // Play feedback
-        if (!isMuted) {
-          playSound(SOUNDS.drop);
-        }
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-        
-        // Check if all blanks are filled
-        const allFilled = updatedBlanks.every(blank => blank.filled);
-        if (allFilled) {
-          setTimeout(() => {
-            checkAnswer();
-          }, 500);
-        }
-        
-        return true;
-      }
-    }
-    
-    console.log("Drop outside of valid range or no close blank found");
-    return false;
-  } catch (err) {
-    console.log("Error in checkDropZone:", err);
-    return false;
-  }
-};
+  };
 
   // Add new function to check if the answer is correct
   const checkAnswer = () => {
@@ -975,51 +975,51 @@ const checkDropZone = (letter, gesture) => {
   };
 
   // Ensure we complete a word and move to the next one properly
-const handleWordComplete = () => {
-  try {
-    playSound(SOUNDS.correct);
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+  const handleWordComplete = () => {
+    try {
+      playSound(SOUNDS.correct);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
-    // Show success animation
-    if (correctAnimation.current) {
-      correctAnimation.current.play();
-    }
+      // Show success animation
+      if (correctAnimation.current) {
+        correctAnimation.current.play();
+      }
 
-    // Update score
-    const wordScore = currentWord.length * 10;
-    setScore(prevScore => prevScore + wordScore);
+      // Update score
+      const wordScore = currentWord.length * 10;
+      setScore(prevScore => prevScore + wordScore);
 
-    // Wait a moment before moving to next word
-    setTimeout(() => {
-      // Clear current state completely
-      setLetters([]);
-      setBlanks([]);
-      setDroppedLetters([]);
-      setRevealedHint('');
-      setBlankPositions({}); // Clear blank positions
-      
-      // Setup next word after a delay to ensure clean state
+      // Wait a moment before moving to next word
+      setTimeout(() => {
+        // Clear current state completely
+        setLetters([]);
+        setBlanks([]);
+        setDroppedLetters([]);
+        setRevealedHint('');
+        setBlankPositions({}); // Clear blank positions
+
+        // Setup next word after a delay to ensure clean state
+        setTimeout(() => {
+          if (availableWords && availableWords.length > 0) {
+            setupGame();
+          } else {
+            endGame();
+          }
+        }, 300);
+      }, 1500);
+    } catch (err) {
+      console.log("Error in handleWordComplete:", err);
+
+      // Fallback to simply setting up the next word on error
       setTimeout(() => {
         if (availableWords && availableWords.length > 0) {
           setupGame();
         } else {
           endGame();
         }
-      }, 300);
-    }, 1500);
-  } catch (err) {
-    console.log("Error in handleWordComplete:", err);
-    
-    // Fallback to simply setting up the next word on error
-    setTimeout(() => {
-      if (availableWords && availableWords.length > 0) {
-        setupGame();
-      } else {
-        endGame();
-      }
-    }, 1000);
-  }
-};
+      }, 1000);
+    }
+  };
 
   const endGame = () => {
     setGameOver(true);
@@ -1198,10 +1198,10 @@ const handleWordComplete = () => {
               style={[styles.difficultyButton, styles.easyButton]}
               onPress={() => handleSelectDifficulty('easy')}
             >
-              <Image
+              {/*<Image
                 source={require('./assets/images/fish.png')}
                 style={styles.difficultyIcon}
-              />
+              />*/}
               <Text style={styles.difficultyText}>Easy</Text>
               <Text style={styles.difficultyDescription}>Simple words</Text>
             </TouchableOpacity>
@@ -1210,10 +1210,10 @@ const handleWordComplete = () => {
               style={[styles.difficultyButton, styles.mediumButton]}
               onPress={() => handleSelectDifficulty('medium')}
             >
-              <Image
+              {/*<Image
                 source={require('./assets/images/fish.png')}
                 style={styles.difficultyIcon}
-              />
+              />*/}
               <Text style={styles.difficultyText}>Medium</Text>
               <Text style={styles.difficultyDescription}>Moderate words</Text>
             </TouchableOpacity>
@@ -1222,10 +1222,10 @@ const handleWordComplete = () => {
               style={[styles.difficultyButton, styles.hardButton]}
               onPress={() => handleSelectDifficulty('hard')}
             >
-              <Image
+              {/*<Image
                 source={require('./assets/images/fish.png')}
                 style={styles.difficultyIcon}
-              />
+              />*/}
               <Text style={styles.difficultyText}>Hard</Text>
               <Text style={styles.difficultyDescription}>Challenging words</Text>
             </TouchableOpacity>
@@ -1397,7 +1397,7 @@ const handleWordComplete = () => {
       return (
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>Something went wrong</Text>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.errorButton}
             onPress={() => setGameState('difficulty')}
           >
@@ -1659,8 +1659,9 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     marginBottom: 20,
     padding: 15,
-    flexDirection: 'row',
+    flexDirection: 'column',
     alignItems: 'center',
+    justifyContent: 'center',
     elevation: 5,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -1690,7 +1691,8 @@ const styles = StyleSheet.create({
   difficultyDescription: {
     fontSize: 14,
     color: 'white',
-    marginLeft: 'auto',
+    textAlign: 'center',
+    marginTop: 5,
     fontFamily: 'OpenDyslexic',
   },
   backButton: {
