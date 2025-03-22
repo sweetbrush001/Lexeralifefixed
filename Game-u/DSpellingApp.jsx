@@ -1127,112 +1127,103 @@ const DSpellingGame = ({ onBackToHome }) => {
         return;
       }
 
-      // Determine how many empty blanks to fill with this hint
-      // For first hint: 1 blank, second hint: 1-2 blanks based on word length, etc.
-      const wordLength = currentWord.length;
-      let hintsToProvide = 1; // Default to 1 hint
+      // Always provide exactly one hint, regardless of word length or hint count
+      const hintsToProvide = 1;
 
-      // For longer words or subsequent hints, provide more letters
-      if (hintsUsedForCurrentWord > 1 || wordLength > 5) {
-        hintsToProvide = Math.min(2, emptyBlanks.length); // Max 2 letters per hint
-      }
-
-      // Limit hints to available empty blanks
-      hintsToProvide = Math.min(hintsToProvide, emptyBlanks.length);
-
-      // Get the real letter for each empty blank
+      // Get the real letter for the empty blank
       const blanksToFill = [];
 
-      // For each empty blank, get its correct letter
-      emptyBlanks.slice(0, hintsToProvide).forEach(blank => {
-        // Find the index of this blank in the original array
-        const blankIndex = blanks.findIndex(b => b.id === blank.id);
+      // Take just the first empty blank
+      const firstEmptyBlank = emptyBlanks[0];
 
-        // Get the correct letter for this position
-        const correctLetter = currentWord[blankIndex].toUpperCase();
+      // Find the index of this blank in the original array
+      const blankIndex = blanks.findIndex(b => b.id === firstEmptyBlank.id);
 
-        blanksToFill.push({
-          blank: blank,
-          letter: correctLetter,
-          blankIndex: blankIndex
-        });
+      // Get the correct letter for this position
+      const correctLetter = currentWord[blankIndex].toUpperCase();
+
+      blanksToFill.push({
+        blank: firstEmptyBlank,
+        letter: correctLetter,
+        blankIndex: blankIndex
       });
 
       // Find matching available letters
       let lettersUsedForHint = [];
       let updatedBlanks = [...blanks];
 
-      // Find letters to use for each blank
-      blanksToFill.forEach(({ blank, letter, blankIndex }) => {
-        // Find an unused letter that matches
-        const matchingLetter = letters.find(l =>
-          l.letter.toUpperCase() === letter &&
-          !l.used &&
-          !lettersUsedForHint.includes(l.id)
+      // Find letter to use for the blank
+      const { blank, letter, blankIndex: hintBlankIndex } = blanksToFill[0];
+
+      // Find an unused letter that matches
+      const matchingLetter = letters.find(l =>
+        l.letter.toUpperCase() === letter &&
+        !l.used &&
+        !lettersUsedForHint.includes(l.id)
+      );
+
+      if (matchingLetter) {
+        // Remember this letter is used for a hint
+        lettersUsedForHint.push(matchingLetter.id);
+
+        // Update blank to be filled with this letter
+        updatedBlanks = updatedBlanks.map(b =>
+          b.id === blank.id ? {
+            ...b,
+            filled: true,
+            filledWithLetterId: matchingLetter.id
+          } : b
         );
 
-        if (matchingLetter) {
-          // Remember this letter is used for a hint
-          lettersUsedForHint.push(matchingLetter.id);
+        // Update dropped letters array
+        setDroppedLetters(prev => [
+          ...prev,
+          {
+            letterId: matchingLetter.id,
+            letter: matchingLetter.letter,
+            blankId: blank.id
+          }
+        ]);
 
-          // Update blank to be filled with this letter
-          updatedBlanks = updatedBlanks.map(b =>
-            b.id === blank.id ? {
-              ...b,
-              filled: true,
-              filledWithLetterId: matchingLetter.id
-            } : b
-          );
+        // Update blanks state
+        setBlanks(updatedBlanks);
 
-          // Update dropped letters array
-          setDroppedLetters(prev => [
-            ...prev,
-            {
-              letterId: matchingLetter.id,
-              letter: matchingLetter.letter,
-              blankId: blank.id
-            }
-          ]);
-        }
-      });
-
-      // Update blanks state
-      setBlanks(updatedBlanks);
-
-      // Update letters state to mark hint letters as used
-      const updatedLetters = letters.map(letter => {
-        if (lettersUsedForHint.includes(letter.id)) {
-          return {
-            ...letter,
-            used: true,
-            inDropZone: true
-          };
-        }
-        return letter;
-      });
-
-      setLetters(updatedLetters);
-
-      // Provide audio feedback
-      if (!isMuted && blanksToFill.length > 0) {
-        // Speak what hints were provided
-        const hintPositions = blanksToFill.map(b => `position ${b.blankIndex + 1}`).join(' and ');
-        Speech.speak(`Hint for ${hintPositions}`, {
-          language: 'en',
-          pitch: 1.0,
-          rate: 0.75,
+        // Update letters state to mark hint letter as used
+        const updatedLetters = letters.map(letter => {
+          if (lettersUsedForHint.includes(letter.id)) {
+            return {
+              ...letter,
+              used: true,
+              inDropZone: true
+            };
+          }
+          return letter;
         });
-      }
 
-      // Haptic feedback
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        setLetters(updatedLetters);
 
-      // Check if all blanks are filled after this hint
-      const allFilled = updatedBlanks.every(blank => blank.filled);
-      if (allFilled) {
-        setTimeout(() => {
-          checkAnswer();
-        }, 500);
+        // Provide audio feedback
+        if (!isMuted) {
+          // Speak which position received the hint
+          Speech.speak(`Hint for position ${hintBlankIndex + 1}`, {
+            language: 'en',
+            pitch: 1.0,
+            rate: 0.75,
+          });
+        }
+
+        // Haptic feedback
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+
+        // Check if all blanks are filled after this hint
+        const allFilled = updatedBlanks.every(blank => blank.filled);
+        if (allFilled) {
+          setTimeout(() => {
+            checkAnswer();
+          }, 500);
+        }
+      } else {
+        console.log("No matching letter available for hint");
       }
     } catch (err) {
       console.log("Error in handleHint:", err);
