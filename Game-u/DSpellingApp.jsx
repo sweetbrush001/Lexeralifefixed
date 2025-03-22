@@ -1155,12 +1155,14 @@ const handleWordComplete = () => {
                   letters.find(l => l.id === blank.filledWithLetterId) : null;
 
                 return (
-                  <View
+                  <TouchableOpacity
                     key={blank.id}
                     style={[
                       styles.blankContainer,
                       blank.filled ? styles.filledBlank : {}
                     ]}
+                    onPress={() => blank.filled ? handleTouchBlank(blank) : null}
+                    activeOpacity={blank.filled ? 0.6 : 1}
                     onLayout={(event) => {
                       try {
                         const { width, height } = event.nativeEvent.layout;
@@ -1181,7 +1183,7 @@ const handleWordComplete = () => {
                     ) : (
                       <Text style={styles.blankText}>_</Text>
                     )}
-                  </View>
+                  </TouchableOpacity>
                 );
               })}
             </View>
