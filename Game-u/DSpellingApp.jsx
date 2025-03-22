@@ -1377,13 +1377,29 @@ const DSpellingGame = ({ onBackToHome }) => {
           {/* Word Image - same container size for all difficulties */}
           <View style={styles.imageContainer}>
             {currentImage ? (
-              <Image
-                source={currentImage}
-                style={styles.wordImage}
-                resizeMode="contain"
-                // Add onError handler to debug image loading issues
-                onError={(e) => console.log('Image loading error:', e.nativeEvent.error)}
-              />
+              <TouchableOpacity
+                onPress={() => {
+                  // Speak the word when image is touched
+                  if (!isMuted) {
+                    Speech.speak(currentWord, {
+                      language: 'en',
+                      pitch: 1.0,
+                      rate: 0.75,
+                    });
+                    
+                    // Add haptic feedback for better user experience
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  }
+                }}
+                activeOpacity={0.8}
+              >
+                <Image
+                  source={currentImage}
+                  style={styles.wordImage}
+                  resizeMode="contain"
+                  onError={(e) => console.log('Image loading error:', e.nativeEvent.error)}
+                />
+              </TouchableOpacity>
             ) : (
               // Fallback placeholder if image is null or undefined
               <View style={styles.placeholderImage}>
