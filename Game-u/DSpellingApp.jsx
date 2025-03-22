@@ -910,12 +910,12 @@ const checkDropZone = (letter, gesture) => {
       }
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
 
-      // Reset blanks and return letters to original positions
+      // Reset blanks and return letters to original positions and appearance
       resetWord();
     }
   };
 
-  // Function to reset the current word attempt
+  // Enhanced resetWord function to fully reset letter appearance
   const resetWord = () => {
     // Clear all blanks
     const resetBlanks = blanks.map(blank => ({
@@ -924,31 +924,39 @@ const checkDropZone = (letter, gesture) => {
       filledWithLetterId: null
     }));
 
-    // Reset all letters
+    // Find all used letters that need to be reset
+    const usedLetterIds = blanks
+      .filter(blank => blank.filled && blank.filledWithLetterId)
+      .map(blank => blank.filledWithLetterId);
+
+    // More thorough letter reset - ensure all flags are properly cleared
     const resetLetters = letters.map(letter => {
-      if (letter.used) {
-        // Return to original position
+      // Reset any letter that was used (has the 'used' flag or was in a blank)
+      if (letter.used || usedLetterIds.includes(letter.id)) {
+        // Animate back to original position
         Animated.spring(letter.position, {
           toValue: letter.originalPosition,
           friction: 5,
           useNativeDriver: false
         }).start();
 
+        // Completely reset the letter state
         return {
           ...letter,
-          used: false,
-          inDropZone: false
+          used: false,        // Remove green coloring
+          inDropZone: false,  // Not in a drop zone anymore
+          isDragging: false   // Not being dragged
         };
       }
       return letter;
     });
 
+    // Update state
     setBlanks(resetBlanks);
     setLetters(resetLetters);
     setDroppedLetters([]);
   };
 
-  // Update handleSubmitWord to use the checkAnswer function
   const handleSubmitWord = () => {
     const allBlanks = blanks.length === currentWord.length;
     const allFilled = blanks.every(blank => blank.filled);
