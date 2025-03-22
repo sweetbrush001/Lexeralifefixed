@@ -24,24 +24,24 @@ const { width, height } = Dimensions.get('window');
 // Game data - hardcoded for now
 const GAME_DATA = {
   easy: [
-    { word: 'fish', image: require('./assets/images/fish.png'), hint: 'It swims in the ocean' },
-    { word: 'crab', image: require('./assets/images/crab.png'), hint: 'It has pincers and walks sideways' },
-    { word: 'shark', image: require('./assets/images/shark.png'), hint: 'A predator with sharp teeth' },
-    { word: 'wave', image: require('./assets/images/wave.png'), hint: 'Ocean water in motion' },
-    { word: 'boat', image: require('./assets/images/boat.png'), hint: 'It floats on water' },
+    { word: 'fish', image: require('./assets/images/fish.png')},
+    { word: 'crab', image: require('./assets/images/crab.png')},
+    { word: 'shark', image: require('./assets/images/shark.png')},
+    { word: 'wave', image: require('./assets/images/wave.png')},
+    { word: 'boat', image: require('./assets/images/boat.png')},
   ],
   medium: [
-    { word: 'starfish', image: require('./assets/images/starfish.png'), hint: 'A five-pointed sea creature' },
-    { word: 'whale', image: require('./assets/images/whale.png'), hint: 'The largest mammal in the sea' },
-    { word: 'coral', image: require('./assets/images/coral.png'), hint: 'Colorful underwater structures' },
-    { word: 'seashell', image: require('./assets/images/shell.png'), hint: 'A hard protective covering' },
-    { word: 'squid', image: require('./assets/images/squid.png'), hint: 'Has tentacles and can spray ink' },],
+    { word: 'starfish', image: require('./assets/images/starfish.png')},
+    { word: 'whale', image: require('./assets/images/whale.png')},
+    { word: 'coral', image: require('./assets/images/coral.png')},
+    { word: 'seashell', image: require('./assets/images/shell.png')},
+    { word: 'squid', image: require('./assets/images/squid.png')},],
   hard: [
-    { word: 'turtle', image: require('./assets/images/turtle.png'), hint: 'A reptile with a shell' },
-    { word: 'octopus', image: require('./assets/images/octopus.png'), hint: 'Has eight arms' },
-    { word: 'dolphin', image: require('./assets/images/dolphin.png'), hint: 'An intelligent marine mammal' },
-    { word: 'jellyfish', image: require('./assets/images/jellyfish.png'), hint: 'It can sting' },
-    { word: 'seahorse', image: require('./assets/images/seahorse.png'), hint: 'Swims upright' },]
+    { word: 'turtle', image: require('./assets/images/turtle.png')},
+    { word: 'octopus', image: require('./assets/images/octopus.png')},
+    { word: 'dolphin', image: require('./assets/images/dolphin.png')},
+    { word: 'jellyfish', image: require('./assets/images/jellyfish.png')},
+    { word: 'seahorse', image: require('./assets/images/seahorse.png')},]
 };
 
 // Sounds
