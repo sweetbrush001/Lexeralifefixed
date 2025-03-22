@@ -567,11 +567,24 @@ const fallbackLetterSet = (wordLetters) => {
       );
       setBlanks(updatedBlanks);
       
-      // Update the letter state - reset to original position
+      // Update the letter state - reset to original position and appearance
       const updatedLetters = letters.map(l =>
-        l.id === filledLetter.id ? { ...l, used: false, inDropZone: false } : l
+        l.id === filledLetter.id ? 
+        { 
+          ...l, 
+          used: false,         // Clear used flag to remove green styling
+          inDropZone: false,   // Clear drop zone flag
+          isDragging: false    // Ensure not marked as dragging
+        } : l
       );
       setLetters(updatedLetters);
+      
+      // Animate the letter back to its original position
+      Animated.spring(filledLetter.position, {
+        toValue: filledLetter.originalPosition,
+        friction: 5,
+        useNativeDriver: false
+      }).start();
       
       // Remove from droppedLetters array
       setDroppedLetters(prev => prev.filter(l => l.blankId !== blank.id));
@@ -589,7 +602,9 @@ const fallbackLetterSet = (wordLetters) => {
     let initialMoveY = 0;
 
     return PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
+      // Prevent interaction with letters that are already in use (in a blank)
+      onStartShouldSetPanResponder: () => !letter.used, // Only allow interaction if not used
+      
       onPanResponderGrant: (e, gestureState) => {
         // Reset dragging state
         isDragging = false;
@@ -599,31 +614,6 @@ const fallbackLetterSet = (wordLetters) => {
         initialMoveY = gestureState.moveY;
         
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-
-        // Check if the letter is used in a blank and remove it
-        if (letter.used) {
-          // Find which blank has this letter
-          const blankWithLetter = blanks.find(b => b.filledWithLetterId === letter.id);
-          if (blankWithLetter) {
-            const updatedBlanks = blanks.map(b =>
-              b.id === blankWithLetter.id
-                ? { ...b, filled: false, filledWithLetterId: null }
-                : b
-            );
-            setBlanks(updatedBlanks);
-
-            // Remove this letter from droppedLetters
-            setDroppedLetters(prev => prev.filter(l => l.blankId !== blankWithLetter.id));
-          }
-
-          // Update letter state
-          const updatedLetters = letters.map(l =>
-            l.id === letter.id
-              ? { ...l, used: false, inDropZone: false }
-              : l
-          );
-          setLetters(updatedLetters);
-        }
 
         // Make the letter appear above all other elements when dragging
         letter.position.setOffset({
