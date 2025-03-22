@@ -1552,7 +1552,7 @@ const DSpellingGame = ({ onBackToHome }) => {
   const renderSummaryScreen = () => {
     return (
       <ImageBackground
-        source={require('./assets/images/space_background.png')}
+        source={require('./assets/images/ocean-gamebackground.png')}
         style={styles.container}
       >
         <View style={styles.overlay}>
@@ -1801,8 +1801,13 @@ const styles = StyleSheet.create({
     fontFamily: 'OpenDyslexic',
   },
   titleContainer: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    left: 0,
+    right: 0,
+    justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 20,
   },
   difficultyContainer: {
     width: '100%',
