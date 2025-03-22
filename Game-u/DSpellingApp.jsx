@@ -1202,10 +1202,10 @@ const DSpellingGame = ({ onBackToHome }) => {
 
         setLetters(updatedLetters);
 
-        // Provide audio feedback - speak only the letter itself
+        // Provide audio feedback - speak only the letter itself in lowercase
+        // to prevent any "capital" pronunciation
         if (!isMuted) {
-          // Just voice the letter with no additional words
-          Speech.speak(`${letter.toUpperCase()}`, {
+          Speech.speak(`${letter.toLowerCase()}`, {
             language: 'en',
             pitch: 1.0,
             rate: 0.75,
