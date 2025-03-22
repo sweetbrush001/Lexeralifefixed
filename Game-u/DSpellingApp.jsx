@@ -16,6 +16,7 @@ import {
   View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import 'react-native-url-polyfill/auto';
 import * as Haptics from './utils/mock-haptics';
 
 const { width, height } = Dimensions.get('window');
