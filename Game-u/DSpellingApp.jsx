@@ -546,8 +546,146 @@ const fallbackLetterSet = (wordLetters) => {
     }
   }, [letterPlaygroundLayout.width, letters.length]); // Only re-run if width or letter count changes
 
-  // Create pan responders for each letter
+  // Add function to handle touching a filled blank
+  const handleTouchBlank = (blank) => {
+    // Only process if the blank is filled
+    if (!blank.filled || !blank.filledWithLetterId) return;
+    
+    // Find the letter that's in this blank
+    const filledLetter = letters.find(l => l.id === blank.filledWithLetterId);
+    
+    if (filledLetter) {
+      // Play feedback
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      if (!isMuted) {
+        playSound(SOUNDS.drop);
+      }
+      
+      // Update the blank state
+      const updatedBlanks = blanks.map(b =>
+        b.id === blank.id ? { ...b, filled: false, filledWithLetterId: null } : b
+      );
+      setBlanks(updatedBlanks);
+      
+      // Update the letter state - reset to original position
+      const updatedLetters = letters.map(l =>
+        l.id === filledLetter.id ? { ...l, used: false, inDropZone: false } : l
+      );
+      setLetters(updatedLetters);
+      
+      // Remove from droppedLetters array
+      setDroppedLetters(prev => prev.filter(l => l.blankId !== blank.id));
+    }
+  };
+
+  // Modified pan responder to fix automatic filling issue
   const createPanResponder = (letter) => {
+    // Track whether the user has dragged the letter
+    let isDragging = false;
+    // Minimum distance to consider it a drag
+    const DRAG_THRESHOLD = 10;
+    // Store initial position for threshold calculation
+    let initialMoveX = 0;
+    let initialMoveY = 0;
+
+    return PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onPanResponderGrant: (e, gestureState) => {
+        // Reset dragging state
+        isDragging = false;
+        
+        // Store initial position
+        initialMoveX = gestureState.moveX;
+        initialMoveY = gestureState.moveY;
+        
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
+        // Check if the letter is used in a blank and remove it
+        if (letter.used) {
+          // Find which blank has this letter
+          const blankWithLetter = blanks.find(b => b.filledWithLetterId === letter.id);
+          if (blankWithLetter) {
+            const updatedBlanks = blanks.map(b =>
+              b.id === blankWithLetter.id
+                ? { ...b, filled: false, filledWithLetterId: null }
+                : b
+            );
+            setBlanks(updatedBlanks);
+
+            // Remove this letter from droppedLetters
+            setDroppedLetters(prev => prev.filter(l => l.blankId !== blankWithLetter.id));
+          }
+
+          // Update letter state
+          const updatedLetters = letters.map(l =>
+            l.id === letter.id
+              ? { ...l, used: false, inDropZone: false }
+              : l
+          );
+          setLetters(updatedLetters);
+        }
+
+        // Make the letter appear above all other elements when dragging
+        letter.position.setOffset({
+          x: letter.position.x._value,
+          y: letter.position.y._value
+        });
+        letter.position.setValue({ x: 0, y: 0 });
+
+        // Mark this letter as being dragged to apply special styling
+        const updatedLetters = letters.map(l =>
+          l.id === letter.id ? { ...l, isDragging: true } : l
+        );
+        setLetters(updatedLetters);
+      },
+      onPanResponderMove: (e, gestureState) => {
+        // Check if this is an actual drag (moved beyond threshold)
+        const dx = Math.abs(gestureState.moveX - initialMoveX);
+        const dy = Math.abs(gestureState.moveY - initialMoveY);
+        
+        // Only set isDragging once we've exceeded the threshold
+        if (!isDragging && (dx > DRAG_THRESHOLD || dy > DRAG_THRESHOLD)) {
+          isDragging = true;
+        }
+        
+        // Update position
+        letter.position.x.setValue(gestureState.dx);
+        letter.position.y.setValue(gestureState.dy);
+      },
+      onPanResponderRelease: (e, gesture) => {
+        letter.position.flattenOffset();
+
+        // Remove the dragging state but preserve positioning status
+        const updatedLetters = letters.map(l =>
+          l.id === letter.id ? { ...l, isDragging: false } : l
+        );
+        setLetters(updatedLetters);
+
+        // Only check for drop zone if this was a real drag, not just a tap
+        let droppedOnBlank = false;
+        if (isDragging) {
+          droppedOnBlank = checkDropZone(letter, gesture);
+        }
+
+        if (!droppedOnBlank) {
+          // Return to original position with animation
+          Animated.spring(letter.position, {
+            toValue: letter.originalPosition,
+            friction: 5,
+            useNativeDriver: false
+          }).start();
+
+          // Only play the wrong sound for actual drops, not just taps
+          if (isDragging && !isMuted) {
+            playSound(SOUNDS.wrong);
+          }
+        }
+      }
+    });
+  };
+
+  // Create pan responders for each letter
+  const createPanResponderOld = (letter) => {
     return PanResponder.create({
       onStartShouldSetPanResponder: () => true,
       onPanResponderGrant: () => {
