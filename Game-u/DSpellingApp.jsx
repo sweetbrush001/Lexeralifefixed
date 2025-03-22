@@ -73,6 +73,7 @@ const DSpellingGame = ({ onBackToHome }) => {
   const [letterPlaygroundLayout, setLetterPlaygroundLayout] = useState({ x: 0, y: 0, width: 0, height: 0 });
   const [availableWords, setAvailableWords] = useState([]); // Add this state for tracking available words
   const [blankPositions, setBlankPositions] = useState({}); // Add this state for tracking blank positions
+  const [hintsUsedForCurrentWord, setHintsUsedForCurrentWord] = useState(0); // Add a new state variable to track how many hints were used
 
   const animation = useRef(null);
   const correctAnimation = useRef(null);
@@ -157,6 +158,8 @@ const DSpellingGame = ({ onBackToHome }) => {
       setDroppedLetters([]);
       setRevealedHint('');
       setBlankPositions({}); // Reset blank positions
+      // Reset hints used for a new word
+      setHintsUsedForCurrentWord(0);
 
       // Randomly select a word from availableWords
       const randomIndex = Math.floor(Math.random() * availableWords.length);
@@ -240,6 +243,8 @@ const DSpellingGame = ({ onBackToHome }) => {
     setDroppedLetters([]);
     setRevealedHint('');
     setBlankPositions({}); // Reset blank positions
+    // Reset hints used for a new word
+    setHintsUsedForCurrentWord(0);
 
     // Set available words state for future reference
     setAvailableWords(words);
@@ -985,8 +990,19 @@ const DSpellingGame = ({ onBackToHome }) => {
         correctAnimation.current.play();
       }
 
-      // Update score
-      const wordScore = currentWord.length * 10;
+      // Calculate score based on word length and hint usage
+      let wordScore = 0;
+
+      if (hintsUsedForCurrentWord === 0) {
+        // Full score if no hints used
+        wordScore = currentWord.length * 10;
+      } else if (hintsUsedForCurrentWord < currentWord.length) {
+        // Reduce score based on number of hints used
+        const hintPenalty = hintsUsedForCurrentWord / currentWord.length;
+        wordScore = Math.floor(currentWord.length * 10 * (1 - hintPenalty));
+      }
+      // No score if all or most letters were revealed through hints
+
       setScore(prevScore => prevScore + wordScore);
 
       // Wait a moment before moving to next word
@@ -1100,79 +1116,92 @@ const DSpellingGame = ({ onBackToHome }) => {
   // Completely revise the handleHint function to fill blanks directly
   const handleHint = () => {
     try {
-      // Determine how many letters to reveal based on word length
-      const wordLength = currentWord.length;
-      const hintLetterCount = wordLength <= 4 ? 1 : wordLength <= 6 ? 2 : 3;
+      // Increment hints used counter 
+      setHintsUsedForCurrentWord(prev => prev + 1);
 
-      // Get the first few letters of the word as our hint letters
-      const hintLetters = currentWord.slice(0, hintLetterCount).split('').map(l => l.toUpperCase());
+      // Find all empty blanks
+      const emptyBlanks = blanks.filter(blank => !blank.filled);
 
-      // Track which blanks are already filled to avoid duplicates
-      const filledBlankIndices = [];
-      blanks.forEach((blank, index) => {
-        if (blank.filled) filledBlankIndices.push(index);
-      });
-
-      // Find letters that match our hint letters and aren't already used
-      const availableLettersForHint = letters.filter(letter =>
-        !letter.used &&
-        hintLetters.includes(letter.letter.toUpperCase())
-      );
-
-      if (availableLettersForHint.length === 0) {
-        console.log("No matching letters available for hint");
+      if (emptyBlanks.length === 0) {
+        console.log("No empty blanks to provide hints for");
         return;
       }
 
-      // Keep track of letters we're going to use for the hint
-      const lettersToUse = [];
-      const blanksToFill = [];
+      // Determine how many empty blanks to fill with this hint
+      // For first hint: 1 blank, second hint: 1-2 blanks based on word length, etc.
+      const wordLength = currentWord.length;
+      let hintsToProvide = 1; // Default to 1 hint
 
-      // For each hint letter, find the matching letter object and blank
-      for (let i = 0; i < hintLetterCount; i++) {
-        // Skip if this position is already filled
-        if (filledBlankIndices.includes(i)) continue;
-
-        // Find a matching unused letter for this hint position
-        const targetLetter = hintLetters[i];
-        const matchingLetter = availableLettersForHint.find(letter =>
-          letter.letter.toUpperCase() === targetLetter &&
-          !lettersToUse.find(l => l.id === letter.id)
-        );
-
-        // If found, use this letter for the hint
-        if (matchingLetter) {
-          lettersToUse.push(matchingLetter);
-          blanksToFill.push({
-            blankIndex: i,
-            letter: matchingLetter
-          });
-        }
+      // For longer words or subsequent hints, provide more letters
+      if (hintsUsedForCurrentWord > 1 || wordLength > 5) {
+        hintsToProvide = Math.min(2, emptyBlanks.length); // Max 2 letters per hint
       }
 
-      // Update blanks with hint letters
-      const updatedBlanks = [...blanks];
-      blanksToFill.forEach(({ blankIndex, letter }) => {
-        updatedBlanks[blankIndex] = {
-          ...updatedBlanks[blankIndex],
-          filled: true,
-          filledWithLetterId: letter.id
-        };
+      // Limit hints to available empty blanks
+      hintsToProvide = Math.min(hintsToProvide, emptyBlanks.length);
 
-        // Add to dropped letters state
-        setDroppedLetters(prev => [
-          ...prev,
-          {
-            letterId: letter.id,
-            letter: letter.letter,
-            blankId: updatedBlanks[blankIndex].id
-          }
-        ]);
+      // Get the real letter for each empty blank
+      const blanksToFill = [];
+
+      // For each empty blank, get its correct letter
+      emptyBlanks.slice(0, hintsToProvide).forEach(blank => {
+        // Find the index of this blank in the original array
+        const blankIndex = blanks.findIndex(b => b.id === blank.id);
+
+        // Get the correct letter for this position
+        const correctLetter = currentWord[blankIndex].toUpperCase();
+
+        blanksToFill.push({
+          blank: blank,
+          letter: correctLetter,
+          blankIndex: blankIndex
+        });
       });
 
-      // Mark the hint letters as used
+      // Find matching available letters
+      let lettersUsedForHint = [];
+      let updatedBlanks = [...blanks];
+
+      // Find letters to use for each blank
+      blanksToFill.forEach(({ blank, letter, blankIndex }) => {
+        // Find an unused letter that matches
+        const matchingLetter = letters.find(l =>
+          l.letter.toUpperCase() === letter &&
+          !l.used &&
+          !lettersUsedForHint.includes(l.id)
+        );
+
+        if (matchingLetter) {
+          // Remember this letter is used for a hint
+          lettersUsedForHint.push(matchingLetter.id);
+
+          // Update blank to be filled with this letter
+          updatedBlanks = updatedBlanks.map(b =>
+            b.id === blank.id ? {
+              ...b,
+              filled: true,
+              filledWithLetterId: matchingLetter.id
+            } : b
+          );
+
+          // Update dropped letters array
+          setDroppedLetters(prev => [
+            ...prev,
+            {
+              letterId: matchingLetter.id,
+              letter: matchingLetter.letter,
+              blankId: blank.id
+            }
+          ]);
+        }
+      });
+
+      // Update blanks state
+      setBlanks(updatedBlanks);
+
+      // Update letters state to mark hint letters as used
       const updatedLetters = letters.map(letter => {
-        if (lettersToUse.find(l => l.id === letter.id)) {
+        if (lettersUsedForHint.includes(letter.id)) {
           return {
             ...letter,
             used: true,
@@ -1182,16 +1211,13 @@ const DSpellingGame = ({ onBackToHome }) => {
         return letter;
       });
 
-      // Update state
-      setBlanks(updatedBlanks);
       setLetters(updatedLetters);
 
-      // Clear the revealed hint text since we're now filling blanks directly
-      setRevealedHint('');
-
       // Provide audio feedback
-      if (!isMuted) {
-        Speech.speak(`The word starts with ${currentWord.slice(0, hintLetterCount)}`, {
+      if (!isMuted && blanksToFill.length > 0) {
+        // Speak what hints were provided
+        const hintPositions = blanksToFill.map(b => `position ${b.blankIndex + 1}`).join(' and ');
+        Speech.speak(`Hint for ${hintPositions}`, {
           language: 'en',
           pitch: 1.0,
           rate: 0.75,
