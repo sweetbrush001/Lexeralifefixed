@@ -1097,26 +1097,85 @@ const DSpellingGame = ({ onBackToHome }) => {
     );
   };
 
+  // Updated handleHint function to fill hints directly in blanks
   const handleHint = () => {
-    // Create a partial word hint
-    const wordLength = currentWord.length;
-    let hint = '';
-
     // For 3-4 letter words, show 1 letter, for longer words show more
+    const wordLength = currentWord.length;
     const hintLetterCount = wordLength <= 4 ? 1 : wordLength <= 6 ? 2 : 3;
 
-    for (let i = 0; i < wordLength; i++) {
-      // Show first n letters as hint
-      if (i < hintLetterCount) {
-        hint += currentWord[i];
-      } else {
-        hint += '_';
+    // Create hint letters (we'll need them for blanks)
+    const hintLetters = currentWord.slice(0, hintLetterCount).split('');
+    
+    // Find which letters to use for the hint
+    const availableLetters = letters.filter(letter => 
+      !letter.used && hintLetters.includes(letter.letter.toLowerCase())
+    );
+    
+    // Keep track of which hint letters we've already used
+    const usedHintLetterIndexes = [];
+    
+    // Create a new blanks array to update
+    const updatedBlanks = [...blanks];
+    
+    // Fill in the hint letters
+    for (let i = 0; i < hintLetterCount; i++) {
+      // Skip if this blank is already filled
+      if (updatedBlanks[i].filled) continue;
+      
+      // Find a matching letter that's not already used
+      const targetLetter = hintLetters[i].toUpperCase();
+      
+      // Find the first matching unused letter
+      const letterToUse = availableLetters.find(letter => 
+        letter.letter.toUpperCase() === targetLetter && 
+        !usedHintLetterIndexes.includes(availableLetters.indexOf(letter))
+      );
+      
+      if (letterToUse) {
+        // Mark this letter as used for our hint operation
+        usedHintLetterIndexes.push(availableLetters.indexOf(letterToUse));
+        
+        // Fill the blank with this letter
+        updatedBlanks[i] = {
+          ...updatedBlanks[i],
+          filled: true,
+          filledWithLetterId: letterToUse.id
+        };
+        
+        // Update the dropped letters array
+        setDroppedLetters(prev => [
+          ...prev,
+          {
+            letterId: letterToUse.id,
+            letter: letterToUse.letter,
+            blankId: updatedBlanks[i].id
+          }
+        ]);
       }
     }
-
-    setRevealedHint(hint);
-
-    // Also speak the hint
+    
+    // Update blanks state
+    setBlanks(updatedBlanks);
+    
+    // Update letters state to mark hint letters as used
+    const updatedLetters = letters.map(letter => {
+      const letterIndex = availableLetters.indexOf(letter);
+      if (letterIndex !== -1 && usedHintLetterIndexes.includes(letterIndex)) {
+        return {
+          ...letter,
+          used: true,
+          inDropZone: true
+        };
+      }
+      return letter;
+    });
+    
+    setLetters(updatedLetters);
+    
+    // Clear the revealed hint text since we're filling the blanks directly
+    setRevealedHint('');
+    
+    // Speak the hint
     if (!isMuted) {
       Speech.speak(`The word starts with ${currentWord.slice(0, hintLetterCount)}`, {
         language: 'en',
@@ -1274,13 +1333,6 @@ const DSpellingGame = ({ onBackToHome }) => {
           <View style={styles.imageContainer}>
             <Image source={currentImage} style={styles.wordImage} resizeMode="contain" />
           </View>
-
-          {/* Revealed Hint - same for all difficulties */}
-          {revealedHint ? (
-            <View style={styles.revealedHintContainer}>
-              <Text style={styles.revealedHintText}>{revealedHint}</Text>
-            </View>
-          ) : null}
 
           {/* Letter Container - same size and layout for all difficulties */}
           <View style={styles.letterContainerOuter}>
