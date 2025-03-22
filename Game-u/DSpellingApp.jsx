@@ -1285,8 +1285,7 @@ const DSpellingGame = ({ onBackToHome }) => {
           />
 
           <Animated.View style={styles.titleContainer}>
-            <Text style={styles.title}>Ocean Spelling</Text>
-            <Text style={styles.subtitle}>Adventure</Text>
+            <Text style={styles.title}>Ocean Spelling Game</Text>
           </Animated.View>
         </View>
       </ImageBackground>
@@ -1297,7 +1296,7 @@ const DSpellingGame = ({ onBackToHome }) => {
   const renderDifficultyScreen = () => {
     return (
       <ImageBackground
-        source={require('./assets/images/space_background.png')}
+        source={require('./assets/images/levelselection-bg.png')}
         style={styles.container}
       >
         <View style={styles.overlay}>
@@ -1357,7 +1356,7 @@ const DSpellingGame = ({ onBackToHome }) => {
     try {
       return (
         <ImageBackground
-          source={require('./assets/images/space_background.png')}
+          source={require('./assets/images/ocean-gamebackground.png')}
           style={styles.container}
         >
           {/* Header - same for all difficulties */}
@@ -1525,12 +1524,12 @@ const DSpellingGame = ({ onBackToHome }) => {
 
           {/* Wrong animation overlay */}
           <LottieView
-  ref={wrongAnimation}
-  source={require('./assets/animations/incorrect.json')} // Your new animation
-  style={styles.wrongAnimation}
-  loop={false}
-  speed={1.2} // Optional: adjust speed
-/>
+            ref={wrongAnimation}
+            source={require('./assets/animations/incorrect.json')} // Your new animation
+            style={styles.wrongAnimation}
+            loop={false}
+            speed={1.2} // Optional: adjust speed
+          />
         </ImageBackground>
       );
     } catch (err) {

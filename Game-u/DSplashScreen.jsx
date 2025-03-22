@@ -61,8 +61,7 @@ const DSplashScreen = ({ onFinish }) => {
           }
         ]}
       >
-        <Text style={styles.title}>Ocean Spelling</Text>
-        <Text style={styles.subtitle}>Adventure</Text>
+        <Text style={styles.title}>Ocean Spelling Game</Text>
       </Animated.View>
     </ImageBackground>
   );

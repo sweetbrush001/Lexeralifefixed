@@ -17,7 +17,7 @@ const DifficultyScreen = ({ onSelectDifficulty, onBack }) => {
 
   return (
     <ImageBackground 
-      source={require('./assets/images/ocean_background.jpg')} 
+      source={require('./assets/images/levelselection-bg.png')} 
       style={styles.container}
     >
       <View style={styles.overlay}>
