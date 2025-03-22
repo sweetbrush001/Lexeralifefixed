@@ -73,7 +73,6 @@ const DSpellingGame = ({ onBackToHome }) => {
   const [letterPlaygroundLayout, setLetterPlaygroundLayout] = useState({ x: 0, y: 0, width: 0, height: 0 });
   const [availableWords, setAvailableWords] = useState([]); // Add this state for tracking available words
   const [blankPositions, setBlankPositions] = useState({}); // Add this state for tracking blank positions
-  const [currentWordHints, setCurrentWordHints] = useState(0); // Add a new state variable to track hints used for the current word
 
   const animation = useRef(null);
   const correctAnimation = useRef(null);
@@ -152,9 +151,6 @@ const DSpellingGame = ({ onBackToHome }) => {
   // Completely rewrite the setupGame function to ensure letters are properly generated
   const setupGame = () => {
     if (availableWords && availableWords.length > 0) {
-      // Reset hint count for the new word
-      setCurrentWordHints(0);
-      
       // First, reset any existing letter state
       setLetters([]);
       setBlanks([]);
@@ -238,9 +234,6 @@ const DSpellingGame = ({ onBackToHome }) => {
       return;
     }
 
-    // Reset hint count for the new word
-    setCurrentWordHints(0);
-    
     // First, reset any existing letter state
     setLetters([]);
     setBlanks([]);
@@ -992,21 +985,8 @@ const DSpellingGame = ({ onBackToHome }) => {
         correctAnimation.current.play();
       }
 
-      // Calculate score based on word length and hint usage
-      let wordScore = 0;
-      
-      if (currentWordHints === 0) {
-        // Full score if no hints used
-        wordScore = currentWord.length * 10;
-      } else if (currentWordHints < currentWord.length) {
-        // Partial score based on hint usage
-        // Reduce score by 25% for each hint used
-        const hintPenalty = 0.25 * currentWordHints;
-        wordScore = Math.max(0, Math.floor(currentWord.length * 10 * (1 - hintPenalty)));
-      }
-      // No score if all letters were revealed through hints
-      
       // Update score
+      const wordScore = currentWord.length * 10;
       setScore(prevScore => prevScore + wordScore);
 
       // Wait a moment before moving to next word
@@ -1117,121 +1097,119 @@ const DSpellingGame = ({ onBackToHome }) => {
     );
   };
 
-  // Updated handleHint function to fill hints directly in blanks
+  // Completely revise the handleHint function to fill blanks directly
   const handleHint = () => {
-    // Increment hint count first
-    const newHintCount = currentWordHints + 1;
-    setCurrentWordHints(newHintCount);
-    
-    // Calculate how many letters to reveal based on hint count and word length
-    const wordLength = currentWord.length;
-    
-    // For first hint: 1 letter for short words, 2 for medium, 3 for long
-    // For subsequent hints: reveal more letters progressively
-    let lettersToReveal = 0;
-    
-    if (wordLength <= 4) {
-      // Short words (4 or fewer letters)
-      lettersToReveal = Math.min(newHintCount, wordLength);
-    } else if (wordLength <= 6) {
-      // Medium words (5-6 letters)
-      lettersToReveal = Math.min(newHintCount + 1, wordLength);
-    } else {
-      // Longer words (7+ letters)
-      lettersToReveal = Math.min(newHintCount + 2, wordLength);
-    }
-    
-    // Ensure we don't try to reveal more letters than the word has
-    lettersToReveal = Math.min(lettersToReveal, wordLength);
-    
-    // Create hint letters array for the number of letters we want to reveal
-    const hintLetters = currentWord.slice(0, lettersToReveal).split('');
-    
-    // Find available letters that match our hint letters
-    const availableLetters = letters.filter(letter => 
-      !letter.used && hintLetters.map(l => l.toUpperCase()).includes(letter.letter.toUpperCase())
-    );
-    
-    // Keep track of which hint letters we've already used
-    const usedHintLetterIndexes = [];
-    
-    // Create a new blanks array to update
-    const updatedBlanks = [...blanks];
-    
-    // Fill in the hint letters
-    for (let i = 0; i < lettersToReveal; i++) {
-      // Skip if this blank is already filled
-      if (updatedBlanks[i].filled) continue;
-      
-      // Find a matching letter that's not already used
-      const targetLetter = hintLetters[i].toUpperCase();
-      
-      // Find the first matching unused letter
-      const letterToUse = availableLetters.find(letter => 
-        letter.letter.toUpperCase() === targetLetter && 
-        !usedHintLetterIndexes.includes(availableLetters.indexOf(letter))
+    try {
+      // Determine how many letters to reveal based on word length
+      const wordLength = currentWord.length;
+      const hintLetterCount = wordLength <= 4 ? 1 : wordLength <= 6 ? 2 : 3;
+
+      // Get the first few letters of the word as our hint letters
+      const hintLetters = currentWord.slice(0, hintLetterCount).split('').map(l => l.toUpperCase());
+
+      // Track which blanks are already filled to avoid duplicates
+      const filledBlankIndices = [];
+      blanks.forEach((blank, index) => {
+        if (blank.filled) filledBlankIndices.push(index);
+      });
+
+      // Find letters that match our hint letters and aren't already used
+      const availableLettersForHint = letters.filter(letter =>
+        !letter.used &&
+        hintLetters.includes(letter.letter.toUpperCase())
       );
-      
-      if (letterToUse) {
-        // Mark this letter as used for our hint operation
-        usedHintLetterIndexes.push(availableLetters.indexOf(letterToUse));
-        
-        // Fill the blank with this letter
-        updatedBlanks[i] = {
-          ...updatedBlanks[i],
+
+      if (availableLettersForHint.length === 0) {
+        console.log("No matching letters available for hint");
+        return;
+      }
+
+      // Keep track of letters we're going to use for the hint
+      const lettersToUse = [];
+      const blanksToFill = [];
+
+      // For each hint letter, find the matching letter object and blank
+      for (let i = 0; i < hintLetterCount; i++) {
+        // Skip if this position is already filled
+        if (filledBlankIndices.includes(i)) continue;
+
+        // Find a matching unused letter for this hint position
+        const targetLetter = hintLetters[i];
+        const matchingLetter = availableLettersForHint.find(letter =>
+          letter.letter.toUpperCase() === targetLetter &&
+          !lettersToUse.find(l => l.id === letter.id)
+        );
+
+        // If found, use this letter for the hint
+        if (matchingLetter) {
+          lettersToUse.push(matchingLetter);
+          blanksToFill.push({
+            blankIndex: i,
+            letter: matchingLetter
+          });
+        }
+      }
+
+      // Update blanks with hint letters
+      const updatedBlanks = [...blanks];
+      blanksToFill.forEach(({ blankIndex, letter }) => {
+        updatedBlanks[blankIndex] = {
+          ...updatedBlanks[blankIndex],
           filled: true,
-          filledWithLetterId: letterToUse.id
+          filledWithLetterId: letter.id
         };
-        
-        // Update the dropped letters array
+
+        // Add to dropped letters state
         setDroppedLetters(prev => [
           ...prev,
           {
-            letterId: letterToUse.id,
-            letter: letterToUse.letter,
-            blankId: updatedBlanks[i].id
+            letterId: letter.id,
+            letter: letter.letter,
+            blankId: updatedBlanks[blankIndex].id
           }
         ]);
-      }
-    }
-    
-    // Update blanks state
-    setBlanks(updatedBlanks);
-    
-    // Update letters state to mark hint letters as used
-    const updatedLetters = letters.map(letter => {
-      const letterIndex = availableLetters.indexOf(letter);
-      if (letterIndex !== -1 && usedHintLetterIndexes.includes(letterIndex)) {
-        return {
-          ...letter,
-          used: true,
-          inDropZone: true
-        };
-      }
-      return letter;
-    });
-    
-    setLetters(updatedLetters);
-    
-    // Clear the revealed hint text
-    setRevealedHint('');
-    
-    // Speak the hint
-    if (!isMuted) {
-      Speech.speak(`The word starts with ${currentWord.slice(0, lettersToReveal)}`, {
-        language: 'en',
-        pitch: 1.0,
-        rate: 0.75,
       });
-    }
-    
-    // Check if all blanks are filled after this hint
-    const allFilled = updatedBlanks.every(blank => blank.filled);
-    if (allFilled) {
-      // If the hint completed the word, trigger the answer check after a short delay
-      setTimeout(() => {
-        checkAnswer();
-      }, 500);
+
+      // Mark the hint letters as used
+      const updatedLetters = letters.map(letter => {
+        if (lettersToUse.find(l => l.id === letter.id)) {
+          return {
+            ...letter,
+            used: true,
+            inDropZone: true
+          };
+        }
+        return letter;
+      });
+
+      // Update state
+      setBlanks(updatedBlanks);
+      setLetters(updatedLetters);
+
+      // Clear the revealed hint text since we're now filling blanks directly
+      setRevealedHint('');
+
+      // Provide audio feedback
+      if (!isMuted) {
+        Speech.speak(`The word starts with ${currentWord.slice(0, hintLetterCount)}`, {
+          language: 'en',
+          pitch: 1.0,
+          rate: 0.75,
+        });
+      }
+
+      // Haptic feedback
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+
+      // Check if all blanks are filled after this hint
+      const allFilled = updatedBlanks.every(blank => blank.filled);
+      if (allFilled) {
+        setTimeout(() => {
+          checkAnswer();
+        }, 500);
+      }
+    } catch (err) {
+      console.log("Error in handleHint:", err);
     }
   };
 
@@ -1381,7 +1359,20 @@ const DSpellingGame = ({ onBackToHome }) => {
 
           {/* Word Image - same container size for all difficulties */}
           <View style={styles.imageContainer}>
-            <Image source={currentImage} style={styles.wordImage} resizeMode="contain" />
+            {currentImage ? (
+              <Image
+                source={currentImage}
+                style={styles.wordImage}
+                resizeMode="contain"
+                // Add onError handler to debug image loading issues
+                onError={(e) => console.log('Image loading error:', e.nativeEvent.error)}
+              />
+            ) : (
+              // Fallback placeholder if image is null or undefined
+              <View style={styles.placeholderImage}>
+                <Text style={styles.placeholderText}>?</Text>
+              </View>
+            )}
           </View>
 
           {/* Letter Container - same size and layout for all difficulties */}
@@ -1647,6 +1638,21 @@ const styles = StyleSheet.create({
   wordImage: {
     width: 150,
     height: 150,
+    // Ensure image is visible
+    backgroundColor: 'rgba(255, 255, 255, 0.1)', // Slight highlight to show image area
+  },
+  placeholderImage: {
+    width: 150,
+    height: 150,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  placeholderText: {
+    fontSize: 48,
+    color: 'white',
+    fontFamily: 'OpenDyslexic-Bold',
   },
   blanksContainer: {
     flexDirection: 'row',
