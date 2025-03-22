@@ -47,14 +47,14 @@ const DSplashScreen = ({ onFinish }) => {
   }, []);
 
   return (
-    <ImageBackground 
-      source={require('./assets/images/space_background.jpg')} 
+    <ImageBackground
+      source={require('./assets/images/ocean-splashscreen.png')}
       style={styles.container}
     >
-          
-      <Animated.View 
+
+      <Animated.View
         style={[
-          styles.titleContainer, 
+          styles.titleContainer,
           {
             opacity: fadeAnim,
             transform: [{ scale: scaleAnim }]

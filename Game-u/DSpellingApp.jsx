@@ -24,24 +24,24 @@ const { width, height } = Dimensions.get('window');
 // Game data - hardcoded for now
 const GAME_DATA = {
   easy: [
-    { word: 'fish', image: require('./assets/images/fish.png')},
-    { word: 'crab', image: require('./assets/images/crab.png')},
-    { word: 'shark', image: require('./assets/images/shark.png')},
-    { word: 'wave', image: require('./assets/images/wave.png')},
-    { word: 'boat', image: require('./assets/images/boat.png')},
+    { word: 'fish', image: require('./assets/images/fish.png') },
+    { word: 'crab', image: require('./assets/images/crab.png') },
+    { word: 'shark', image: require('./assets/images/shark.png') },
+    { word: 'wave', image: require('./assets/images/wave.png') },
+    { word: 'boat', image: require('./assets/images/boat.png') },
   ],
   medium: [
-    { word: 'starfish', image: require('./assets/images/starfish.png')},
-    { word: 'whale', image: require('./assets/images/whale.png')},
-    { word: 'coral', image: require('./assets/images/coral.png')},
-    { word: 'seashell', image: require('./assets/images/shell.png')},
-    { word: 'squid', image: require('./assets/images/squid.png')},],
+    { word: 'starfish', image: require('./assets/images/starfish.png') },
+    { word: 'whale', image: require('./assets/images/whale.png') },
+    { word: 'coral', image: require('./assets/images/coral.png') },
+    { word: 'seashell', image: require('./assets/images/shell.png') },
+    { word: 'squid', image: require('./assets/images/squid.png') },],
   hard: [
-    { word: 'turtle', image: require('./assets/images/turtle.png')},
-    { word: 'octopus', image: require('./assets/images/octopus.png')},
-    { word: 'dolphin', image: require('./assets/images/dolphin.png')},
-    { word: 'jellyfish', image: require('./assets/images/jellyfish.png')},
-    { word: 'seahorse', image: require('./assets/images/seahorse.png')},]
+    { word: 'turtle', image: require('./assets/images/turtle.png') },
+    { word: 'octopus', image: require('./assets/images/octopus.png') },
+    { word: 'dolphin', image: require('./assets/images/dolphin.png') },
+    { word: 'jellyfish', image: require('./assets/images/jellyfish.png') },
+    { word: 'seahorse', image: require('./assets/images/seahorse.png') },]
 };
 
 // Sounds
@@ -916,6 +916,11 @@ const DSpellingGame = ({ onBackToHome }) => {
       }
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
 
+      // Play the wrong animation when answer is incorrect
+      if (wrongAnimation.current) {
+        wrongAnimation.current.play();
+      }
+
       // Reset blanks and return letters to original positions and appearance
       resetWord();
     }
@@ -1269,7 +1274,7 @@ const DSpellingGame = ({ onBackToHome }) => {
   const renderSplashScreen = () => {
     return (
       <ImageBackground
-        source={require('./assets/images/space_background.png')}
+        source={require('./assets/images/ocean-splashscreen.png')}
         style={styles.container}
       >
         <View style={styles.overlay}>
@@ -1517,6 +1522,15 @@ const DSpellingGame = ({ onBackToHome }) => {
               </TouchableOpacity>
             )}
           </View>
+
+          {/* Wrong animation overlay */}
+          <LottieView
+  ref={wrongAnimation}
+  source={require('./assets/animations/incorrect.json')} // Your new animation
+  style={styles.wrongAnimation}
+  loop={false}
+  speed={1.2} // Optional: adjust speed
+/>
         </ImageBackground>
       );
     } catch (err) {
@@ -2084,18 +2098,17 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     fontFamily: 'OpenDyslexic',
   },
+  wrongAnimation: {
+    zIndex: 30,
+    pointerEvents: 'none', // Allow interaction with components below
+  },
   errorButton: {
     paddingVertical: 12,
     paddingHorizontal: 20,
-    backgroundColor: 'rgba(76, 175, 80, 0.8)',
     borderRadius: 25,
-  },
-  errorButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold',
-    fontFamily: 'OpenDyslexic',
+    backgroundColor: 'rgba(76, 175, 80, 0.8)',
+    alignItems: 'center',
+    justifyContent: 'center',
   }
 });
-
 export default DSpellingGame;
