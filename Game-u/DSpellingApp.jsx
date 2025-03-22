@@ -1202,10 +1202,10 @@ const DSpellingGame = ({ onBackToHome }) => {
 
         setLetters(updatedLetters);
 
-        // Provide audio feedback
+        // Provide audio feedback - speak the letter instead of the position
         if (!isMuted) {
-          // Speak which position received the hint
-          Speech.speak(`Hint for position ${hintBlankIndex + 1}`, {
+          // Speak the letter that was filled in
+          Speech.speak(`Hint: the letter ${letter.toUpperCase()}`, {
             language: 'en',
             pitch: 1.0,
             rate: 0.75,
