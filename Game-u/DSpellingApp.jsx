@@ -1202,10 +1202,10 @@ const DSpellingGame = ({ onBackToHome }) => {
 
         setLetters(updatedLetters);
 
-        // Provide audio feedback - speak the letter instead of the position
+        // Provide audio feedback - speak only the letter itself
         if (!isMuted) {
-          // Speak the letter that was filled in
-          Speech.speak(`Hint: the letter ${letter.toUpperCase()}`, {
+          // Just voice the letter with no additional words
+          Speech.speak(`${letter.toUpperCase()}`, {
             language: 'en',
             pitch: 1.0,
             rate: 0.75,
@@ -1386,7 +1386,7 @@ const DSpellingGame = ({ onBackToHome }) => {
                       pitch: 1.0,
                       rate: 0.75,
                     });
-                    
+
                     // Add haptic feedback for better user experience
                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                   }
