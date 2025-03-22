@@ -1,0 +1,53 @@
+{
+    "expo": {
+      "name": "Word Scramble Game",
+      "slug": "word-scramble-game",
+      "version": "1.0.0",
+      "orientation": "portrait",
+      "icon": "./assets/images/icon.png",
+      "userInterfaceStyle": "light",
+      "splash": {
+        "image": "./assets/images/splash.png",
+        "resizeMode": "contain",
+        "backgroundColor": "#F8F5FF"
+      },
+      "assetBundlePatterns": [
+        "**/*"
+      ],
+      "ios": {
+        "supportsTablet": true,
+        "bundleIdentifier": "com.yourcompany.wordscramble",
+        "buildNumber": "1.0.0"
+      },
+      "android": {
+        "adaptiveIcon": {
+          "foregroundImage": "./assets/images/adaptive-icon.png",
+          "backgroundColor": "#F8F5FF"
+        },
+        "package": "com.yourcompany.wordscramble",
+        "versionCode": 1,
+        "permissions": []
+      },
+      "web": {
+        "favicon": "./assets/images/favicon.png"
+      },
+      "plugins": [
+        [
+          "expo-font",
+          {
+            "fonts": [
+              "./assets/fonts/OpenDyslexic-Regular.otf",
+              "./assets/fonts/OpenDyslexic-Bold.otf"
+            ]
+          }
+        ]
+      ],
+      "updates": {
+        "fallbackToCacheTimeout": 0
+      },
+      "description": "A word scramble game designed for dyslexic individuals with accessibility features",
+      "githubUrl": "https://github.com/yourusername/word-scramble-game",
+      "primaryColor": "#6A24FE",
+      "newArchEnabled": true
+    }
+  }
