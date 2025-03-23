@@ -96,7 +96,7 @@ export default function PhonicsSplashScreen({ onStartGame, onBackToHome }) {
           <View style={styles.buttonsContainer}>
             <TouchableOpacity style={styles.startButton} onPress={handleStartGame} activeOpacity={0.7}>
               <ImageBackground
-                source={require("./assets/images/wooden-button.png")}
+                source={require("./assets/images/pirate-wood.png")}
                 style={styles.woodenButton}
                 resizeMode="stretch"
               >
@@ -106,7 +106,7 @@ export default function PhonicsSplashScreen({ onStartGame, onBackToHome }) {
 
             <TouchableOpacity style={styles.backButton} onPress={handleBackToHome} activeOpacity={0.7}>
               <ImageBackground
-                source={require("./assets/images/wooden-button-small.png")}
+                source={require("./assets/images/pirate-grey.png")}
                 style={styles.woodenButtonSmall}
                 resizeMode="stretch"
               >
@@ -192,8 +192,8 @@ const styles = StyleSheet.create({
     gap: 15,
   },
   startButton: {
-    width: width * 0.7,
-    height: height * 0.08,
+    width: width * 0.6,
+    height: height * 0.1,
     marginBottom: 10,
   },
   woodenButton: {
@@ -203,14 +203,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   startButtonText: {
-    fontSize: Math.min(width * 0.05, 24),
+    fontSize: Math.min(width * 0.04, 24),
     fontFamily: "OpenDyslexic-Bold",
-    color: "#3E2723",
+    color: "#eb9f2d",
     textAlign: "center",
   },
   backButton: {
-    width: width * 0.5,
-    height: height * 0.06,
+    width: width * 0.6,
+    height: height * 0.1,
   },
   woodenButtonSmall: {
     width: "100%",
