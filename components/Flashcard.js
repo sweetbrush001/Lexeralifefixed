@@ -1,4 +1,4 @@
-"use client";
+"use client"; //hiiii
 
 import { useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, Animated, Dimensions } from "react-native";
