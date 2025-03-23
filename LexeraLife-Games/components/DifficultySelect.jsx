@@ -281,11 +281,11 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   animalsAnimation: {
-    width: "100%",
-    height: Math.min(height * 0.3, 200),
+    width: Math.min(width * 0.5, 200),
+    height: Math.min(height * 0.3, 120),
     position: "absolute",
-    bottom: height * 0.5, 
-    transform: [{translateX: -width * 0.47}],
+    top: height * 0,
+    alignSelf: "center",
   },
 });
 
