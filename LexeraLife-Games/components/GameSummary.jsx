@@ -182,7 +182,7 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     color: "#3E2723",
-    fontSize: Math.min(width * 0.05, 16),
+    fontSize: Math.min(width * 0.04, 16),
     fontFamily: "OpenDyslexic-Bold",
     textAlign: "center",
   },
