@@ -165,7 +165,6 @@ const CreatePost = ({ navigation }) => {
     }
   };
   
-  
   return (
     <SafeAreaView style={[styles.container, { paddingTop: insets.top }]}>
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
@@ -211,6 +210,7 @@ const CreatePost = ({ navigation }) => {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
+<<<<<<< Updated upstream
           <Animated.View 
             style={[
               styles.userInfo,
@@ -229,6 +229,8 @@ const CreatePost = ({ navigation }) => {
             <Text style={styles.userName}>{currentUser.displayName}</Text>
           </Animated.View>
           
+=======
+>>>>>>> Stashed changes
           <Animated.View style={{ opacity: fadeAnim }}>
             <TextInput 
               style={styles.titleInput} 
@@ -275,6 +277,7 @@ const CreatePost = ({ navigation }) => {
           </Animated.View>
         </ScrollView>
       </KeyboardAvoidingView>
+<<<<<<< Updated upstream
       
       <Animated.View 
         style={[
@@ -303,6 +306,8 @@ const CreatePost = ({ navigation }) => {
           <Text style={styles.toolbarText}>Add Location</Text>
         </TouchableOpacity>
       </Animated.View>
+=======
+>>>>>>> Stashed changes
     </SafeAreaView>
   );
 };
