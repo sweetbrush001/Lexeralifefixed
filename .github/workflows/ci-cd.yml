@@ -1,0 +1,58 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm install
+
+    # Uncomment if you have linting configured
+    # - name: Lint code
+    #   run: npm run lint
+
+    # Uncomment if you have tests configured
+    # - name: Run tests
+    #   run: npm test
+
+    - name: Install Expo CLI
+      run: npm install -g expo-cli eas-cli
+
+    - name: Login to Expo
+      env:
+        EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+      run: expo login --non-interactive -t ${{ secrets.EXPO_TOKEN }}
+
+    - name: Build app
+      run: |
+        if [ "${{ github.event_name }}" = "push" ] && [[ "${{ github.ref }}" == "refs/heads/main" || "${{ github.ref }}" == "refs/heads/master" ]]; then
+          echo "Building production version"
+          eas build --platform all --non-interactive --no-wait
+        else
+          echo "Building preview version"
+          eas build --platform all --profile preview --non-interactive --no-wait
+        fi
+      env:
+        EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+
+    # Deploy to Expo
+    - name: Publish to Expo
+      if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+      run: eas update --auto
+      env:
+        EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
