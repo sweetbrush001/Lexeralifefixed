@@ -86,7 +86,7 @@ export default function PhonicsSplashScreen({ onStartGame, onBackToHome }) {
           <Text style={styles.subtitle}>Sail the seas of sounds!</Text>
 
           <LottieView
-            source={require("./assets/animations/good-score.json")}
+            source={require("./assets/animations/parrot.json")}
             autoPlay
             loop
             style={styles.treasureAnimation}
@@ -119,7 +119,7 @@ export default function PhonicsSplashScreen({ onStartGame, onBackToHome }) {
         {/* Waves animation at the bottom */}
         <View style={styles.bottomSection}>
           <LottieView
-            source={require("./assets/animations/jungle-leaves.json")}
+            source={require("./assets/animations/sea-waves.json")}
             autoPlay
             loop
             style={styles.wavesAnimation}
@@ -231,8 +231,8 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
   },
   wavesAnimation: {
-    width: width,
-    height: height * 0.15,
+    width: width* 5,
+    height: height* 0.25,
   },
 })
 
