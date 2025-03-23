@@ -3,6 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView } from 
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import * as Speech from "expo-speech";
 import { LinearGradient } from "expo-linear-gradient";
+import Icon from "react-native-vector-icons/FontAwesome";
 
 const TypeTextScreen = () => {
   const navigation = useNavigation();
@@ -39,6 +40,14 @@ const TypeTextScreen = () => {
 
   return (
     <LinearGradient colors={["#ff9a9e", "#fad0c4"]} style={styles.container}>
+
+      <TouchableOpacity 
+        style={styles.backButton} 
+        onPress={() => navigation.goBack()}
+      >
+        <Icon name="arrow-left" size={32} color="#fff" />
+      </TouchableOpacity>
+
       <View style={styles.card}>
         <Text style={styles.header}>Type Your Text</Text>
         
@@ -134,6 +143,12 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     width: '100%',
   },
+  backButton: {
+    position: "absolute",
+    top: 40,
+    left: 20,
+    zIndex: 10,
+  },  
   actionButton: {
     width: '48%',
     borderRadius: 15,
