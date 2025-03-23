@@ -272,10 +272,24 @@ const styles = StyleSheet.create({
     resizeMode: "contain",
     aspectRatio: 1.6, 
   },
-  buttonText: {
-    fontSize: Math.min(width * 0.06, 28),
+  buttonText1: {
+    fontSize: Math.min(width * 0.04, 24),
     fontFamily: "OpenDyslexic-Bold",
-    color: "#3E2723",
+    color: "#3afcab",
+    textAlign: "center",
+    paddingHorizontal: 10,
+  },
+  buttonText2: {
+    fontSize: Math.min(width *0.04, 24),
+    fontFamily: "OpenDyslexic-Bold",
+    color: "#fcc83a",
+    textAlign: "center",
+    paddingHorizontal: 10,
+  },
+  buttonText3: {
+    fontSize: Math.min(width *0.04, 24),
+    fontFamily: "OpenDyslexic-Bold",
+    color: "#ff413b",
     textAlign: "center",
     paddingHorizontal: 10,
   },
