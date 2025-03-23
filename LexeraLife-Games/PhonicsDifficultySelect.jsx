@@ -200,7 +200,7 @@ export default function PhonicsDifficultySelect({ onSelectDifficulty, onBackToHo
         {animationLoaded && (
           <View style={styles.animationContainer}>
             <LottieView
-              source={require("./assets/animations/loading.json")}
+              source={require("./assets/animations/ship-load.json")}
               autoPlay
               loop
               style={styles.shipAnimation}

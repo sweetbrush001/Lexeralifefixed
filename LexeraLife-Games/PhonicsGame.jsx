@@ -726,10 +726,10 @@ export default function PhonicsGame({ onBackToHome }) {
   // Render loading screen
   if (loading) {
     return (
-      <ImageBackground source={require("./assets/images/jungle-background.jpg")} style={styles.loadingContainer}>
+      <ImageBackground source={require("./assets/images/treasure.webp")} style={styles.loadingContainer}>
         <View style={styles.loadingOverlay}>
           <LottieView
-            source={require("./assets/animations/loading.json")}
+            source={require("./assets/animations/ship-load.json")}
             autoPlay
             loop
             style={styles.loadingAnimation}
