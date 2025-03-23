@@ -24,8 +24,10 @@
     "expo": "52.0.0",
     "expo-auth-session": "~6.0.3",
     "expo-av": "~15.0.2",
+    "expo-document-picker": "~13.0.3",
     "expo-file-system": "~18.0.11",
     "expo-font": "~13.0.4",
+    "expo-image-manipulator": "~13.0.6",
     "expo-image-picker": "~16.0.6",
     "expo-linear-gradient": "~14.0.2",
     "expo-random": "^14.0.1",
@@ -48,9 +50,7 @@
     "react-native-svg": "^15.8.0",
     "react-native-tts": "^4.1.1",
     "react-native-vector-icons": "^10.2.0",
-    "tesseract.js": "^6.0.0",
-    "expo-image-manipulator": "~13.0.6",
-    "expo-document-picker": "~13.0.3"
+    "tesseract.js": "^6.0.0"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",
