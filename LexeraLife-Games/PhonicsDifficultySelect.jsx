@@ -159,30 +159,30 @@ export default function PhonicsDifficultySelect({ onSelectDifficulty, onBackToHo
           <TouchableOpacity style={styles.difficultyButton} onPress={() => handleSelect("easy")} activeOpacity={0.7}>
             <ImageBackground
               source={require("./assets/images/pirate-green.png")}
-              style={styles.woodenSign}
+              style={styles.woodenSign1}
               resizeMode="contain"
             >
-              <Text style={styles.buttonText}>Cabin Boy</Text>
+              <Text style={styles.buttonText1}>Cabin Boy</Text>
             </ImageBackground>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.difficultyButton} onPress={() => handleSelect("medium")} activeOpacity={0.7}>
             <ImageBackground
               source={require("./assets/images/pirate-yellow.png")}
-              style={styles.woodenSign}
+              style={styles.woodenSign2}
               resizeMode="contain"
             >
-              <Text style={styles.buttonText}>First Mate</Text>
+              <Text style={styles.buttonText2}>First Mate</Text>
             </ImageBackground>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.difficultyButton} onPress={() => handleSelect("hard")} activeOpacity={0.7}>
             <ImageBackground
               source={require("./assets/images/pirate-red.png")}
-              style={styles.woodenSign}
+              style={styles.woodenSign3}
               resizeMode="contain"
             >
-              <Text style={styles.buttonText}>Captain</Text>
+              <Text style={styles.buttonText3}>Captain</Text>
             </ImageBackground>
           </TouchableOpacity>
         </Animated.View>
@@ -243,19 +243,34 @@ const styles = StyleSheet.create({
   },
   difficultyButton: {
     width: width * 0.7,
-    height: height * 0.12, // Increased height for better visibility
+    height: height * 0.12, 
     marginBottom: height * 0.03,
     alignItems: "center",
     justifyContent: "center",
   },
-  woodenSign: {
+  woodenSign1: {
     width: "100%",
     height: "100%",
     justifyContent: "center",
     alignItems: "center",
-    // Ensure consistent appearance of image buttons
     resizeMode: "contain",
-    aspectRatio: 3.5, // Set a fixed aspect ratio
+    aspectRatio: 1.5, 
+  },
+  woodenSign2: {
+    width: "100%",
+    height: "100%",
+    justifyContent: "center",
+    alignItems: "center",
+    resizeMode: "contain",
+    aspectRatio: 1.6, 
+  },
+  woodenSign3: {
+    width: "100%",
+    height: "100%",
+    justifyContent: "center",
+    alignItems: "center",
+    resizeMode: "contain",
+    aspectRatio: 1.6, 
   },
   buttonText: {
     fontSize: Math.min(width * 0.06, 28),
