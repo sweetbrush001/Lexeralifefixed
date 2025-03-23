@@ -862,7 +862,7 @@ export default function PhonicsGame({ onBackToHome }) {
         {showSuccess && (
           <View style={styles.animationContainer}>
             <LottieView
-              source={require("./assets/animations/correct.json")}
+              source={require("./assets/animations/pirate-wrong.json")}
               autoPlay
               loop={false}
               style={styles.animation}
@@ -874,7 +874,7 @@ export default function PhonicsGame({ onBackToHome }) {
         {showFailure && (
           <View style={styles.animationContainer}>
             <LottieView
-              source={require("./assets/animations/incorrect.json")}
+              source={require("./assets/animations/monkey-right.json")}
               autoPlay
               loop={false}
               style={styles.animation}
