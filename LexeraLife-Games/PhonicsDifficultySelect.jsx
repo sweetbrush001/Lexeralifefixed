@@ -179,7 +179,7 @@ export default function PhonicsDifficultySelect({ onSelectDifficulty, onBackToHo
           <TouchableOpacity style={styles.difficultyButton} onPress={() => handleSelect("hard")} activeOpacity={0.7}>
             <ImageBackground
               source={require("./assets/images/pirate-red.png")}
-              style={styles.woodenSign3}
+              style={styles.woodenSign2}
               resizeMode="contain"
             >
               <Text style={styles.buttonText3}>Captain</Text>
@@ -189,7 +189,7 @@ export default function PhonicsDifficultySelect({ onSelectDifficulty, onBackToHo
 
         <TouchableOpacity style={styles.backButton} onPress={handleBackToHome} activeOpacity={0.7}>
           <ImageBackground
-            source={require("./assets/images/wooden-button-small.png")}
+            source={require("./assets/images/pirate-wood.png")}
             style={styles.woodenButtonSmall}
             resizeMode="stretch"
           >
@@ -220,7 +220,7 @@ const styles = StyleSheet.create({
   },
   overlay: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.2)",
+    backgroundColor: "rgba(0,0,0,0.3)",
     alignItems: "center",
     justifyContent: "center",
     padding: 20,
@@ -239,12 +239,11 @@ const styles = StyleSheet.create({
     width: "100%",
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: height * 0.05,
   },
   difficultyButton: {
     width: width * 0.7,
     height: height * 0.12, 
-    marginBottom: height * 0.03,
+    marginBottom: height * 0.015, // Reduced gap between buttons
     alignItems: "center",
     justifyContent: "center",
   },
@@ -264,19 +263,12 @@ const styles = StyleSheet.create({
     resizeMode: "contain",
     aspectRatio: 1.6, 
   },
-  woodenSign3: {
-    width: "100%",
-    height: "100%",
-    justifyContent: "center",
-    alignItems: "center",
-    resizeMode: "contain",
-    aspectRatio: 1.6, 
-  },
   buttonText1: {
     fontSize: Math.min(width * 0.04, 24),
     fontFamily: "OpenDyslexic-Bold",
     color: "#3afcab",
     textAlign: "center",
+    transform: [{translateY: -2}],
     paddingHorizontal: 10,
   },
   buttonText2: {
@@ -284,18 +276,20 @@ const styles = StyleSheet.create({
     fontFamily: "OpenDyslexic-Bold",
     color: "#fcc83a",
     textAlign: "center",
+    transform: [{translateY: -2}],
     paddingHorizontal: 10,
   },
   buttonText3: {
     fontSize: Math.min(width *0.04, 24),
     fontFamily: "OpenDyslexic-Bold",
-    color: "#ff413b",
+    color: "#f76565",
     textAlign: "center",
+    transform: [{translateY: -5}],
     paddingHorizontal: 10,
   },
   backButton: {
-    width: width * 0.5,
-    height: height * 0.06,
+    width: width * 0.45,
+    height: height * 0.08,
     marginBottom: height * 0.05,
   },
   woodenButtonSmall: {
@@ -305,9 +299,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   backButtonText: {
-    fontSize: Math.min(width * 0.04, 18),
+    fontSize: Math.min(width * 0.03, 20),
     fontFamily: "OpenDyslexic-Bold",
-    color: "#3E2723",
+    color: "#eb9f2d",
     textAlign: "center",
   },
   animationContainer: {
