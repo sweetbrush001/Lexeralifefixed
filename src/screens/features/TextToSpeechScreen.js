@@ -52,9 +52,9 @@ const TextToSpeechScreen = () => {
   const gradientColors = animation.interpolate({
     inputRange: [0, 0.5, 1],
     outputRange: [
-      "rgba(255, 182, 193, 1)", 
-      "rgba(173, 216, 230, 1)", 
-      "rgba(221, 160, 221, 1)", 
+      "rgba(255, 154, 158, 0.95)", // Warmer pink
+      "rgba(250, 208, 196, 0.95)", // Soft peach
+      "rgba(255, 154, 158, 0.95)", // Back to pink
     ],
   });
 
@@ -178,54 +178,77 @@ const TextToSpeechScreen = () => {
   return (
     <View style={styles.container}>
       <Animated.View style={[styles.animatedBackground, { backgroundColor: gradientColors }]} />
-
-      <TouchableOpacity onPress={pickImage} style={styles.glowButton}>
-        <LinearGradient colors={["#ff9966", "#ff5e62"]} style={styles.buttonInner}>
-          <Text style={styles.buttonText}>📸 Capture Document</Text>
-        </LinearGradient>
-      </TouchableOpacity>
-
-      <TouchableOpacity onPress={pickFromGallery} style={styles.glowButton}>
-        <LinearGradient colors={["#56CCF2", "#2F80ED"]} style={styles.buttonInner}>
-          <Text style={styles.buttonText}>🖼 Upload Image</Text>
-        </LinearGradient>
-      </TouchableOpacity>
-
-      {!imageUri && !text && (
-        <TouchableOpacity onPress={() => navigation.navigate("TypeTextScreen")} style={styles.glowButton}>
-          <LinearGradient colors={["#00c6ff", "#0072ff"]} style={styles.buttonInner}>
-            <Text style={styles.buttonText}>📝 Type a Text</Text>
-          </LinearGradient>
-        </TouchableOpacity>
-      )}
-
-      {imageUri && <Image source={{ uri: imageUri }} style={styles.preview} />}
-
-      {loading && <ActivityIndicator size="large" color="#FF7043" />}
-
-      {text ? (
-        <ScrollView style={[styles.textContainer, isSpeaking && { transform: [{ scale: 1.1 }] }]}>
-          <Text style={styles.extractedText}>
-            {text.split(" ").map((word, index) => (
-              <Text key={index} style={highlightedWordIndex === index ? styles.highlightedWord : {}}>
-                {word}{" "}
-              </Text>
-            ))}
-          </Text>
-
-          <TouchableOpacity onPress={speakTextWithHighlighting} style={[styles.glowButton, styles.smallButton]} disabled={isButtonDisabled}>
+      
+      <View style={styles.cardContainer}>
+        <Text style={styles.headerText}>Text to Speech</Text>
+        
+        <View style={styles.buttonRow}>
+          <TouchableOpacity onPress={pickImage} style={styles.glowButton}>
             <LinearGradient colors={["#ff9966", "#ff5e62"]} style={styles.buttonInner}>
-              <Text style={styles.buttonText}>🔊 Read the Text</Text>
+              <Text style={styles.buttonText}>📸 Capture</Text>
             </LinearGradient>
           </TouchableOpacity>
 
-          <TouchableOpacity onPress={stopSpeech} style={[styles.glowButton, styles.smallButton]}>
-          <LinearGradient colors={["#ff9966", "#ff5e62"]} style={[styles.buttonInner, styles.smallButtonInner]}>
-              <Text style={styles.buttonText}>⏹ Stop</Text>
+          <TouchableOpacity onPress={pickFromGallery} style={styles.glowButton}>
+            <LinearGradient colors={["#ff9a9e", "#fad0c4"]} style={styles.buttonInner}>
+              <Text style={styles.buttonText}>🖼 Gallery</Text>
             </LinearGradient>
           </TouchableOpacity>
-        </ScrollView>
-      ) : null}
+        </View>
+
+        {!imageUri && !text && (
+          <TouchableOpacity onPress={() => navigation.navigate("TypeTextScreen")} style={[styles.glowButton, styles.fullWidthButton]}>
+            <LinearGradient colors={["#ff9a9e", "#fad0c4"]} style={styles.buttonInner}>
+              <Text style={styles.buttonText}>📝 Type a Text</Text>
+            </LinearGradient>
+          </TouchableOpacity>
+        )}
+
+        {imageUri && (
+          <View style={styles.imageContainer}>
+            <Image source={{ uri: imageUri }} style={styles.preview} />
+          </View>
+        )}
+
+        {loading && (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#FF7043" />
+            <Text style={styles.loadingText}>Processing image...</Text>
+          </View>
+        )}
+
+        {text ? (
+          <View style={styles.resultCard}>
+            <ScrollView style={styles.textContainer}>
+              <Text style={styles.extractedText}>
+                {text.split(" ").map((word, index) => (
+                  <Text key={index} style={highlightedWordIndex === index ? styles.highlightedWord : {}}>
+                    {word}{" "}
+                  </Text>
+                ))}
+              </Text>
+            </ScrollView>
+
+            <View style={styles.actionButtonsContainer}>
+              <TouchableOpacity 
+                onPress={speakTextWithHighlighting} 
+                style={[styles.actionButton, isButtonDisabled && styles.disabledButton]} 
+                disabled={isButtonDisabled}
+              >
+                <LinearGradient colors={["#ff9966", "#ff5e62"]} style={styles.actionButtonInner}>
+                  <Text style={styles.actionButtonText}>🔊 Read</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+
+              <TouchableOpacity onPress={stopSpeech} style={styles.actionButton}>
+                <LinearGradient colors={["#ff5e62", "#d9534f"]} style={styles.actionButtonInner}>
+                  <Text style={styles.actionButtonText}>⏹ Stop</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+            </View>
+          </View>
+        ) : null}
+      </View>
     </View>
   );
 };
@@ -235,83 +258,139 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    padding: 20,
+    padding: 0,
     overflow: "hidden",
   },
   animatedBackground: {
     ...StyleSheet.absoluteFillObject,
-    position: "absolute",
   },
-  glowButton: {
-    width: "90%",
-    borderRadius: 30,
-    marginBottom: 20,
-    shadowColor: "#fff",
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.5,
+  cardContainer: {
+    width: '92%',
+    borderRadius: 25,
+    padding: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.85)',
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.2,
     shadowRadius: 15,
     elevation: 10,
+    alignItems: 'center',
   },
-  buttonContainer: {
-    alignItems: 'center', 
-    justifyContent: 'center',
-    width: '100%', 
-  },
-  smallButton: {
-    width: "60%",  
-    marginVertical: 10, 
-    alignSelf: 'center', 
-  },
-  smallButtonInner: {
-    paddingVertical: 8,  
-    borderRadius: 20,  
-  },
-  smallButtonText: {
-    fontSize: 14,  
+  headerText: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#ff5e62',
+    marginBottom: 20,
     textAlign: 'center',
-  },  
+  },
+  buttonRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+    marginBottom: 15,
+  },
+  glowButton: {
+    width: '48%',
+    borderRadius: 20,
+    marginBottom: 15,
+    shadowColor: "#ff9a9e",
+    shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.4,
+    shadowRadius: 10,
+    elevation: 8,
+  },
+  fullWidthButton: {
+    width: '100%',
+  },
   buttonInner: {
     paddingVertical: 15,
-    borderRadius: 30,
+    borderRadius: 20,
     alignItems: "center",
   },
   buttonText: {
     color: "#fff",
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: "bold",
+  },
+  imageContainer: {
+    width: '100%',
+    alignItems: 'center',
+    marginVertical: 15,
   },
   preview: {
     width: 250,
     height: 250,
     resizeMode: "contain",
-    marginBottom: 20,
-    borderRadius: 20,
+    borderRadius: 15,
     borderWidth: 2,
     borderColor: "#FF7043",
   },
+  loadingContainer: {
+    padding: 20,
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 10,
+    color: '#FF7043',
+    fontSize: 16,
+  },
+  resultCard: {
+    width: '100%',
+    borderRadius: 15,
+    overflow: 'hidden',
+    backgroundColor: '#fff',
+    shadowColor: "#FF7043",
+    shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
+  },
   textContainer: {
-    maxHeight: 300,
-    width: "90%",
+    maxHeight: 200,
+    width: "100%",
     padding: 15,
-    borderWidth: 1,
-    borderColor: "#FF7043",
-    borderRadius: 20,
-    marginVertical: 10,
+    borderRadius: 0,
     backgroundColor: "#FFFAFA",
+  },
+  extractedText: {
+    fontSize: 16,
+    lineHeight: 26,
+    color: "#333",
   },
   highlightedWord: {
     backgroundColor: "#FF7043",
     color: "#fff",
     padding: 2,
-    borderRadius: 3,
+    borderRadius: 5,
+    overflow: 'hidden',
   },
-  smallerWord: {
-    fontSize: 14, // Smaller font size for highlighted word
+  actionButtonsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    padding: 15,
+    backgroundColor: 'rgba(255, 250, 250, 0.8)',
   },
-  extractedText: {
+  actionButton: {
+    width: '45%',
+    borderRadius: 15,
+    shadowColor: "#ff9a9e",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 5,
+  },
+  actionButtonInner: {
+    paddingVertical: 12,
+    borderRadius: 15,
+    alignItems: "center",
+  },
+  actionButtonText: {
+    color: "#fff",
     fontSize: 16,
-    lineHeight: 24,
-    color: "#333",
+    fontWeight: "bold",
+  },
+  disabledButton: {
+    opacity: 0.6,
   },
 });
 
