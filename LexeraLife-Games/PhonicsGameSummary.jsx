@@ -33,11 +33,11 @@ export default function PhonicsGameSummary({
   // Get the appropriate animation based on score
   const getAnimation = () => {
     if (percentage >= 80) {
-      return require("./assets/animations/try-again.json")
+      return require("./assets/animations/great-score.json")
     } else if (percentage >= 50) {
       return require("./assets/animations/good-score.json")
     } else {
-      return require("./assets/animations/great-score.json")
+      return require("./assets/animations/try-again.json")
     }
   }
 
@@ -53,7 +53,7 @@ export default function PhonicsGameSummary({
   }
 
   return (
-    <ImageBackground source={require("./assets/images/jungle-background.jpg")} style={styles.container}>
+    <ImageBackground source={require("./assets/images/treasure.webp")} style={styles.container}>
       <View style={styles.overlay}>
         <LottieView source={getAnimation()} autoPlay loop style={styles.animation} />
 
@@ -82,7 +82,7 @@ export default function PhonicsGameSummary({
         <View style={styles.buttonsContainer}>
           <TouchableOpacity style={styles.button} onPress={handlePlayAgain} activeOpacity={0.7}>
             <ImageBackground
-              source={require("./assets/images/wooden-button.png")}
+              source={require("./assets/images/wooden-button-small.png")}
               style={styles.woodenButton}
               resizeMode="stretch"
             >
@@ -92,7 +92,7 @@ export default function PhonicsGameSummary({
 
           <TouchableOpacity style={styles.button} onPress={handleChangeDifficulty} activeOpacity={0.7}>
             <ImageBackground
-              source={require("./assets/images/wooden-button.png")}
+              source={require("./assets/images/wooden-button-small.png")}
               style={styles.woodenButton}
               resizeMode="stretch"
             >
@@ -102,7 +102,7 @@ export default function PhonicsGameSummary({
 
           <TouchableOpacity style={styles.button} onPress={handleBackToHome} activeOpacity={0.7}>
             <ImageBackground
-              source={require("./assets/images/wooden-button.png")}
+              source={require("./assets/images/wooden-button-small.png")}
               style={styles.woodenButton}
               resizeMode="stretch"
             >
