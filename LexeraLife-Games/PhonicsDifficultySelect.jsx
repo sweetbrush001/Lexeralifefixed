@@ -158,7 +158,7 @@ export default function PhonicsDifficultySelect({ onSelectDifficulty, onBackToHo
         <Animated.View style={[styles.buttonsContainer, { transform: [{ scale: scaleAnim }] }]}>
           <TouchableOpacity style={styles.difficultyButton} onPress={() => handleSelect("easy")} activeOpacity={0.7}>
             <ImageBackground
-              source={require("./assets/images/logo.png")}
+              source={require("./assets/images/pirate-green.png")}
               style={styles.woodenSign}
               resizeMode="contain"
             >
@@ -168,7 +168,7 @@ export default function PhonicsDifficultySelect({ onSelectDifficulty, onBackToHo
 
           <TouchableOpacity style={styles.difficultyButton} onPress={() => handleSelect("medium")} activeOpacity={0.7}>
             <ImageBackground
-              source={require("./assets/images/logo.png")}
+              source={require("./assets/images/pirate-yellow.png")}
               style={styles.woodenSign}
               resizeMode="contain"
             >
@@ -178,7 +178,7 @@ export default function PhonicsDifficultySelect({ onSelectDifficulty, onBackToHo
 
           <TouchableOpacity style={styles.difficultyButton} onPress={() => handleSelect("hard")} activeOpacity={0.7}>
             <ImageBackground
-              source={require("./assets/images/logo.png")}
+              source={require("./assets/images/pirate-red.png")}
               style={styles.woodenSign}
               resizeMode="contain"
             >
@@ -243,8 +243,8 @@ const styles = StyleSheet.create({
   },
   difficultyButton: {
     width: width * 0.7,
-    height: height * 0.1,
-    marginBottom: height * 0.02,
+    height: height * 0.12, // Increased height for better visibility
+    marginBottom: height * 0.03,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -253,12 +253,16 @@ const styles = StyleSheet.create({
     height: "100%",
     justifyContent: "center",
     alignItems: "center",
+    // Ensure consistent appearance of image buttons
+    resizeMode: "contain",
+    aspectRatio: 3.5, // Set a fixed aspect ratio
   },
   buttonText: {
     fontSize: Math.min(width * 0.06, 28),
     fontFamily: "OpenDyslexic-Bold",
     color: "#3E2723",
     textAlign: "center",
+    paddingHorizontal: 10,
   },
   backButton: {
     width: width * 0.5,

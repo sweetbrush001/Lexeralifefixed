@@ -221,7 +221,7 @@ const styles = StyleSheet.create({
   backButtonText: {
     fontSize: Math.min(width * 0.04, 18),
     fontFamily: "OpenDyslexic",
-    color: "#3E2723",
+    color: "#609df7",
     textAlign: "center",
   },
   bottomSection: {
