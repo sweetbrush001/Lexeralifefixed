@@ -244,103 +244,141 @@ const HomeScreen = () => {
             )}
           </LinearGradient>
 
-          {/* Features section */}
+          {/* Features section - Modernized */}
           <View style={styles.featuresSection}>
             <ReadableText style={styles.sectionTitle} readable={false}>
               Features
             </ReadableText>
             
             <View style={styles.featureGrid}>
-              {/* Feature Cards - Arranged in a 2x3 grid */}
+              {/* Primary Feature Row - Two prominent features */}
+              <View style={styles.primaryFeatureRow}>
+                <TouchableOpacity 
+                  style={[styles.featureCard, styles.primaryFeature]}
+                  onPress={() => navigation.navigate('Chatbot')}
+                  activeOpacity={0.7}
+                >
+                  <LinearGradient
+                    colors={['#FFE0E0', '#FFF5F5']}
+                    style={styles.gradientCard}
+                  >
+                    <View style={styles.cardContent}>
+                      <View style={[styles.iconContainer, styles.primaryIcon]}>
+                        <MaterialCommunityIcons name="robot" size={32} color="#FF6B6B" />
+                      </View>
+                      <ReadableText style={styles.featureTitle} readable={true} priority={4}>
+                        Lexera Bot
+                      </ReadableText>
+                    </View>
+                  </LinearGradient>
+                </TouchableOpacity>
+                
+                <TouchableOpacity 
+                  style={[styles.featureCard, styles.primaryFeature]}
+                  onPress={() => navigation.navigate('Games')}
+                  activeOpacity={0.7}
+                >
+                  <LinearGradient
+                    colors={['#F0F5FF', '#F8FBFF']}
+                    style={styles.gradientCard}
+                  >
+                    <View style={styles.cardContent}>
+                      <View style={[styles.iconContainer, styles.primaryIcon]}>
+                        <MaterialCommunityIcons name="brain" size={32} color="#FF6B6B" />
+                      </View>
+                      <ReadableText style={styles.featureTitle} readable={true} priority={5}>
+                        Brain Training
+                      </ReadableText>
+                    </View>
+                  </LinearGradient>
+                </TouchableOpacity>
+              </View>
+              
+              {/* Flash Cards - Highlighted wide feature */}
               <TouchableOpacity 
-                style={styles.featureCard}
-                onPress={() => navigation.navigate('Chatbot')}
+                style={[styles.featureCard, styles.wideFeature]}
+                onPress={() => navigation.navigate('FlashCards')}
                 activeOpacity={0.7}
               >
-                <BlurView intensity={10} style={styles.cardBlur}>
-                  <View style={styles.iconContainer}>
-                    <MaterialCommunityIcons name="robot" size={30} color="#FF6B6B" />
+                <LinearGradient
+                  colors={['#FFF0EA', '#FFF9F7']}
+                  start={{x: 0, y: 0}}
+                  end={{x: 1, y: 0}}
+                  style={styles.gradientCard}
+                >
+                  <View style={[styles.cardContent, styles.wideCardContent]}>
+                    <View style={[styles.iconContainer, styles.wideIcon]}>
+                      <MaterialCommunityIcons name="cards-outline" size={34} color="#FF6B6B" />
+                    </View>
+                    <ReadableText style={[styles.featureTitle, styles.wideTitle]} readable={true} priority={6}>
+                      Flash Cards
+                    </ReadableText>
                   </View>
-                  <ReadableText style={styles.featureTitle} readable={true} priority={4}>
-                    Lexera Bot
-                  </ReadableText>
-                </BlurView>
+                </LinearGradient>
               </TouchableOpacity>
               
-              <TouchableOpacity 
-                style={styles.featureCard}
-                onPress={() => navigation.navigate('Games')}
-                activeOpacity={0.7}
-              >
-                <BlurView intensity={10} style={styles.cardBlur}>
-                  <View style={styles.iconContainer}>
-                    <MaterialCommunityIcons name="brain" size={30} color="#FF6B6B" />
+              {/* Secondary Feature Grid - Four smaller features */}
+              <View style={styles.secondaryFeatureGrid}>
+                <TouchableOpacity 
+                  style={styles.secondaryFeature}
+                  onPress={() => navigation.navigate('Teststarting')}
+                  activeOpacity={0.7}
+                >
+                  <View style={styles.cardContent}>
+                    <View style={styles.iconContainer}>
+                      <Feather name="clipboard" size={26} color="#FF6B6B" />
+                    </View>
+                    <ReadableText style={styles.featureTitle} readable={true} priority={7}>
+                      Dyslexia Test
+                    </ReadableText>
                   </View>
-                  <ReadableText style={styles.featureTitle} readable={true} priority={5}>
-                    Brain Training
-                  </ReadableText>
-                </BlurView>
-              </TouchableOpacity>
-              
-              <TouchableOpacity 
-                style={styles.featureCard}
-                onPress={() => navigation.navigate('Teststarting')}
-                activeOpacity={0.7}
-              >
-                <BlurView intensity={10} style={styles.cardBlur}>
-                  <View style={styles.iconContainer}>
-                    <Feather name="clipboard" size={30} color="#FF6B6B" />
+                </TouchableOpacity>
+                
+                <TouchableOpacity 
+                  style={styles.secondaryFeature}
+                  onPress={() => navigation.navigate('Relax')}
+                  activeOpacity={0.7}
+                >
+                  <View style={styles.cardContent}>
+                    <View style={styles.iconContainer}>
+                      <Feather name="heart" size={26} color="#FF6B6B" />
+                    </View>
+                    <ReadableText style={styles.featureTitle} readable={true} priority={8}>
+                      Relax
+                    </ReadableText>
                   </View>
-                  <ReadableText style={styles.featureTitle} readable={true} priority={6}>
-                    Dyslexia Test
-                  </ReadableText>
-                </BlurView>
-              </TouchableOpacity>
-              
-              <TouchableOpacity 
-                style={styles.featureCard}
-                onPress={() => navigation.navigate('Relax')}
-                activeOpacity={0.7}
-              >
-                <BlurView intensity={10} style={styles.cardBlur}>
-                  <View style={styles.iconContainer}>
-                    <Feather name="heart" size={30} color="#FF6B6B" />
+                </TouchableOpacity>
+                
+                <TouchableOpacity 
+                  style={styles.secondaryFeature}
+                  onPress={() => navigation.navigate('ReadAssist')}
+                  activeOpacity={0.7}
+                >
+                  <View style={styles.cardContent}>
+                    <View style={styles.iconContainer}>
+                      <Feather name="book-open" size={26} color="#FF6B6B" />
+                    </View>
+                    <ReadableText style={styles.featureTitle} readable={true} priority={9}>
+                      Text Reader
+                    </ReadableText>
                   </View>
-                  <ReadableText style={styles.featureTitle} readable={true} priority={7}>
-                    Relax
-                  </ReadableText>
-                </BlurView>
-              </TouchableOpacity>
-              
-              <TouchableOpacity 
-                style={styles.featureCard}
-                onPress={() => navigation.navigate('ReadAssist')}
-                activeOpacity={0.7}
-              >
-                <BlurView intensity={10} style={styles.cardBlur}>
-                  <View style={styles.iconContainer}>
-                    <Feather name="book-open" size={30} color="#FF6B6B" />
+                </TouchableOpacity>
+                
+                <TouchableOpacity 
+                  style={styles.secondaryFeature}
+                  onPress={() => navigation.navigate('Community')}
+                  activeOpacity={0.7}
+                >
+                  <View style={styles.cardContent}>
+                    <View style={styles.iconContainer}>
+                      <Feather name="users" size={26} color="#FF6B6B" />
+                    </View>
+                    <ReadableText style={styles.featureTitle} readable={true} priority={10}>
+                      Community
+                    </ReadableText>
                   </View>
-                  <ReadableText style={styles.featureTitle} readable={true} priority={8}>
-                    Text Reader
-                  </ReadableText>
-                </BlurView>
-              </TouchableOpacity>
-              
-              <TouchableOpacity 
-                style={styles.featureCard}
-                onPress={() => navigation.navigate('Community')}
-                activeOpacity={0.7}
-              >
-                <BlurView intensity={10} style={styles.cardBlur}>
-                  <View style={styles.iconContainer}>
-                    <Feather name="users" size={30} color="#FF6B6B" />
-                  </View>
-                  <ReadableText style={styles.featureTitle} readable={true} priority={9}>
-                    Community
-                  </ReadableText>
-                </BlurView>
-              </TouchableOpacity>
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
         </ScrollView>
@@ -517,52 +555,173 @@ const styles = StyleSheet.create({
   },
   // Removed the side panel styles since they're now in the SidePanel component
   featuresSection: {
-    paddingHorizontal: 20,
-    marginTop: 10,
+    paddingHorizontal: 15,
+    marginTop: 15,
   },
   sectionTitle: {
-    fontSize: 20,
-    fontWeight: '600',
+    fontSize: 22,
+    fontWeight: '700',
     color: '#333',
     marginTop: 10,
     marginBottom: 15,
+    paddingHorizontal: 5,
   },
-  // New grid layout - 2x3 grid
+  // Modern grid layout
   featureGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
   },
   featureCard: {
-    width: '48%', // Almost half of the container width
-    height: 120,
-    borderRadius: 16,
+    width: '31%', // Three items per row
+    height: 110,
+    borderRadius: 20,
     overflow: 'hidden',
     marginBottom: 15,
     backgroundColor: 'rgba(255, 255, 255, 0.8)',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.1,
-    shadowRadius: 6,
-    elevation: 3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  primaryFeature: {
+    width: '48%', // Two items in first row
+    height: 140,
+  },
+  wideFeature: {
+    width: '100%', // Full width for Flash Cards
+    height: 100,
+    marginVertical: 10,
   },
   cardBlur: {
-    padding: 15,
+    padding: 12,
     alignItems: 'center',
     justifyContent: 'center',
     height: '100%',
+    flexDirection: 'row',
   },
   iconContainer: {
-    width: 55,
-    height: 55,
-    borderRadius: 27.5,
+    width: 50,
+    height: 50,
+    borderRadius: 25,
     backgroundColor: 'rgba(255, 107, 107, 0.1)',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 8,
+    marginRight: 10,
   },
   featureTitle: {
-    fontSize: 14,
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+    textAlign: 'center',
+  },
+  // Modern Feature Styles - Completely refreshed
+  featuresSection: {
+    paddingHorizontal: 20,
+    marginTop: 20,
+    marginBottom: 10,
+  },
+  sectionTitle: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: '#333',
+    marginBottom: 20,
+  },
+  featureGrid: {
+    flex: 1,
+  },
+  // Primary feature row (first row with 2 large cards)
+  primaryFeatureRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 15,
+  },
+  primaryFeature: {
+    width: '48%',
+    height: 140,
+    backgroundColor: 'transparent',
+  },
+  // Wide feature (Flash Cards)
+  wideFeature: {
+    width: '100%',
+    height: 90,
+    marginBottom: 15,
+    backgroundColor: 'transparent',
+  },
+  wideCardContent: {
+    flexDirection: 'row',
+    justifyContent: 'flex-start',
+    paddingHorizontal: 20,
+  },
+  wideIcon: {
+    marginRight: 15,
+    width: 56,
+    height: 56,
+  },
+  wideTitle: {
+    fontSize: 18,
+    textAlign: 'left',
+  },
+  // Secondary features grid (2x2 grid)
+  secondaryFeatureGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+  },
+  secondaryFeature: {
+    width: '48%',
+    height: 110,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    marginBottom: 15,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    elevation: 3,
+    padding: 15,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  // Card components common styles
+  featureCard: {
+    borderRadius: 20,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  gradientCard: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  cardContent: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 15,
+  },
+  iconContainer: {
+    width: 46,
+    height: 46,
+    borderRadius: 23,
+    backgroundColor: 'rgba(255, 107, 107, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  primaryIcon: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    marginBottom: 12,
+  },
+  featureTitle: {
+    fontSize: 15,
     fontWeight: '600',
     color: '#333',
     textAlign: 'center',

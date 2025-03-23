@@ -48,7 +48,7 @@ const GamesScreen = () => {
         <View style={styles.header}>
           <TouchableOpacity 
             style={styles.backButton}
-            onPress={() => navigation.goBack()}
+            onPress={() => navigation.navigate('Home')}
           >
             <Feather name="arrow-left" size={24} color="#FF6B6B" />
           </TouchableOpacity>
@@ -81,7 +81,7 @@ const GamesScreen = () => {
           {/* Word Builder Game Card */}
           <TouchableOpacity 
             style={styles.gameCard}
-            onPress={() => navigation.navigate('WordBuilderGame')}
+            onPress={() => navigation.navigate('PhonicsGame')}
           >
             <BlurView intensity={10} style={styles.cardBlur}>
               <View style={styles.gameCardContent}>
@@ -125,7 +125,7 @@ const GamesScreen = () => {
           {/* Letter Recognition Game Card */}
           <TouchableOpacity 
             style={styles.gameCard}
-            onPress={() => navigation.navigate('LetterRecognitionGame')}
+            onPress={() => navigation.navigate('SpellingGame')}
           >
             <BlurView intensity={10} style={styles.cardBlur}>
               <View style={styles.gameCardContent}>
@@ -174,7 +174,7 @@ const GamesScreen = () => {
             <BlurView intensity={10} style={styles.cardBlur}>
               <View style={styles.gameCardContent}>
                 <View style={styles.gameIconContainer}>
-                  <MaterialCommunityIcons name="pattern" size={32} color="#FF6B6B" />
+                  <MaterialCommunityIcons name="view-grid" size={32} color="#FF6B6B" />
                 </View>
                 <View style={styles.gameInfo}>
                   <ReadableText style={[styles.gameTitle, fontStyle]} readable={true} priority={12}>
@@ -204,6 +204,50 @@ const GamesScreen = () => {
                   </ReadableText>
                   <ReadableText style={[styles.gameDescription, fontStyle]} readable={true} priority={15}>
                     Advanced brain training with word associations and cognitive challenges.
+                  </ReadableText>
+                </View>
+              </View>
+            </BlurView>
+          </TouchableOpacity>
+
+          {/* Word Scramble Game Card */}
+          <TouchableOpacity 
+            style={styles.gameCard}
+            onPress={() => navigation.navigate('WordScrambleEntry')}
+          >
+            <BlurView intensity={10} style={styles.cardBlur}>
+              <View style={styles.gameCardContent}>
+                <View style={styles.gameIconContainer}>
+                  <MaterialCommunityIcons name="shuffle-variant" size={32} color="#FF6B6B" />
+                </View>
+                <View style={styles.gameInfo}>
+                  <ReadableText style={[styles.gameTitle, fontStyle]} readable={true} priority={16}>
+                    Word Scramble
+                  </ReadableText>
+                  <ReadableText style={[styles.gameDescription, fontStyle]} readable={true} priority={17}>
+                    Unscramble jumbled words to improve vocabulary and spelling skills.
+                  </ReadableText>
+                </View>
+              </View>
+            </BlurView>
+          </TouchableOpacity>
+
+          {/* Ocean Spelling Game Card */}
+          <TouchableOpacity 
+            style={styles.gameCard}
+            onPress={() => navigation.navigate('OceanSpellingGame')}
+          >
+            <BlurView intensity={10} style={styles.cardBlur}>
+              <View style={styles.gameCardContent}>
+                <View style={styles.gameIconContainer}>
+                  <MaterialCommunityIcons name="jellyfish" size={32} color="#FF6B6B" />
+                </View>
+                <View style={styles.gameInfo}>
+                  <ReadableText style={[styles.gameTitle, fontStyle]} readable={true} priority={18}>
+                    Ocean Spelling
+                  </ReadableText>
+                  <ReadableText style={[styles.gameDescription, fontStyle]} readable={true} priority={19}>
+                    Learn to spell ocean-themed words with visual cues and interactive challenges.
                   </ReadableText>
                 </View>
               </View>

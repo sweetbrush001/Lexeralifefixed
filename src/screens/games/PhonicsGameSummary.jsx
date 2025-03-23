@@ -1,0 +1,213 @@
+import { View, Text, TouchableOpacity, StyleSheet, ImageBackground, Dimensions } from "react-native"
+import LottieView from "lottie-react-native"
+import * as Haptics from "expo-haptics"
+
+const { width, height } = Dimensions.get("window")
+
+export default function PhonicsGameSummary({
+  score,
+  totalQuestions,
+  difficulty,
+  highScore,
+  onPlayAgain,
+  onChangeDifficulty,
+  onBackToHome = () => {},
+}) {
+  const percentage = Math.round((score / totalQuestions) * 100)
+
+  const handlePlayAgain = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
+    onPlayAgain()
+  }
+
+  const handleChangeDifficulty = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
+    onChangeDifficulty()
+  }
+
+  const handleBackToHome = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
+    
+    // Only call if it's a function
+    if (typeof onBackToHome === 'function') {
+      onBackToHome()
+    } else {
+      console.warn("onBackToHome is not a function")
+    }
+  }
+
+  // Get the appropriate animation based on score
+  const getAnimation = () => {
+    if (percentage >= 80) {
+      return require("./assets/animations/try-again.json")
+    } else if (percentage >= 50) {
+      return require("./assets/animations/good-score.json")
+    } else {
+      return require("./assets/animations/great-score.json")
+    }
+  }
+
+  // Get the appropriate message based on score
+  const getMessage = () => {
+    if (percentage >= 80) {
+      return "Ahoy! Ye found the treasure!"
+    } else if (percentage >= 50) {
+      return "Not bad, matey!"
+    } else {
+      return "Arrr! Better luck next time!"
+    }
+  }
+
+  return (
+    <ImageBackground source={require("./assets/images/jungle-background.jpg")} style={styles.container}>
+      <View style={styles.overlay}>
+        <LottieView source={getAnimation()} autoPlay loop style={styles.animation} />
+
+        <Text style={styles.title}>Adventure Complete!</Text>
+
+        <ImageBackground
+          source={require("./assets/images/jungle-background.jpg")}
+          style={styles.statsContainer}
+          resizeMode="stretch"
+        >
+          <View style={styles.statsContent}>
+            <Text style={styles.messageText}>{getMessage()}</Text>
+
+            <Text style={styles.difficultyText}>
+              {difficulty === "easy" ? "Cabin Boy" : difficulty === "medium" ? "First Mate" : "Captain"} Difficulty
+            </Text>
+
+            <Text style={styles.scoreText}>
+              Score: {score}/{totalQuestions} ({percentage}%)
+            </Text>
+
+            <Text style={styles.statsText}>High Score: {highScore}</Text>
+          </View>
+        </ImageBackground>
+
+        <View style={styles.buttonsContainer}>
+          <TouchableOpacity style={styles.button} onPress={handlePlayAgain} activeOpacity={0.7}>
+            <ImageBackground
+              source={require("./assets/images/wooden-button.png")}
+              style={styles.woodenButton}
+              resizeMode="stretch"
+            >
+              <Text style={styles.buttonText}>Play Again</Text>
+            </ImageBackground>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.button} onPress={handleChangeDifficulty} activeOpacity={0.7}>
+            <ImageBackground
+              source={require("./assets/images/wooden-button.png")}
+              style={styles.woodenButton}
+              resizeMode="stretch"
+            >
+              <Text style={styles.buttonText}>Change Difficulty</Text>
+            </ImageBackground>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.button} onPress={handleBackToHome} activeOpacity={0.7}>
+            <ImageBackground
+              source={require("./assets/images/wooden-button.png")}
+              style={styles.woodenButton}
+              resizeMode="stretch"
+            >
+              <Text style={styles.buttonText}>Back to Port</Text>
+            </ImageBackground>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </ImageBackground>
+  )
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    width: "100%",
+    height: "100%",
+  },
+  overlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.3)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+  },
+  animation: {
+    width: width * 0.4,
+    height: width * 0.4,
+    marginBottom: height * 0.02,
+  },
+  title: {
+    fontSize: Math.min(width * 0.08, 42),
+    fontFamily: "OpenDyslexic-Bold",
+    color: "#FFFFFF",
+    textShadowColor: "rgba(0, 0, 0, 0.75)",
+    textShadowOffset: { width: -1, height: 1 },
+    textShadowRadius: 10,
+    marginBottom: height * 0.02,
+  },
+  statsContainer: {
+    width: width * 0.85,
+    height: height * 0.3,
+    marginVertical: height * 0.03,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  statsContent: {
+    width: "80%",
+    alignItems: "center",
+  },
+  messageText: {
+    fontSize: Math.min(width * 0.06, 28),
+    fontFamily: "OpenDyslexic-Bold",
+    color: "#8B4513",
+    marginBottom: height * 0.015,
+    textAlign: "center",
+  },
+  difficultyText: {
+    fontSize: Math.min(width * 0.05, 24),
+    fontFamily: "OpenDyslexic-Bold",
+    color: "#8B4513",
+    marginBottom: height * 0.015,
+    textAlign: "center",
+  },
+  scoreText: {
+    fontSize: Math.min(width * 0.07, 32),
+    fontFamily: "OpenDyslexic-Bold",
+    color: "#8B4513",
+    marginBottom: height * 0.015,
+    textAlign: "center",
+  },
+  statsText: {
+    fontSize: Math.min(width * 0.05, 25),
+    fontFamily: "OpenDyslexic-Bold",
+    color: "#8B4513",
+    marginBottom: height * 0.01,
+    textAlign: "center",
+  },
+  buttonsContainer: {
+    width: "90%",
+    alignItems: "center",
+    gap: height * 0.015,
+  },
+  button: {
+    width: width * 0.7,
+    height: height * 0.07,
+    marginBottom: height * 0.01,
+  },
+  woodenButton: {
+    width: "100%",
+    height: "100%",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  buttonText: {
+    color: "#3E2723",
+    fontSize: Math.min(width * 0.05, 20),
+    fontFamily: "OpenDyslexic-Bold",
+    textAlign: "center",
+  },
+})
+
