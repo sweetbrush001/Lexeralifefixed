@@ -780,7 +780,7 @@ export default function PhonicsGame({ onBackToHome }) {
 
             {/* Word image */}
             <ImageBackground
-              source={require("./assets/images/wooden-frame.png")}
+              source={require("./assets/images/pirate-panel.png")}
               style={styles.woodenFrame}
               resizeMode="stretch"
             >
@@ -796,7 +796,7 @@ export default function PhonicsGame({ onBackToHome }) {
                 activeOpacity={0.7}
               >
                 <ImageBackground
-                  source={require("./assets/images/wooden-button.png")}
+                  source={require("./assets/images/pirate-yellow.png")}
                   style={styles.pirateButton}
                   resizeMode="stretch"
                 >
@@ -811,7 +811,7 @@ export default function PhonicsGame({ onBackToHome }) {
                 activeOpacity={0.7}
               >
                 <ImageBackground
-                  source={require("./assets/images/wooden-button.png")}
+                  source={require("./assets/images/pirate-yellow.png")}
                   style={styles.pirateButton}
                   resizeMode="stretch"
                 >
@@ -835,7 +835,7 @@ export default function PhonicsGame({ onBackToHome }) {
                   activeOpacity={0.7}
                 >
                   <ImageBackground
-                    source={require("./assets/images/jungle-splash.jpg")}
+                    source={require("./assets/images/mcq-scroll.png")}
                     style={styles.optionBackground}
                     resizeMode="stretch"
                   >
@@ -848,7 +848,7 @@ export default function PhonicsGame({ onBackToHome }) {
             {/* End game button */}
             <TouchableOpacity style={styles.endGameButton} onPress={handleEndGame} activeOpacity={0.7}>
               <ImageBackground
-                source={require("./assets/images/wooden-button-small.png")}
+                source={require("./assets/images/pirate-wood.png")}
                 style={styles.pirateButtonSmall}
                 resizeMode="stretch"
               >
