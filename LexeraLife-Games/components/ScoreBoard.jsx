@@ -30,10 +30,10 @@ const styles = StyleSheet.create({
   },
   scoreContainer: {
     alignItems: "center",
-    marginBottom: 10,
+    marginBottom: 5,
   },
   scoreText: {
-    fontSize: 26,
+    fontSize: 24,
     fontFamily: "OpenDyslexic-Bold",
     color: "#402503",
     
@@ -55,7 +55,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   progressText: {
-    fontSize: 16,
+    fontSize: 14,
     fontFamily: "OpenDyslexic",
     color: "#362003",
     textAlign: "center",

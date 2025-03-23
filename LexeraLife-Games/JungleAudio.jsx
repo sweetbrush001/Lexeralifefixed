@@ -131,7 +131,7 @@ const styles = StyleSheet.create({
   container: {
     position: "absolute",
     top: 20,
-    right: 20,
+    right: 10,
     zIndex: 10,
   },
   soundButton: {
@@ -139,8 +139,8 @@ const styles = StyleSheet.create({
     height: 70,
     borderRadius: 20,
     position: "absolute",
-    top: 70,
-    right: 5,
+    top: 5,
+    right: 10,
     justifyContent: "center",
     alignItems: "center",
   },
