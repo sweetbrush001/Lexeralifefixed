@@ -17,6 +17,7 @@ import * as Speech from "expo-speech";
 import * as FileSystem from "expo-file-system";
 import * as ImageManipulator from "expo-image-manipulator";
 import { LinearGradient } from "expo-linear-gradient";
+import Icon from "react-native-vector-icons/FontAwesome";
 
 const OCR_API_KEY = "K87132275288957";
 
@@ -178,6 +179,13 @@ const TextToSpeechScreen = () => {
   return (
     <View style={styles.container}>
       <Animated.View style={[styles.animatedBackground, { backgroundColor: gradientColors }]} />
+
+      <TouchableOpacity 
+        style={styles.backButton}
+        onPress={() => navigation.goBack()}
+      > 
+        <Icon name="arrow-left" size={32} color="#fff" /> 
+      </TouchableOpacity>
       
       <View style={styles.cardContainer}>
         <Text style={styles.headerText}>Text to Speech</Text>
@@ -213,7 +221,7 @@ const TextToSpeechScreen = () => {
         {loading && (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color="#FF7043" />
-            <Text style={styles.loadingText}>Processing image...</Text>
+            <Text style={styles.loadingText}>Processing text...</Text>
           </View>
         )}
 
@@ -364,6 +372,12 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     overflow: 'hidden',
   },
+  backButton: {
+    position: "absolute",
+    top: 40, // Adjust for spacing
+    left: 20, 
+    zIndex: 10, 
+  },  
   actionButtonsContainer: {
     flexDirection: 'row',
     justifyContent: 'space-around',
