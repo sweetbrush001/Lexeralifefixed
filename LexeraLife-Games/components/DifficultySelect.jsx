@@ -244,7 +244,6 @@ const styles = StyleSheet.create({
     textShadowRadius: 10,
     marginBottom: height * 0.01,
     textAlign: "center",
-
   },
   buttonsContainer: {
     width: "100%",
@@ -283,9 +282,10 @@ const styles = StyleSheet.create({
   },
   animalsAnimation: {
     width: "100%",
-    height: Math.min(height * 0.3, 150),
+    height: Math.min(height * 0.3, 200),
     position: "absolute",
-    top: 70,
+    bottom: height * 0.5, 
+    transform: [{translateX: -width * 0.47}],
   },
-})
+});
 
