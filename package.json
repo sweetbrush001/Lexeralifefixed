@@ -2,7 +2,6 @@
   "name": "myapp",
   "version": "1.0.0",
   "main": "index.js",
-  "type": "module",
   "scripts": {
     "start": "expo start",
     "android": "expo start --android",
@@ -10,42 +9,61 @@
     "web": "expo start --web"
   },
   "dependencies": {
+    "@expo/config-plugins": "~9.0.0",
     "@expo/vector-icons": "^14.0.2",
-    "@react-native-async-storage/async-storage": "^1.24.0",
+    "@motify/components": "^0.18.0",
+    "@motify/core": "^0.18.0",
+    "@react-native-async-storage/async-storage": "^1.23.1",
+    "@react-native-community/netinfo": "^11.4.1",
     "@react-native-community/slider": "^4.5.5",
     "@react-native-firebase/app": "^21.10.1",
     "@react-native-firebase/firestore": "^21.10.1",
+    "@react-native-google-signin/google-signin": "^13.2.0",
+    "@react-native-masked-view/masked-view": "^0.3.2",
     "@react-native-voice/voice": "^3.2.4",
     "@react-navigation/native": "^7.0.14",
     "@react-navigation/native-stack": "^7.2.0",
     "@react-navigation/stack": "^7.1.1",
     "axios": "^1.7.9",
-    "expo": "52.0.0",
+    "expo": "~52.0.38",
     "expo-auth-session": "~6.0.3",
     "expo-av": "~15.0.2",
+    "expo-blur": "~14.0.3",
+    "expo-camera": "^16.0.18",
     "expo-font": "~13.0.4",
+    "expo-haptics": "~14.0.1",
+    "expo-image-manipulator": "~13.0.6",
     "expo-image-picker": "~16.0.6",
     "expo-linear-gradient": "~14.0.2",
     "expo-random": "^14.0.1",
     "expo-speech": "~13.0.1",
+    "expo-splash-screen": "~0.29.22",
     "expo-status-bar": "~2.0.1",
     "expo-web-browser": "~14.0.2",
     "firebase": "^11.3.0",
+    "framesync": "^5.3.0",
     "ldrs": "^1.0.2",
     "lottie-react-native": "^7.1.0",
+    "moti": "^0.30.0",
+    "popmotion": "^11.0.3",
     "react": "18.3.1",
-    "react-native": "0.76.6",
+    "react-native": "^0.76.7",
+    "react-native-animatable": "^1.4.0",
+    "react-native-app-intro-slider": "^4.0.4",
+    "react-native-confetti-cannon": "^1.5.2",
     "react-native-draggable-flatlist": "^4.0.1",
-    "react-native-gesture-handler": "^2.24.0",
+    "react-native-gesture-handler": "~2.20.2",
     "react-native-markdown-display": "^7.0.2",
     "react-native-paper": "^5.13.1",
     "react-native-reanimated": "~3.16.1",
-    "react-native-safe-area-context": "4.12.0",
+    "react-native-safe-area-context": "^4.12.0",
     "react-native-screens": "~4.4.0",
+    "react-native-skeleton-placeholder": "^5.2.4",
     "react-native-spinkit": "^1.5.1",
     "react-native-svg": "^15.8.0",
     "react-native-tts": "^4.1.1",
-    "react-native-vector-icons": "^10.2.0"
+    "react-native-vector-icons": "^10.2.0",
+    "style-value-types": "^5.1.2"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",
@@ -56,5 +74,26 @@
     "metro-react-native-babel-preset": "^0.77.0",
     "react-native-dotenv": "^3.4.11"
   },
-  "private": true
+  "private": true,
+  "expo": {
+    "doctor": {
+      "reactNativeDirectoryCheck": {
+        "exclude": [
+          "react-native-confetti-cannon",
+          "react-native-spinkit",
+          "react-native-tts",
+          "expo-random",
+          "react-native-app-intro-slider",
+          "react-native-skeleton-placeholder"
+        ],
+        "listUnknownPackages": false
+      }
+    }
+  },
+  "overrides": {
+    "@expo/config-plugins": "~9.0.0"
+  },
+  "resolutions": {
+    "@expo/config-plugins": "~9.0.0"
+  }
 }

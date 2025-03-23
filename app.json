@@ -1,33 +1,41 @@
 {
   "expo": {
-    "name": "MyApp",
-    "slug": "MyApp",
+    "name": "Lexeralife",
+    "slug": "lexeralife",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
+    "scheme": "lexeralife",
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
-    "ios": {
-      "supportsTablet": true,
-      "scheme": "lexeralife"
-    },
-    "android": {
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
-      },
-      "scheme": "lexeralife"
-    },
     "web": {
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "expo-font"
-    ]
+      "expo-font",
+      [
+        "@react-native-voice/voice",
+        {
+          "microphonePermission": "Allow Lexera Life to access your microphone",
+          "speechRecognitionPermission": "Allow Lexera Life to access speech recognition"
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "c4f9cd8d-228b-4cc4-975f-210a1b932737"
+      }
+    },
+    "android": {
+      "permissions": [
+        "android.permission.RECORD_AUDIO"
+      ],
+      "package": "com.lexeralife.app"
+    }
   }
 }

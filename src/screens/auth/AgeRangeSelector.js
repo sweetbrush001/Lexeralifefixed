@@ -9,10 +9,14 @@ import {
   ImageBackground, 
   Dimensions,
   Platform,
-  StatusBar
+  StatusBar,
+  Alert
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { auth, db } from '../../config/firebaseConfig';
+import { doc, setDoc } from 'firebase/firestore';
+import * as Haptics from 'expo-haptics';
 
 // Get screen dimensions for responsive sizing
 const { width, height } = Dimensions.get('window');
@@ -28,6 +32,7 @@ const fontSize = (size) => {
 export default function AgeRangeSelector() {
   const navigation = useNavigation();
   const [selectedAgeRange, setSelectedAgeRange] = useState(null);
+  const [saving, setSaving] = useState(false);
 
   // Age range options
   const ageRanges = [
@@ -37,7 +42,8 @@ export default function AgeRangeSelector() {
       label: 'Years',
       position: 'right',
       characterImage: require('../../../assets/char1.png'),
-      colors: ['#322B7C', '#4EBFED']
+      colors: ['#322B7C', '#4EBFED'],
+      firestoreValue: '6-12 years'
     },
     { 
       id: 2, 
@@ -45,7 +51,8 @@ export default function AgeRangeSelector() {
       label: 'Years',
       position: 'left',
       characterImage: require('../../../assets/char2.png'),
-      colors: ['#D6226A', '#FFC371']
+      colors: ['#D6226A', '#FFC371'],
+      firestoreValue: '13-17 years'
     },
     { 
       id: 3, 
@@ -53,19 +60,48 @@ export default function AgeRangeSelector() {
       label: 'Years',
       position: 'right',
       characterImage: require('../../../assets/char3.png'),
-      colors: ['#735B47', '#C8A696']
+      colors: ['#735B47', '#C8A696'],
+      firestoreValue: '18+ years (Adults)'
     },
   ];
 
   // Handle age range selection
   const handleAgeRangeSelect = (id) => {
     setSelectedAgeRange(id);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
   };
 
-  // Handle next button press - navigate to Home page
-  const handleNextPress = () => {
+  // Handle next button press - save age range and navigate to Guide
+  const handleNextPress = async () => {
     if (selectedAgeRange) {
-      navigation.replace('Home');
+      try {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        setSaving(true);
+        
+        const currentUser = auth.currentUser;
+        if (!currentUser) {
+          Alert.alert("Error", "You must be logged in to continue.");
+          setSaving(false);
+          return;
+        }
+        
+        // Get the selected age range's Firestore value
+        const selectedRange = ageRanges.find(item => item.id === selectedAgeRange);
+        
+        // Save the age range to the user's document in Firestore
+        await setDoc(doc(db, "users", currentUser.uid), {
+          ageRange: selectedRange.firestoreValue,
+          // Keep any existing user data by using merge: true in the options
+        }, { merge: true });
+        
+        // Navigate to the Guide screen
+        navigation.replace('Guide');
+      } catch (error) {
+        console.error("Error saving age range:", error);
+        Alert.alert("Error", "Failed to save your age range. Please try again.");
+      } finally {
+        setSaving(false);
+      }
     }
   };
 

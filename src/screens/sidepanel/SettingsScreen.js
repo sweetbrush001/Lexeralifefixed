@@ -1,14 +1,18 @@
-import React, { useMemo } from 'react';
-import { View, Text, StyleSheet, TextInput, ScrollView, Pressable } from 'react-native';
+import React, { useMemo, useRef, useEffect } from 'react';
+import { View, Text, StyleSheet, TextInput, ScrollView, Pressable, Animated, TouchableWithoutFeedback, TouchableOpacity } from 'react-native';
 import { useFonts } from 'expo-font';
-import { MaterialIcons } from '@expo/vector-icons';
+import { MaterialIcons, Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSettings } from '../../context/SettingsContext';
+import StyledToggleSwitch from '../../components/StyledToggleSwitch';
+import SlideSelector from '../../components/SlideSelector';
+import FancyRadioGroup from '../../components/FancyRadioGroup';
+import { useNavigation } from '@react-navigation/native';
 
 const ColorPresets = [
-  { label: 'Black', value: '#000000' },
-  { label: 'Navy', value: '#000080' },
-  { label: 'Dark Gray', value: '#404040' },
+  { label: 'Black', value: '#000000', swatch: true },
+  { label: 'Navy', value: '#000080', swatch: true },
+  { label: 'Gray', value: '#404040', swatch: true },
 ];
 
 const FontSizePresets = [
@@ -29,6 +33,7 @@ const SettingsScreen = () => {
   const [fontsLoaded] = useFonts({
     'OpenDyslexic-Regular': require('../../../assets/fonts/OpenDyslexic3-Regular.ttf'),
   });
+  const navigation = useNavigation();
 
   const handleSettingChange = (key, value) => {
     updateSettings({
@@ -57,6 +62,17 @@ const SettingsScreen = () => {
 
   return (
     <SafeAreaView style={styles.container}>
+      <View style={styles.header}>
+        <TouchableOpacity 
+          style={styles.backButton} 
+          onPress={() => navigation.goBack()}
+        >
+          <Ionicons name="arrow-back" size={24} color="#333" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Settings</Text>
+        <View style={styles.placeholderView} />
+      </View>
+      
       <ScrollView showsVerticalScrollIndicator={false}>
         {previewText}
 
@@ -86,80 +102,55 @@ const SettingsScreen = () => {
           </View>
         </View>
 
+        {/* Text Color Section with new FancyRadioGroup */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Text Color</Text>
-          <View style={styles.colorPresets}>
-            {ColorPresets.map((color) => (
-              <Pressable
-                key={color.value}
-                style={[
-                  styles.colorButton,
-                  settings.fontColor === color.value && styles.colorButtonSelected,
-                ]}
-                onPress={() => handleSettingChange('fontColor', color.value)}
-              >
-                <View style={[styles.colorSwatch, { backgroundColor: color.value }]} />
-                <Text style={styles.colorLabel}>{color.label}</Text>
-              </Pressable>
-            ))}
-          </View>
+          <Text style={styles.sectionSubtitle}>Choose a color preset:</Text>
+          
+          <FancyRadioGroup
+            options={ColorPresets}
+            value={settings.fontColor}
+            onChange={(value) => handleSettingChange('fontColor', value)}
+            style={styles.colorRadioGroup}
+          />
+          
+          <Text style={styles.sectionSubtitle}>Or enter a custom hex color:</Text>
           <TextInput
             style={styles.input}
             value={settings.fontColor}
             onChangeText={(text) => handleSettingChange('fontColor', text)}
-            placeholder="Or enter custom hex color"
+            placeholder="#000000"
             placeholderTextColor="#666"
           />
         </View>
 
+        {/* Contrast Section with new Slider Selector */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Contrast</Text>
-          <View style={styles.contrastButtons}>
-            {ContrastPresets.map((contrast) => (
-              <Pressable
-                key={contrast.value}
-                style={[
-                  styles.contrastButton,
-                  Math.round(settings.contrast * 10) === Math.round(contrast.value * 10) && 
-                  styles.contrastButtonSelected,
-                ]}
-                onPress={() => handleSettingChange('contrast', contrast.value)}
-              >
-                <Text 
-                  style={[
-                    styles.contrastButtonText,
-                    Math.round(settings.contrast * 10) === Math.round(contrast.value * 10) && 
-                    styles.contrastButtonTextSelected,
-                  ]}
-                >
-                  {contrast.label}
-                </Text>
-              </Pressable>
-            ))}
-          </View>
+          <SlideSelector 
+            options={ContrastPresets}
+            value={settings.contrast}
+            onChange={(value) => handleSettingChange('contrast', value)}
+          />
+          <Text style={styles.helperText}>
+            Adjust contrast to make text easier to read
+          </Text>
         </View>
 
-        <Pressable
-          style={[
-            styles.accessibilityButton,
-            settings.isDyslexicFriendly && styles.accessibilityButtonActive,
-          ]}
-          onPress={() => handleSettingChange('isDyslexicFriendly', !settings.isDyslexicFriendly)}
-        >
-          <MaterialIcons
-            name={settings.isDyslexicFriendly ? 'check-circle' : 'accessibility-new'}
-            size={24}
-            color={settings.isDyslexicFriendly ? '#fff' : '#007AFF'}
-          />
-          <Text
-            style={[
-              styles.accessibilityButtonText,
-              settings.isDyslexicFriendly && styles.accessibilityButtonTextActive,
-            ]}
-          >
-            Dyslexic Friendly Font
+        {/* Dyslexic Friendly Font Toggle */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Accessibility</Text>
+          <View style={styles.toggleContainer}>
+            <Text style={styles.toggleLabel}>Dyslexic Friendly Font</Text>
+            <StyledToggleSwitch 
+              value={settings.isDyslexicFriendly}
+              onToggle={() => handleSettingChange('isDyslexicFriendly', !settings.isDyslexicFriendly)} 
+            />
+          </View>
+          <Text style={styles.toggleDescription}>
+            Enables OpenDyslexic font designed to increase readability for readers with dyslexia
           </Text>
-        </Pressable>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -337,6 +328,81 @@ const styles = StyleSheet.create({
   },
   accessibilityButtonTextActive: {
     color: '#fff',
+  },
+  // Toggle Switch Styles
+  toggleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  toggleLabel: {
+    fontSize: 16,
+    color: '#333',
+    fontWeight: '500',
+  },
+  toggleDescription: {
+    fontSize: 14,
+    color: '#666',
+    marginTop: 4,
+    lineHeight: 20,
+  },
+  switch: {
+    position: 'relative',
+    width: 56,
+    height: 32,
+    borderRadius: 16,
+    padding: 4,
+  },
+  slider: {
+    width: 24,
+    height: 24,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    // For shadow on iOS
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.15,
+    shadowRadius: 2,
+    // For shadow on Android
+    elevation: 2,
+  },
+  helperText: {
+    fontSize: 14,
+    color: '#666',
+    marginTop: 10,
+    textAlign: 'center',
+  },
+  sectionSubtitle: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 12,
+  },
+  colorRadioGroup: {
+    marginBottom: 16,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#DEDEDE',
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#1A1A1A',
+    flex: 1,
+    textAlign: 'center',
+  },
+  backButton: {
+    padding: 8,
+  },
+  placeholderView: {
+    width: 40, // Match the width of the back button for balanced layout
   },
 });
 
