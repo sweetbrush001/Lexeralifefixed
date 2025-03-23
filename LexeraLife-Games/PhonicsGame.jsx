@@ -757,7 +757,7 @@ export default function PhonicsGame({ onBackToHome }) {
 
   // Render main game
   return (
-    <ImageBackground source={require("./assets/images/game-screen-bg.jpg")} style={styles.container}>
+    <ImageBackground source={require("./assets/images/game-bg.webp")} style={styles.container}>
       <PirateAudio />
 
       <View style={styles.overlay}>
