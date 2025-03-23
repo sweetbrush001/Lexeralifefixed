@@ -174,7 +174,6 @@ const CreatePost = ({ navigation }) => {
     }
   };
   
-  
   return (
     <SafeAreaView style={[styles.container, { paddingTop: insets.top }]}>
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
@@ -220,24 +219,6 @@ const CreatePost = ({ navigation }) => {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          <Animated.View 
-            style={[
-              styles.userInfo,
-              {
-                opacity: fadeAnim,
-                transform: [{ translateY: slideAnim }]
-              }
-            ]}
-          >
-            <Image 
-              source={{ 
-                uri: currentUser.photoURL || 'https://placeimg.com/80/80/people' 
-              }} 
-              style={styles.userAvatar} 
-            />
-            <Text style={[styles.userName, fontStyle]}>{currentUser.displayName}</Text>
-          </Animated.View>
-          
           <Animated.View style={{ opacity: fadeAnim }}>
             <TextInput 
               style={[styles.titleInput, fontStyle]} 
@@ -284,34 +265,6 @@ const CreatePost = ({ navigation }) => {
           </Animated.View>
         </ScrollView>
       </KeyboardAvoidingView>
-      
-      <Animated.View 
-        style={[
-          styles.toolbar,
-          {
-            opacity: fadeAnim,
-            transform: [{ translateY: slideAnim }]
-          }
-        ]}
-      >
-        <TouchableOpacity 
-          style={styles.toolbarButton} 
-          onPress={pickImage}
-        >
-          <Icon name="image" size={20} color="#0066FF" />
-          <Text style={[styles.toolbarText, fontStyle]}>Add Image</Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity style={styles.toolbarButton}>
-          <Icon name="poll" size={20} color="#0066FF" />
-          <Text style={[styles.toolbarText, fontStyle]}>Create Poll</Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity style={styles.toolbarButton}>
-          <Icon name="map-marker-alt" size={20} color="#0066FF" />
-          <Text style={[styles.toolbarText, fontStyle]}>Add Location</Text>
-        </TouchableOpacity>
-      </Animated.View>
     </SafeAreaView>
   );
 };
