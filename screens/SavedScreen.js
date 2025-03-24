@@ -14,32 +14,29 @@ import {
   TextInput,
   SafeAreaView,
   StatusBar,
-  Image,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import Flashcard from "../components/Flashcard";
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { getSavedFlashcards, removeFlashcard, clearFlashcards } from "../utils/storage";
-import { LinearGradient } from "expo-linear-gradient";
+import { getSavedFlashcards, removeFlashcard } from "../utils/storage";
 
-const { width, height } = Dimensions.get('window');
+const { width } = Dimensions.get('window');
 
+// Clean, minimalist color palette
 const COLORS = {
-  primary: "#7C4DFF", // Purple primary color
-  primaryLight: "#B39DDB",
-  secondary: "#FF9800", // Orange accent
-  background: "#F5F7FA",
-  card: "#FFFFFF",
+  primary: "#7C4DFF",
+  primaryLight: "#EDE7F6",
+  background: "#FFFFFF",
+  card: "#F9F9F9",
   text: "#333333",
-  textLight: "#78909C",
-  border: "#E0E0E0",
-  success: "#4CAF50",
-  error: "#F44336",
+  textLight: "#757575",
+  border: "#EEEEEE",
+  success: "#66BB6A",
+  error: "#EF5350",
   shadow: "#000",
 };
 
-const CARD_HEIGHT = 220;
-const STACK_OFFSET = 8;
+const CARD_HEIGHT = 200;
 const FLASHCARDS_KEY = 'flashcards';
 
 export default function SavedScreen({ setActiveTab, setFlashcards, setTimer }) {
@@ -48,8 +45,6 @@ export default function SavedScreen({ setActiveTab, setFlashcards, setTimer }) {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
   const [expandedCollection, setExpandedCollection] = useState(null);
-  const [expandedCard, setExpandedCard] = useState(null);
-  const [animation] = useState(new Animated.Value(0));
   const [modalVisible, setModalVisible] = useState(false);
   const [timerModalVisible, setTimerModalVisible] = useState(false);
   const [selectedCollection, setSelectedCollection] = useState([]);
@@ -84,18 +79,6 @@ export default function SavedScreen({ setActiveTab, setFlashcards, setTimer }) {
       setLoading(false);
       setRefreshing(false);
     }
-  };
-
-  const toggleCollection = (subtopic) => {
-    setExpandedCollection(expandedCollection === subtopic ? null : subtopic);
-    setExpandedCard(null);
-    
-    Animated.spring(animation, {
-      toValue: expandedCollection === subtopic ? 0 : 1,
-      useNativeDriver: true,
-      tension: 40,
-      friction: 7,
-    }).start();
   };
 
   const handleDelete = async (id, subtopic) => {
@@ -188,102 +171,54 @@ export default function SavedScreen({ setActiveTab, setFlashcards, setTimer }) {
 
   const renderCollection = ({ item: [subtopic, cards] }) => {
     const isExpanded = expandedCollection === subtopic;
-    const containerHeight = isExpanded 
-      ? CARD_HEIGHT * cards.length + (cards.length - 1) * 12 
-      : CARD_HEIGHT + (cards.length - 1) * STACK_OFFSET;
-
-    // Get category color for the collection
-    const getCategoryColor = () => {
-      const categories = {
-        "technology": "#7C4DFF",
-        "geography": "#26A69A",
-        "history": "#EF5350",
-        "science": "#42A5F5",
-        "other": "#FFA726"
-      };
-      
-      // Use the category of the first card, or default
-      const category = cards[0]?.category || "other";
-      return categories[category] || COLORS.primary;
-    };
 
     return (
       <View style={styles.collectionContainer}>
-        <LinearGradient
-          colors={[getCategoryColor() + '20', COLORS.card]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.collectionGradient}
+        <TouchableOpacity 
+          style={styles.collectionHeader}
+          onPress={() => setExpandedCollection(isExpanded ? null : subtopic)}
+          activeOpacity={0.7}
         >
-          <View style={styles.collectionHeader}>
-            <View style={styles.collectionTitleContainer}>
-              <Text style={styles.collectionTitle}>{subtopic}</Text>
-              <View style={[styles.cardCountBadge, { backgroundColor: getCategoryColor() + '30' }]}>
-                <Text style={[styles.cardCount, { color: getCategoryColor() }]}>{cards.length}</Text>
-              </View>
+          <View style={styles.collectionTitleContainer}>
+            <Text style={styles.collectionTitle}>{subtopic}</Text>
+            <View style={styles.cardCountContainer}>
+              <Text style={styles.cardCount}>{cards.length} cards</Text>
             </View>
+          </View>
+          
+          <View style={styles.headerButtons}>
+            <TouchableOpacity 
+              style={styles.iconButton}
+              onPress={() => handleDeleteCollection(subtopic)}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <Ionicons name="trash-outline" size={18} color={COLORS.textLight} />
+            </TouchableOpacity>
             
-            <View style={styles.buttonContainer}>
-              <TouchableOpacity 
-                style={[styles.actionButton, { backgroundColor: getCategoryColor() }]}
-                onPress={() => toggleCollection(subtopic)}
-              >
-                <Ionicons 
-                  name={isExpanded ? "chevron-up" : "chevron-down"} 
-                  size={20} 
-                  color="#fff" 
-                />
-              </TouchableOpacity>
-              
-              <TouchableOpacity 
-                style={[styles.actionButton, { backgroundColor: COLORS.error }]}
-                onPress={() => handleDeleteCollection(subtopic)}
-              >
-                <Ionicons name="trash-outline" size={18} color="#fff" />
-              </TouchableOpacity>
-            </View>
+            <Ionicons 
+              name={isExpanded ? "chevron-up" : "chevron-down"} 
+              size={20} 
+              color={COLORS.textLight} 
+            />
           </View>
+        </TouchableOpacity>
 
-          <View style={[styles.stackContainer, { height: containerHeight }]}>
-            {cards.map((card, index) => {
-              const offset = isExpanded ? index * (CARD_HEIGHT + 12) : index * STACK_OFFSET;
-              
-              return (
-                <Animated.View
-                  key={card.id || index}
-                  style={[
-                    styles.stackedCard,
-                    {
-                      zIndex: cards.length - index,
-                      transform: [{
-                        translateY: animation.interpolate({
-                          inputRange: [0, 1],
-                          outputRange: [index * STACK_OFFSET, offset]
-                        })
-                      }]
-                    }
-                  ]}
+        {isExpanded && (
+          <View style={styles.flashcardsContainer}>
+            {cards.map((card, index) => (
+              <View key={card.id || index} style={styles.flashcardWrapper}>
+                <Flashcard flashcard={card} />
+                <TouchableOpacity 
+                  style={styles.deleteButton} 
+                  onPress={() => handleDelete(card.id, subtopic)}
+                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                 >
-                  <View style={styles.flashcardContainer}>
-                    <Flashcard 
-                      flashcard={card} 
-                      expanded={expandedCard === card.id}
-                    />
-                    {isExpanded && (
-                      <TouchableOpacity 
-                        style={styles.deleteButton} 
-                        onPress={() => handleDelete(card.id, subtopic)}
-                      >
-                        <Ionicons name="trash-outline" size={16} color="#fff" />
-                        <Text style={styles.deleteButtonText}>Delete</Text>
-                      </TouchableOpacity>
-                    )}
-                  </View>
-                </Animated.View>
-              );
-            })}
+                  <Ionicons name="trash-outline" size={16} color={COLORS.error} />
+                </TouchableOpacity>
+              </View>
+            ))}
           </View>
-        </LinearGradient>
+        )}
       </View>
     );
   };
@@ -293,8 +228,9 @@ export default function SavedScreen({ setActiveTab, setFlashcards, setTimer }) {
       <View style={styles.modalHeader}>
         <Text style={styles.modalTitle}>Select a Collection</Text>
         <TouchableOpacity
-          style={styles.modalCloseIcon}
+          style={styles.modalCloseButton}
           onPress={() => setModalVisible(false)}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
           <Ionicons name="close" size={24} color={COLORS.text} />
         </TouchableOpacity>
@@ -302,7 +238,6 @@ export default function SavedScreen({ setActiveTab, setFlashcards, setTimer }) {
       
       {Object.keys(collections).length === 0 ? (
         <View style={styles.emptyModalContainer}>
-          <Ionicons name="folder-open-outline" size={64} color={COLORS.primaryLight} />
           <Text style={styles.emptyModalText}>No collections available</Text>
         </View>
       ) : (
@@ -318,11 +253,11 @@ export default function SavedScreen({ setActiveTab, setFlashcards, setTimer }) {
                 setTimerModalVisible(true);
               }}
             >
-              <View style={styles.modalItemContent}>
-                <Text style={styles.modalItemText}>{subtopic}</Text>
+              <Text style={styles.modalItemText}>{subtopic}</Text>
+              <View style={styles.modalItemRight}>
                 <Text style={styles.modalItemCount}>{cards.length} cards</Text>
+                <Ionicons name="chevron-forward" size={18} color={COLORS.textLight} />
               </View>
-              <Ionicons name="chevron-forward" size={20} color={COLORS.textLight} />
             </TouchableOpacity>
           )}
           contentContainerStyle={styles.modalList}
@@ -336,8 +271,9 @@ export default function SavedScreen({ setActiveTab, setFlashcards, setTimer }) {
       <View style={styles.modalHeader}>
         <Text style={styles.modalTitle}>Set Timer</Text>
         <TouchableOpacity
-          style={styles.modalCloseIcon}
+          style={styles.modalCloseButton}
           onPress={() => setTimerModalVisible(false)}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
           <Ionicons name="close" size={24} color={COLORS.text} />
         </TouchableOpacity>
@@ -391,7 +327,7 @@ export default function SavedScreen({ setActiveTab, setFlashcards, setTimer }) {
       
       <View style={styles.modalButtonGroup}>
         <TouchableOpacity
-          style={[styles.modalButton, styles.modalPrimaryButton]}
+          style={[styles.modalActionButton, styles.primaryButton]}
           onPress={() => {
             const totalSeconds = (parseInt(timerMinutes) || 0) * 60 + (parseInt(timerSeconds) || 0);
             setFlashcards(selectedCollection);
@@ -400,12 +336,11 @@ export default function SavedScreen({ setActiveTab, setFlashcards, setTimer }) {
             setTimerModalVisible(false);
           }}
         >
-          <Ionicons name="timer-outline" size={20} color="#fff" />
-          <Text style={styles.modalButtonText}>Start with Timer</Text>
+          <Text style={styles.buttonText}>Start with Timer</Text>
         </TouchableOpacity>
         
         <TouchableOpacity
-          style={[styles.modalButton, styles.modalSecondaryButton]}
+          style={[styles.modalActionButton, styles.secondaryButton]}
           onPress={() => {
             setFlashcards(selectedCollection);
             setTimer(0); // No timer
@@ -413,8 +348,7 @@ export default function SavedScreen({ setActiveTab, setFlashcards, setTimer }) {
             setTimerModalVisible(false);
           }}
         >
-          <Ionicons name="play-outline" size={20} color="#fff" />
-          <Text style={styles.modalButtonText}>Start without Timer</Text>
+          <Text style={styles.buttonText}>Start without Timer</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -422,12 +356,12 @@ export default function SavedScreen({ setActiveTab, setFlashcards, setTimer }) {
 
   const renderHeader = () => (
     <View style={styles.header}>
-      <View style={styles.headerContent}>
+      <View style={styles.headerRow}>
         <Text style={styles.headerTitle}>My Collections</Text>
         
         {isSearching ? (
           <View style={styles.searchContainer}>
-            <Ionicons name="search" size={20} color={COLORS.textLight} />
+            <Ionicons name="search" size={18} color={COLORS.textLight} />
             <TextInput
               ref={searchInputRef}
               style={styles.searchInput}
@@ -437,15 +371,16 @@ export default function SavedScreen({ setActiveTab, setFlashcards, setTimer }) {
               autoFocus
             />
             <TouchableOpacity onPress={toggleSearch}>
-              <Ionicons name="close" size={20} color={COLORS.textLight} />
+              <Ionicons name="close" size={18} color={COLORS.textLight} />
             </TouchableOpacity>
           </View>
         ) : (
           <TouchableOpacity 
-            style={styles.searchButton}
+            style={styles.iconButton}
             onPress={toggleSearch}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
-            <Ionicons name="search" size={22} color={COLORS.primary} />
+            <Ionicons name="search" size={20} color={COLORS.textLight} />
           </TouchableOpacity>
         )}
       </View>
@@ -472,11 +407,9 @@ export default function SavedScreen({ setActiveTab, setFlashcards, setTimer }) {
   if (error) {
     return (
       <View style={styles.centerContainer}>
-        <Ionicons name="alert-circle-outline" size={64} color={COLORS.error} />
         <Text style={styles.errorText}>{error}</Text>
         <TouchableOpacity style={styles.retryButton} onPress={loadFlashcards}>
-          <Ionicons name="refresh" size={20} color="#fff" />
-          <Text style={styles.retryButtonText}>Retry</Text>
+          <Text style={styles.buttonText}>Retry</Text>
         </TouchableOpacity>
       </View>
     );
@@ -495,34 +428,28 @@ export default function SavedScreen({ setActiveTab, setFlashcards, setTimer }) {
           <View style={styles.emptyContainer}>
             {searchQuery ? (
               <>
-                <Ionicons name="search" size={64} color={COLORS.primaryLight} />
                 <Text style={styles.emptyTitle}>No results found</Text>
                 <Text style={styles.emptyText}>
                   No flashcards match your search "{searchQuery}"
                 </Text>
                 <TouchableOpacity 
-                  style={styles.emptyButton}
+                  style={[styles.emptyButton, styles.primaryButton]}
                   onPress={() => setSearchQuery('')}
                 >
-                  <Text style={styles.emptyButtonText}>Clear Search</Text>
+                  <Text style={styles.buttonText}>Clear Search</Text>
                 </TouchableOpacity>
               </>
             ) : (
               <>
-                <Image 
-                  source={{ uri: 'https://cdn-icons-png.flaticon.com/512/4076/4076478.png' }}
-                  style={styles.emptyImage}
-                />
                 <Text style={styles.emptyTitle}>No flashcards yet</Text>
                 <Text style={styles.emptyText}>
                   Create your first flashcard collection to get started
                 </Text>
                 <TouchableOpacity 
-                  style={styles.emptyButton}
+                  style={[styles.emptyButton, styles.primaryButton]}
                   onPress={() => setActiveTab('generate')}
                 >
-                  <Ionicons name="add-circle-outline" size={20} color="#fff" />
-                  <Text style={styles.emptyButtonText}>Create Flashcards</Text>
+                  <Text style={styles.buttonText}>Create Flashcards</Text>
                 </TouchableOpacity>
               </>
             )}
@@ -545,18 +472,19 @@ export default function SavedScreen({ setActiveTab, setFlashcards, setTimer }) {
         )}
         
         {!isEmpty && (
-          <TouchableOpacity 
-            style={styles.testButton}
-            onPress={() => setModalVisible(true)}
-          >
-            <Ionicons name="school-outline" size={20} color="#fff" />
-            <Text style={styles.testButtonText}>Test Flashcards</Text>
-          </TouchableOpacity>
+          <View style={styles.buttonContainer}>
+            <TouchableOpacity 
+              style={[styles.testButton, styles.primaryButton]}
+              onPress={() => setModalVisible(true)}
+            >
+              <Text style={styles.buttonText}>Test Flashcards</Text>
+            </TouchableOpacity>
+          </View>
         )}
         
         <Modal
           visible={modalVisible}
-          animationType="slide"
+          animationType="fade"
           transparent={true}
           onRequestClose={() => setModalVisible(false)}
         >
@@ -568,7 +496,7 @@ export default function SavedScreen({ setActiveTab, setFlashcards, setTimer }) {
         
         <Modal
           visible={timerModalVisible}
-          animationType="slide"
+          animationType="fade"
           transparent={true}
           onRequestClose={() => setTimerModalVisible(false)}
         >
@@ -593,46 +521,43 @@ const styles = StyleSheet.create({
   },
   header: {
     padding: 16,
-    paddingBottom: 8,
     backgroundColor: COLORS.background,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
   },
-  headerContent: {
+  headerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
   headerTitle: {
-    fontSize: 28,
-    fontWeight: "700",
-    color: COLORS.primary,
+    fontSize: 24,
+    fontWeight: "600",
+    color: COLORS.text,
   },
   headerSubtitle: {
     fontSize: 14,
     color: COLORS.textLight,
     marginTop: 4,
   },
-  searchButton: {
+  iconButton: {
     padding: 8,
-    borderRadius: 8,
   },
   searchContainer: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: COLORS.card,
-    borderRadius: 12,
+    borderRadius: 8,
     paddingHorizontal: 12,
     marginLeft: 12,
-    height: 44,
-    shadowColor: COLORS.shadow,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
+    height: 40,
+    borderWidth: 1,
+    borderColor: COLORS.border,
   },
   searchInput: {
     flex: 1,
-    height: 44,
+    height: 40,
     marginLeft: 8,
     fontSize: 16,
     color: COLORS.text,
@@ -651,105 +576,95 @@ const styles = StyleSheet.create({
   },
   listContent: {
     padding: 16,
-    paddingBottom: 100, // Extra padding for the test button
+    paddingBottom: 80, // Extra padding for the test button
   },
   collectionContainer: {
-    marginBottom: 24,
-    borderRadius: 16,
+    marginBottom: 16,
+    backgroundColor: COLORS.card,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: COLORS.border,
     overflow: 'hidden',
-    shadowColor: COLORS.shadow,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 6,
-  },
-  collectionGradient: {
-    borderRadius: 16,
-    padding: 16,
   },
   collectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
+    padding: 16,
   },
   collectionTitleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flex: 1,
   },
   collectionTitle: {
-    fontSize: 20,
-    fontWeight: "700",
+    fontSize: 18,
+    fontWeight: "600",
     color: COLORS.text,
-    textTransform: 'capitalize',
-    marginRight: 8,
+    marginBottom: 4,
   },
-  cardCountBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
+  cardCountContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   cardCount: {
     fontSize: 14,
-    fontWeight: "600",
+    color: COLORS.textLight,
   },
-  buttonContainer: {
+  headerButtons: {
     flexDirection: 'row',
     alignItems: 'center',
   },
-  actionButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginLeft: 8,
-    shadowColor: COLORS.shadow,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 3,
+  flashcardsContainer: {
+    padding: 16,
+    paddingTop: 0,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.border,
   },
-  stackContainer: {
+  flashcardWrapper: {
+    marginBottom: 16,
     position: 'relative',
-    width: '100%',
-  },
-  stackedCard: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    height: CARD_HEIGHT,
-  },
-  flashcardContainer: {
-    flex: 1,
-    borderRadius: 16,
-    overflow: 'hidden',
   },
   deleteButton: {
-    backgroundColor: COLORS.error,
-    borderRadius: 8,
-    padding: 10,
-    flexDirection: 'row',
-    alignItems: 'center',
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    backgroundColor: COLORS.card,
+    borderRadius: 16,
+    width: 32,
+    height: 32,
     justifyContent: 'center',
-    marginTop: 8,
-    alignSelf: 'flex-end',
-    width: 100,
-    shadowColor: COLORS.shadow,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 3,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: COLORS.border,
   },
-  deleteButtonText: {
+  buttonContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    padding: 16,
+    backgroundColor: COLORS.background,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.border,
+  },
+  testButton: {
+    height: 48,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 8,
+  },
+  primaryButton: {
+    backgroundColor: COLORS.primary,
+  },
+  secondaryButton: {
+    backgroundColor: COLORS.textLight,
+  },
+  buttonText: {
     color: "#fff",
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: "600",
-    marginLeft: 4,
   },
   errorText: {
     color: COLORS.error,
-    marginTop: 16,
     marginBottom: 20,
     textAlign: "center",
     fontSize: 16,
@@ -760,15 +675,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     padding: 32,
   },
-  emptyImage: {
-    width: 120,
-    height: 120,
-    marginBottom: 24,
-    opacity: 0.8,
-  },
   emptyTitle: {
-    fontSize: 22,
-    fontWeight: "700",
+    fontSize: 20,
+    fontWeight: "600",
     color: COLORS.text,
     marginBottom: 12,
     textAlign: "center",
@@ -781,63 +690,18 @@ const styles = StyleSheet.create({
     lineHeight: 24,
   },
   emptyButton: {
-    backgroundColor: COLORS.primary,
-    flexDirection: 'row',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 12,
-    shadowColor: COLORS.shadow,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  emptyButtonText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "600",
-    marginLeft: 8,
   },
   retryButton: {
     backgroundColor: COLORS.primary,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
     paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 12,
+    paddingHorizontal: 24,
+    borderRadius: 8,
     marginTop: 16,
-  },
-  retryButtonText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "600",
-    marginLeft: 8,
-  },
-  testButton: {
-    position: 'absolute',
-    bottom: 24,
-    left: 24,
-    right: 24,
-    backgroundColor: COLORS.primary,
-    borderRadius: 16,
-    height: 56,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: COLORS.shadow,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    elevation: 8,
-  },
-  testButtonText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "600",
-    marginLeft: 8,
   },
   modalContainer: {
     flex: 1,
@@ -850,32 +714,27 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: 'rgba(0,0,0,0.4)',
   },
   modalContent: {
     width: '85%',
-    backgroundColor: COLORS.card,
-    borderRadius: 16,
-    padding: 24,
-    shadowColor: COLORS.shadow,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.3,
-    shadowRadius: 16,
-    elevation: 10,
-    maxHeight: height * 0.7,
+    backgroundColor: COLORS.background,
+    borderRadius: 8,
+    padding: 20,
+    maxHeight: '80%',
   },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: 16,
   },
   modalTitle: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: COLORS.primary,
+    fontSize: 20,
+    fontWeight: '600',
+    color: COLORS.text,
   },
-  modalCloseIcon: {
+  modalCloseButton: {
     padding: 4,
   },
   modalList: {
@@ -885,23 +744,22 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 16,
-    paddingHorizontal: 8,
+    paddingVertical: 12,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
   },
-  modalItemContent: {
-    flex: 1,
-  },
   modalItemText: {
-    fontSize: 18,
+    fontSize: 16,
     color: COLORS.text,
-    fontWeight: '600',
-    marginBottom: 4,
+  },
+  modalItemRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   modalItemCount: {
     fontSize: 14,
     color: COLORS.textLight,
+    marginRight: 8,
   },
   emptyModalContainer: {
     alignItems: 'center',
@@ -912,27 +770,26 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: COLORS.textLight,
     textAlign: 'center',
-    marginTop: 16,
   },
   timerInputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginVertical: 24,
+    marginVertical: 20,
   },
   timerInputWrapper: {
     alignItems: 'center',
   },
   timerInput: {
-    width: 80,
-    height: 80,
-    borderWidth: 2,
-    borderColor: COLORS.primaryLight,
-    borderRadius: 12,
-    fontSize: 32,
-    fontWeight: '700',
+    width: 70,
+    height: 70,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: 8,
+    fontSize: 28,
+    fontWeight: '600',
     textAlign: 'center',
-    color: COLORS.primary,
+    color: COLORS.text,
   },
   timerLabel: {
     fontSize: 14,
@@ -940,13 +797,13 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   timerSeparator: {
-    fontSize: 32,
-    fontWeight: '700',
-    color: COLORS.primary,
+    fontSize: 28,
+    fontWeight: '600',
+    color: COLORS.text,
     marginHorizontal: 16,
   },
   timerPresets: {
-    marginBottom: 24,
+    marginBottom: 20,
   },
   timerPresetsTitle: {
     fontSize: 16,
@@ -956,17 +813,15 @@ const styles = StyleSheet.create({
   },
   timerPresetsRow: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
     justifyContent: 'space-between',
   },
   timerPresetButton: {
-    backgroundColor: COLORS.primaryLight + '30',
+    backgroundColor: COLORS.primaryLight,
     paddingVertical: 8,
-    paddingHorizontal: 16,
+    paddingHorizontal: 12,
     borderRadius: 8,
-    marginBottom: 8,
-    width: '23%',
     alignItems: 'center',
+    width: '22%',
   },
   timerPresetText: {
     color: COLORS.primary,
@@ -975,24 +830,10 @@ const styles = StyleSheet.create({
   modalButtonGroup: {
     marginTop: 8,
   },
-  modalButton: {
-    flexDirection: 'row',
+  modalActionButton: {
+    paddingVertical: 12,
+    borderRadius: 8,
     alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 14,
-    borderRadius: 12,
     marginBottom: 12,
-  },
-  modalPrimaryButton: {
-    backgroundColor: COLORS.primary,
-  },
-  modalSecondaryButton: {
-    backgroundColor: COLORS.secondary,
-  },
-  modalButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-    marginLeft: 8,
   },
 });
