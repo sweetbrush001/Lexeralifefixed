@@ -208,13 +208,6 @@ export default function SavedScreen({ setActiveTab, setFlashcards, setTimer }) {
             {cards.map((card, index) => (
               <View key={card.id || index} style={styles.flashcardWrapper}>
                 <Flashcard flashcard={card} />
-                <TouchableOpacity 
-                  style={styles.deleteButton} 
-                  onPress={() => handleDelete(card.id, subtopic)}
-                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                >
-                  <Ionicons name="trash-outline" size={16} color={COLORS.error} />
-                </TouchableOpacity>
               </View>
             ))}
           </View>
