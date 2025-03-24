@@ -34,7 +34,7 @@ const CATEGORIES = [
 ];
 
 const FLASHCARD_COLORS = [
-  "#ffffff", "#96ADFC", "#DB1F1F", "#B987DC", "#A8F29A", "#F8FD89"
+  "#ffffff", "#96ADFC", "#fa9bed", "#B987DC", "#A8F29A", "#F8FD89"
 ];
 
 export default function GenerateScreen({ setActiveTab }) {
