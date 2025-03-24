@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import { View, Text, TouchableOpacity, StyleSheet, Image, Dimensions, Alert, ImageBackground } from "react-native"
+import { View, Text, TouchableOpacity, StyleSheet, Image, Dimensions, Alert, ImageBackground, ImageBackgroundBase } from "react-native"
 import { Audio } from "expo-av"
 import * as Speech from "expo-speech"
 import * as Haptics from "./utils/mock-haptics"
@@ -862,7 +862,7 @@ export default function PhonicsGame({ onBackToHome }) {
         {showSuccess && (
           <View style={styles.animationContainer}>
             <LottieView
-              source={require("./assets/animations/pirate-wrong.json")}
+              source={require("./assets/animations/monkey-right.json")}
               autoPlay
               loop={false}
               style={styles.animation}
@@ -874,7 +874,7 @@ export default function PhonicsGame({ onBackToHome }) {
         {showFailure && (
           <View style={styles.animationContainer}>
             <LottieView
-              source={require("./assets/animations/monkey-right.json")}
+              source={require("./assets/animations/pirate-wrong.json")}
               autoPlay
               loop={false}
               style={styles.animation}
@@ -894,7 +894,7 @@ const styles = StyleSheet.create({
   },
   overlay: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.2)",
+    backgroundColor: "rgba(0,0,0,0.3)",
     padding: 20,
   },
   loadingContainer: {
@@ -994,7 +994,7 @@ const styles = StyleSheet.create({
   },
   audioButton: {
     width: Math.min(width * 0.4, 180),
-    height: Math.min(height * 0.08, 60),
+    height: Math.min(height * 0.08, 80),
   },
   pirateButton: {
     width: "100%",
@@ -1003,7 +1003,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   audioButtonText: {
-    color: "#3E2723",
+    color: "#FFD700",
     fontSize: Math.min(width * 0.04, 18),
     fontFamily: "OpenDyslexic-Bold",
     textAlign: "center",
@@ -1044,7 +1044,7 @@ const styles = StyleSheet.create({
   },
   endGameButton: {
     width: Math.min(width * 0.5, 200),
-    height: Math.min(height * 0.06, 50),
+    height: Math.min(height * 0.06, 100),
     marginTop: height * 0.02,
   },
   pirateButtonSmall: {
@@ -1054,8 +1054,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   endGameButtonText: {
-    color: "#3E2723",
-    fontSize: Math.min(width * 0.04, 16),
+    color: "#eb9f2d",
+    fontSize: Math.min(width * 0.05, 18),
     fontFamily: "OpenDyslexic",
     textAlign: "center",
   },
