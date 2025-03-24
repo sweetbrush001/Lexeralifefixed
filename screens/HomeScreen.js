@@ -25,7 +25,7 @@ const HomeScreen = ({ navigation }) => {
   return (
     <SafeAreaProvider>
       <SafeAreaView style={styles.safeArea}>
-        <ImageBackground source={require("../assets/images/background.png")} style={styles.backgroundImage}>
+        <ImageBackground source={require("../assets/images/background.webp")} style={styles.backgroundImage}>
           <ScrollView contentContainerStyle={styles.scrollContainer}>
             <View style={styles.container}>
               <View style={styles.header}>
