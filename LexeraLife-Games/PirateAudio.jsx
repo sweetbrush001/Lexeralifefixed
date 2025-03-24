@@ -1,9 +1,9 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import { View, TouchableOpacity, StyleSheet } from "react-native"
+import { View, TouchableOpacity, StyleSheet, Image } from "react-native"
 import { Audio } from "expo-av"
-import { Feather } from "@expo/vector-icons"
+
 import * as Haptics from "./utils/mock-haptics"
 
 export default function PirateAudio({ isPlaying = true }) {
@@ -114,12 +114,15 @@ export default function PirateAudio({ isPlaying = true }) {
   return (
     <View style={styles.container}>
       <TouchableOpacity
-        style={styles.soundButton}
-        onPress={toggleSound}
-        accessibilityLabel={isMuted ? "Turn on pirate sounds" : "Turn off pirate sounds"}
-      >
-        <Feather name={isMuted ? "volume-x" : "volume-2"} size={24} color="white" />
-      </TouchableOpacity>
+              style={styles.soundButton}
+              onPress={toggleSound}
+              accessibilityLabel={isMuted ? "Turn on jungle sounds" : "Turn off jungle sounds"}
+            >
+              <Image
+                source={isMuted ? require("./assets/images/volume-mute.png") : require("./assets/images/volume-on.png")}
+                style={styles.soundIcon}
+              />
+            </TouchableOpacity>
     </View>
   )
 }
@@ -127,17 +130,20 @@ export default function PirateAudio({ isPlaying = true }) {
 const styles = StyleSheet.create({
   container: {
     position: "absolute",
-    top: 20,
+    top: 30,
     right: 20,
     zIndex: 10,
   },
   soundButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    width: 60,
+    height: 60,
+    borderRadius: 30,
     justifyContent: "center",
     alignItems: "center",
+  },
+  soundIcon: {
+    width: "100%",
+    height: "100%",
   },
 })
 
