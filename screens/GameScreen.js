@@ -72,7 +72,7 @@ const GameScreen = ({ route, navigation }) => {
   const getBackgroundImage = () => {
     switch (level.toLowerCase()) {
       case "easy":
-        return require("../assets/images/easy-background.png");
+        return require("../assets/images/easy-background.webp");
       case "medium":
         return require("../assets/images/medium-background.png");
       case "hard":
