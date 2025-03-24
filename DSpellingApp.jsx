@@ -231,8 +231,7 @@ const DSpellingGame = ({ onBackToHome }) => {
   };
 
   // Update setupGameWithWords with similar changes
-  const setupGameWithWords = (words) => {
-    // Make sure we have words available
+  const setupGameWithWords = (words) => {    // Make sure we have words available
     if (!words || words.length === 0) {
       console.error("No words available for this difficulty!");
       return;
@@ -308,9 +307,6 @@ const DSpellingGame = ({ onBackToHome }) => {
       });
     }
   };
-
-  // Remove the duplicate positionLetters function and replace with a single implementation
-  // Removed duplicate declaration of positionLetters
 
   // Fix the generateLetterSet function to add proper error handling and unique IDs
   const generateLetterSet = (wordLetters) => {
@@ -552,7 +548,7 @@ const DSpellingGame = ({ onBackToHome }) => {
     }
   }, [letterPlaygroundLayout.width, letters.length]); // Only re-run if width or letter count changes
 
-  // Add function to handle touching a filled blank
+  // Function to handle touching a filled blank
   const handleTouchBlank = (blank) => {
     // Only process if the blank is filled
     if (!blank.filled || !blank.filledWithLetterId) return;
@@ -680,90 +676,7 @@ const DSpellingGame = ({ onBackToHome }) => {
     });
   };
 
-  // Create pan responders for each letter
-  const createPanResponderOld = (letter) => {
-    return PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
-      onPanResponderGrant: () => {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-
-        // Check if the letter is used in a blank and remove it
-        if (letter.used) {
-          // Find which blank has this letter
-          const blankWithLetter = blanks.find(b => b.filledWithLetterId === letter.id);
-          if (blankWithLetter) {
-            const updatedBlanks = blanks.map(b =>
-              b.id === blankWithLetter.id
-                ? { ...b, filled: false, filledWithLetterId: null }
-                : b
-            );
-            setBlanks(updatedBlanks);
-
-            // Remove this letter from droppedLetters
-            setDroppedLetters(prev => prev.filter(l => l.blankId !== blankWithLetter.id));
-          }
-
-          // Update letter state
-          const updatedLetters = letters.map(l =>
-            l.id === letter.id
-              ? { ...l, used: false, inDropZone: false }
-              : l
-          );
-          setLetters(updatedLetters);
-        }
-
-        // Make the letter appear above all other elements when dragging
-        letter.position.setOffset({
-          x: letter.position.x._value,
-          y: letter.position.y._value
-        });
-        letter.position.setValue({ x: 0, y: 0 });
-
-        // Mark this letter as being dragged to apply special styling
-        const updatedLetters = letters.map(l =>
-          l.id === letter.id ? { ...l, isDragging: true } : l
-        );
-        setLetters(updatedLetters);
-      },
-      onPanResponderMove: Animated.event(
-        [null, { dx: letter.position.x, dy: letter.position.y }],
-        { useNativeDriver: false }
-      ),
-      onPanResponderRelease: (e, gesture) => {
-        letter.position.flattenOffset();
-
-        // Remove the dragging state but preserve positioning status
-        const updatedLetters = letters.map(l =>
-          l.id === letter.id ? { ...l, isDragging: false } : l
-        );
-        setLetters(updatedLetters);
-
-        // Check if letter is dropped on a blank
-        const droppedOnBlank = checkDropZone(letter, gesture);
-
-        if (!droppedOnBlank) {
-          // Return to original position with animation, but keep hasBeenPositioned true
-          Animated.spring(letter.position, {
-            toValue: letter.originalPosition,
-            friction: 5,
-            useNativeDriver: false
-          }).start();
-
-          if (!isMuted) {
-            playSound(SOUNDS.wrong);
-          }
-        }
-      }
-    });
-  };
-
-  // Update the checkDropZone function to add error handling
-  // Removed duplicate declaration of checkDropZone to avoid redeclaration error
-
-  // Update the checkDropZone function with a more robust approach
-  // Removed duplicate declaration of checkDropZone to avoid redeclaration error
-
-  // Completely revise the checkDropZone function to allow filling blanks in any order
+  // CheckDropZone function to add error handling
   const checkDropZone = (letter, gesture) => {
     try {
       // Find all empty blanks
@@ -926,7 +839,7 @@ const DSpellingGame = ({ onBackToHome }) => {
     }
   };
 
-  // Enhanced resetWord function to fully reset letter appearance
+  // ResetWord function to fully reset letter appearance
   const resetWord = () => {
     // Clear all blanks
     const resetBlanks = blanks.map(blank => ({
