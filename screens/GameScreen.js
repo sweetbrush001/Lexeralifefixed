@@ -74,7 +74,7 @@ const GameScreen = ({ route, navigation }) => {
       case "easy":
         return require("../assets/images/easy-background.webp");
       case "medium":
-        return require("../assets/images/medium-background.png");
+        return require("../assets/images/medium-background.webp");
       case "hard":
         return require("../assets/images/hard-background.png");
       default:
