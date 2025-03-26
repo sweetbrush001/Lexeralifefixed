@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from 'react'; // Import React and useState hook for state management
 import {
   View,
   Text,
@@ -11,50 +11,73 @@ import {
   StatusBar,
   ImageBackground,
   Dimensions,
-} from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { FontAwesome, AntDesign, Ionicons } from '@expo/vector-icons';
-import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
-import OrbitLoader from '../../components/ui/OrbitLoader';
+} from 'react-native'; // Import necessary React Native components for UI building
+import { LinearGradient } from 'expo-linear-gradient'; // Import for creating gradient backgrounds
+import { FontAwesome, AntDesign, Ionicons } from '@expo/vector-icons'; // Import icon sets for UI elements
+import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth'; // Import Firebase authentication functions
+import OrbitLoader from '../../components/ui/OrbitLoader'; // Import custom loading animation component
 
 // Get screen dimensions for responsive design
 const { width, height } = Dimensions.get('window');
-const isSmallScreen = width < 375;
-const isMediumScreen = width >= 375 && width < 414;
-const isLargeScreen = width >= 414;
+const isSmallScreen = width < 375; // Flag for small screen devices
+const isMediumScreen = width >= 375 && width < 414; // Flag for medium screen devices
+const isLargeScreen = width >= 414; // Flag for large screen devices
 
-// Scaling functions for responsive sizing
+/**
+ * Scaling function for responsive sizing
+ * Adjusts sizes proportionally based on screen width
+ * @param {number} size - Base size to be scaled
+ * @returns {number} - Calculated size based on device width
+ */
 const scale = size => (width / 375) * size;
 
+/**
+ * SignupScreen Component
+ * Handles user registration with email/password and social options
+ * 
+ * @param {Object} navigation - Navigation object for screen transitions
+ * @returns {JSX.Element} Rendered SignupScreen component
+ */
 const SignupScreen = ({ navigation }) => {
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [passwordVisible, setPasswordVisible] = useState(false);
-  const [confirmPasswordVisible, setConfirmPasswordVisible] = useState(false);
+  // State variables to manage form inputs and UI state
+  const [name, setName] = useState(''); // State for user's name
+  const [email, setEmail] = useState(''); // State for user's email
+  const [password, setPassword] = useState(''); // State for user's password
+  const [confirmPassword, setConfirmPassword] = useState(''); // State for password confirmation
+  const [error, setError] = useState(''); // State for storing error messages
+  const [loading, setLoading] = useState(false); // State for tracking registration progress
+  const [passwordVisible, setPasswordVisible] = useState(false); // State to toggle password visibility
+  const [confirmPasswordVisible, setConfirmPasswordVisible] = useState(false); // State to toggle confirm password visibility
 
+  /**
+   * Handle user registration with Firebase
+   * Validates inputs, creates account, and navigates to next screen on success
+   */
   const handleSignup = async () => {
+    // Validate that passwords match
     if (password !== confirmPassword) {
       setError('Passwords do not match');
       return;
     }
     
+    // Validate password length (Firebase requires at least 6 characters)
     if (password.length < 6) {
       setError('Password must be at least 6 characters');
       return;
     }
 
+    // Set loading state and clear previous errors
     setLoading(true);
     setError('');
     
     try {
+      // Initialize Firebase Auth and create new user with email and password
       const auth = getAuth();
       await createUserWithEmailAndPassword(auth, email, password);
+      // Navigate to age range selection screen on successful registration
       navigation.replace('AgeRangeSelector');
     } catch (error) {
+      // Handle different Firebase authentication errors with user-friendly messages
       let errorMessage = 'Failed to create account';
       
       if (error.code === 'auth/email-already-in-use') {
@@ -67,6 +90,7 @@ const SignupScreen = ({ navigation }) => {
       
       setError(errorMessage);
     } finally {
+      // Reset loading state regardless of outcome
       setLoading(false);
     }
   };
@@ -78,15 +102,19 @@ const SignupScreen = ({ navigation }) => {
       resizeMode="cover"
     >
       <SafeAreaView style={styles.container}>
+        {/* StatusBar configuration for appearance */}
         <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
         
+        {/* KeyboardAvoidingView adjusts layout when keyboard appears */}
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={styles.formContainer}
           keyboardVerticalOffset={Platform.OS === 'ios' ? 40 : 0}
         >
+          {/* Main title text */}
           <Text style={styles.title}>REGISTER</Text>
           
+          {/* Stylized subtitle with different colors */}
           <View style={styles.subtitleContainer}>
             <Text style={styles.subtitlePurple}>Create </Text>
             <Text style={styles.subtitleBlack}>your </Text>
@@ -94,7 +122,9 @@ const SignupScreen = ({ navigation }) => {
             <Text style={styles.subtitleRed}>account</Text>
           </View>
           
+          {/* Form input fields container */}
           <View style={styles.inputsContainer}>
+            {/* Name input field with icon */}
             <View style={styles.inputContainer}>
               <Ionicons name="person-outline" size={scale(20)} color="#777" style={styles.inputIcon} />
               <TextInput
@@ -106,6 +136,7 @@ const SignupScreen = ({ navigation }) => {
               />
             </View>
             
+            {/* Email input field with icon */}
             <View style={styles.inputContainer}>
               <Ionicons name="mail-outline" size={scale(20)} color="#777" style={styles.inputIcon} />
               <TextInput
@@ -119,6 +150,7 @@ const SignupScreen = ({ navigation }) => {
               />
             </View>
             
+            {/* Password input field with toggle visibility option */}
             <View style={styles.inputContainer}>
               <Ionicons name="lock-closed-outline" size={scale(20)} color="#777" style={styles.inputIcon} />
               <TextInput
@@ -141,6 +173,7 @@ const SignupScreen = ({ navigation }) => {
               </TouchableOpacity>
             </View>
             
+            {/* Confirm password field with toggle visibility option */}
             <View style={styles.inputContainer}>
               <Ionicons name="lock-closed-outline" size={scale(20)} color="#777" style={styles.inputIcon} />
               <TextInput
@@ -164,6 +197,7 @@ const SignupScreen = ({ navigation }) => {
             </View>
           </View>
 
+          {/* Conditional error message display */}
           {error ? (
             <View style={styles.errorContainer}>
               <Ionicons name="alert-circle" size={scale(18)} color="#ef4444" />
@@ -171,6 +205,7 @@ const SignupScreen = ({ navigation }) => {
             </View>
           ) : null}
           
+          {/* Terms and conditions text */}
           <View style={styles.termsContainer}>
             <Text style={styles.termsText}>
               By signing up you agree to our{' '}
@@ -180,6 +215,7 @@ const SignupScreen = ({ navigation }) => {
             </Text>
           </View>
           
+          {/* Signup button with gradient background */}
           <TouchableOpacity 
             style={styles.signupButtonContainer}
             onPress={handleSignup}
@@ -199,26 +235,32 @@ const SignupScreen = ({ navigation }) => {
             </LinearGradient>
           </TouchableOpacity>
           
+          {/* OR separator with lines */}
           <View style={styles.orContainer}>
             <View style={styles.orLine} />
             <Text style={styles.orText}>OR</Text>
             <View style={styles.orLine} />
           </View>
           
+          {/* Social login options */}
           <View style={styles.socialContainer}>
+            {/* Google login button */}
             <TouchableOpacity style={styles.socialButton}>
               <AntDesign name="google" size={scale(28)} color="#DB4437" />
             </TouchableOpacity>
             
+            {/* Facebook login button */}
             <TouchableOpacity style={styles.socialButton}>
               <FontAwesome name="facebook" size={scale(28)} color="#4267B2" />
             </TouchableOpacity>
             
+            {/* Apple login button */}
             <TouchableOpacity style={styles.socialButton}>
               <AntDesign name="apple1" size={scale(28)} color="#000000" />
             </TouchableOpacity>
           </View>
           
+          {/* Login redirection for existing users */}
           <View style={styles.loginContainer}>
             <Text style={styles.loginText}>Already have an Account?</Text>
             <TouchableOpacity onPress={() => navigation.navigate('Login')}>
@@ -231,6 +273,7 @@ const SignupScreen = ({ navigation }) => {
   );
 };
 
+// StyleSheet for component styling
 const styles = StyleSheet.create({
   backgroundImage: {
     flex: 1,

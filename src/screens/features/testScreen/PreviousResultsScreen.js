@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react"; // Import React and hooks for state and effects
 import {
   View,
   Text,
@@ -10,18 +10,26 @@ import {
   Animated,
   Platform,
   ScrollView,
-} from "react-native";
-import { useNavigation } from "@react-navigation/native";
-import { Ionicons } from "@expo/vector-icons";
-import { auth, db } from "../../../config/firebaseConfig";
-import { collection, query, where, getDocs, deleteDoc, doc } from "firebase/firestore";
-import { LinearGradient } from "expo-linear-gradient";
-import { useTextStyle } from '../../../hooks/useTextStyle';
-import LoadingScreen from '../../../screens/loading/LoadingScreen';
-import OrbitLoader from '../../../components/ui/OrbitLoader';
+} from "react-native"; // Import React Native components
+import { useNavigation } from "@react-navigation/native"; // Import for navigation
+import { Ionicons } from "@expo/vector-icons"; // Import for icons
+import { auth, db } from "../../../config/firebaseConfig"; // Import Firebase configuration
+import { collection, query, where, getDocs, deleteDoc, doc } from "firebase/firestore"; // Import Firestore functions
+import { LinearGradient } from "expo-linear-gradient"; // Import for gradient effects
+import { useTextStyle } from '../../../hooks/useTextStyle'; // Import custom hook for text styling
+import LoadingScreen from '../../../screens/loading/LoadingScreen'; // Import loading screen component
+import OrbitLoader from '../../../components/ui/OrbitLoader'; // Import custom loader component
 
+// Get device width for responsive design
 const { width } = Dimensions.get("window");
 
+/**
+ * Determine gradient colors based on test percentage score
+ * Different colors represent different risk levels
+ * 
+ * @param {number} percentage - The test score percentage
+ * @returns {string[]} Array of gradient colors
+ */
 const getScoreColors = (percentage) => {
   if (percentage <= 30) {
     return ['#00b09b', '#96c93d']; // Green (Good)
@@ -32,6 +40,13 @@ const getScoreColors = (percentage) => {
   }
 };
 
+/**
+ * Determine risk level text and color based on test percentage
+ * Provides user-friendly feedback about their test results
+ * 
+ * @param {number} percentage - The test score percentage
+ * @returns {Object} Object containing text description and color
+ */
 const getRiskLevel = (percentage) => {
   if (percentage <= 30) {
     return { text: 'your good', color: '#00b09b' };
@@ -42,6 +57,16 @@ const getRiskLevel = (percentage) => {
   }
 };
 
+/**
+ * ResultCard Component
+ * Displays individual test result with score, date, and actions
+ * 
+ * @param {Object} item - The test result data
+ * @param {Function} onDelete - Function to handle deletion
+ * @param {Animated.Value} animationValue - Animation value for entrance effects
+ * @param {boolean} isDeleting - Whether this item is currently being deleted
+ * @returns {JSX.Element} Rendered result card
+ */
 const ResultCard = ({ item, onDelete, animationValue, isDeleting }) => {
   const scoreColors = getScoreColors(item.percentage);
   const risk = getRiskLevel(item.percentage);
@@ -57,12 +82,14 @@ const ResultCard = ({ item, onDelete, animationValue, isDeleting }) => {
         },
       ]}
     >
+      {/* Show loading overlay when deleting */}
       {isDeleting && (
         <View style={styles.deletingOverlay}>
           <OrbitLoader size={40} color="#FF5252" />
         </View>
       )}
       
+      {/* Percentage score with color-coded background */}
       <LinearGradient
         colors={scoreColors}
         start={{ x: 0, y: 0 }}
@@ -72,6 +99,7 @@ const ResultCard = ({ item, onDelete, animationValue, isDeleting }) => {
         <Text style={[styles.scoreText, textStyle]}>{item.percentage}%</Text>
       </LinearGradient>
       
+      {/* Test result details */}
       <View style={styles.resultInfo}>
         <Text style={[styles.dateText, textStyle]}>
           {new Date(item.timestamp?.toDate()).toLocaleDateString()}
@@ -84,6 +112,7 @@ const ResultCard = ({ item, onDelete, animationValue, isDeleting }) => {
         </Text>
       </View>
 
+      {/* Delete button */}
       <TouchableOpacity
         style={styles.deleteButton}
         onPress={() => onDelete(item.id)}
@@ -94,21 +123,32 @@ const ResultCard = ({ item, onDelete, animationValue, isDeleting }) => {
   );
 };
 
+/**
+ * PreviousResultsScreen Component
+ * Displays all previous test results for the logged-in user
+ * Allows viewing and managing test history
+ * 
+ * @returns {JSX.Element} Rendered PreviousResultsScreen component
+ */
 const PreviousResultsScreen = () => {
-  const [results, setResults] = useState([]);
-  const [loading, setLoading] = useState(true);
+  // State variables
+  const [results, setResults] = useState([]); // Store test results
+  const [loading, setLoading] = useState(true); // Track loading state
   const [deletingId, setDeletingId] = useState(null); // Track which item is being deleted
+  
   const navigation = useNavigation();
-  const user = auth.currentUser;
-  const fadeAnim = new Animated.Value(0);
-  const textStyle = useTextStyle();
+  const user = auth.currentUser; // Get current user from Firebase Auth
+  const fadeAnim = new Animated.Value(0); // Animation value for entrance effects
+  const textStyle = useTextStyle(); // Get text style settings
 
+  // Fetch results when component mounts and user is available
   useEffect(() => {
     if (user) {
       fetchResults();  // Fetch results only if user is logged in
     }
   }, [user]);
 
+  // Animate cards when results are loaded
   useEffect(() => {
     Animated.spring(fadeAnim, {
       toValue: 1,
@@ -118,21 +158,29 @@ const PreviousResultsScreen = () => {
     }).start();
   }, [results]);
 
+  /**
+   * Fetch test results from Firestore
+   * Gets all results for the current user and sorts by date
+   */
   const fetchResults = async () => {
     if (!user) return;
     setLoading(true);
     try {
+      // Query Firestore for user's test results
       const q = query(
         collection(db, "testResults"),
         where("userId", "==", user.uid)  // Fetch only the logged-in user's results
       );
       const querySnapshot = await getDocs(q);
+      
+      // Process and sort results
       const fetchedResults = querySnapshot.docs
         .map((doc) => ({
           id: doc.id,
           ...doc.data(),
         }))
         .sort((a, b) => b.timestamp - a.timestamp); // Sort results by timestamp (newest first)
+      
       setResults(fetchedResults);
     } catch (error) {
       console.error("Error fetching results:", error);
@@ -141,7 +189,14 @@ const PreviousResultsScreen = () => {
     }
   };
 
+  /**
+   * Delete a test result with confirmation
+   * Removes result from Firestore and updates UI
+   * 
+   * @param {string} id - ID of the result to delete
+   */
   const deleteResult = async (id) => {
+    // Show confirmation dialog
     Alert.alert(
       "Delete Result",
       "Are you sure you want to delete this result?",
@@ -172,14 +227,18 @@ const PreviousResultsScreen = () => {
 
   return (
     <View style={styles.container}>
+      {/* Header section with title and subtitle */}
       <View style={styles.header}>
         <Text style={[styles.title, textStyle]}>Previous Results</Text>
         <Text style={[styles.subtitle, textStyle]}>View and manage your test history</Text>
       </View>
 
+      {/* Conditional rendering based on loading state and results availability */}
       {loading ? (
+        // Show loading screen while fetching results
         <LoadingScreen message="Loading your results..." color="#6C63FF" />
       ) : results.length === 0 ? (
+        // Show empty state when no results are available
         <View style={styles.emptyContainer}>
           <Ionicons name="document-text-outline" size={64} color="#CBD5E0" />
           <Text style={[styles.noResults, textStyle]}>No previous results found</Text>
@@ -188,6 +247,7 @@ const PreviousResultsScreen = () => {
           </Text>
         </View>
       ) : (
+        // Show list of results when available
         <FlatList
           data={results}
           keyExtractor={(item) => item.id}
@@ -204,6 +264,7 @@ const PreviousResultsScreen = () => {
         />
       )}
 
+      {/* Navigation back button */}
       <TouchableOpacity
         style={styles.backButton}
         onPress={() => navigation.goBack()}
@@ -222,6 +283,7 @@ const PreviousResultsScreen = () => {
   );
 };
 
+// StyleSheet for component styling
 const styles = StyleSheet.create({
   container: {
     flex: 1,

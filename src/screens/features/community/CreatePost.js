@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react'; // Import React and hooks for state and refs
 import {
   View,
   Text,
@@ -14,26 +14,34 @@ import {
   Image,
   StatusBar,
   Animated,
-} from 'react-native';
-import { db, auth, storage } from '../../../config/firebaseConfig';
-import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import Icon from 'react-native-vector-icons/FontAwesome5';
-import * as ImagePicker from 'expo-image-picker';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+} from 'react-native'; // Import React Native components for UI
+import { db, auth, storage } from '../../../config/firebaseConfig'; // Import Firebase services
+import { addDoc, collection, serverTimestamp } from 'firebase/firestore'; // Import Firestore functions
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'; // Import Firebase Storage functions
+import Icon from 'react-native-vector-icons/FontAwesome5'; // Import icon library
+import * as ImagePicker from 'expo-image-picker'; // Import image picker for selecting images
+import { useSafeAreaInsets } from 'react-native-safe-area-context'; // Import for safe area handling
 // Import useTextStyle hook
-import { useTextStyle } from '../../../hooks/useTextStyle';
+import { useTextStyle } from '../../../hooks/useTextStyle'; // Import custom hook for text styling
 
+/**
+ * CreatePost Component
+ * Allows users to create and publish community posts with text and images
+ * 
+ * @param {Object} navigation - Navigation object for screen transitions
+ * @returns {JSX.Element} Rendered CreatePost component
+ */
 const CreatePost = ({ navigation }) => {
-  const [title, setTitle] = useState('');
-  const [content, setContent] = useState('');
-  const [image, setImage] = useState(null);
-  const [submitting, setSubmitting] = useState(false);
-  const [charCount, setCharCount] = useState(0);
+  // State variables for managing form inputs and UI state
+  const [title, setTitle] = useState(''); // State for post title
+  const [content, setContent] = useState(''); // State for post content/body
+  const [image, setImage] = useState(null); // State for selected image URI
+  const [submitting, setSubmitting] = useState(false); // State for tracking submission progress
+  const [charCount, setCharCount] = useState(0); // State for character count in content
   const [currentUser, setCurrentUser] = useState({
     displayName: 'Anonymous',
     photoURL: null
-  });
+  }); // State for current user information
   
   // Get text style settings and extract just the font family
   const textStyleSettings = useTextStyle();
@@ -42,12 +50,18 @@ const CreatePost = ({ navigation }) => {
     return { fontFamily };
   }, [textStyleSettings]);
   
-  const contentInputRef = useRef(null);
-  const insets = useSafeAreaInsets();
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const slideAnim = useRef(new Animated.Value(50)).current;
+  // References for UI interactions
+  const contentInputRef = useRef(null); // Reference to content input for focus management
+  const insets = useSafeAreaInsets(); // Get safe area insets for layout
+  const fadeAnim = useRef(new Animated.Value(0)).current; // Animation value for fading elements in
+  const slideAnim = useRef(new Animated.Value(50)).current; // Animation value for sliding elements in
   
+  /**
+   * Effect hook for component initialization
+   * Sets up user info, animations, and image picker permissions
+   */
   useEffect(() => {
+    // Get current user information from Firebase Auth
     if (auth.currentUser) {
       setCurrentUser({
         displayName: auth.currentUser.displayName || 'Anonymous',
@@ -55,6 +69,7 @@ const CreatePost = ({ navigation }) => {
       });
     }
     
+    // Start entrance animations for UI elements
     Animated.parallel([
       Animated.timing(fadeAnim, {
         toValue: 1,
@@ -68,6 +83,7 @@ const CreatePost = ({ navigation }) => {
       })
     ]).start();
 
+    // Request permissions for image picker (mobile only)
     (async () => {
       if (Platform.OS !== 'web') {
         const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -78,11 +94,21 @@ const CreatePost = ({ navigation }) => {
     })();
   }, [fadeAnim, slideAnim]);
   
+  /**
+   * Handle content text changes
+   * Updates state and counts characters
+   * 
+   * @param {string} text - New content text
+   */
   const handleContentChange = (text) => {
     setContent(text);
     setCharCount(text.length);
   };
   
+  /**
+   * Launch image picker to select an image from device
+   * Updates state with selected image URI
+   */
   const pickImage = async () => {
     try {
       let result = await ImagePicker.launchImageLibraryAsync({
@@ -100,21 +126,34 @@ const CreatePost = ({ navigation }) => {
     }
   };
   
+  /**
+   * Remove selected image
+   * Clears image state
+   */
   const removeImage = () => {
     setImage(null);
   };
   
+  /**
+   * Upload image to Firebase Storage
+   * Converts URI to blob and uploads to storage
+   * 
+   * @returns {string|null} Download URL of uploaded image or null if no image
+   */
   const uploadImage = async () => {
     if (!image) return null;
     
     try {
+      // Convert image URI to blob
       const response = await fetch(image);
       const blob = await response.blob();
       
+      // Create unique filename based on timestamp
       const fileExtension = image.split('.').pop();
       const fileName = `post_images/${Date.now()}.${fileExtension}`;
       const storageRef = ref(storage, fileName);
       
+      // Upload blob to Firebase Storage
       await uploadBytes(storageRef, blob);
       const downloadURL = await getDownloadURL(storageRef);
       
@@ -125,7 +164,12 @@ const CreatePost = ({ navigation }) => {
     }
   };
   
+  /**
+   * Handle post submission
+   * Validates inputs, uploads image, and saves post to Firestore
+   */
   const handleSubmit = async () => {
+    // Validate input fields
     if (!title.trim()) {
       Alert.alert('Error', 'Please enter a title for your post');
       return;
@@ -139,11 +183,13 @@ const CreatePost = ({ navigation }) => {
     setSubmitting(true);
     
     try {
+      // Upload image if one is selected
       const imageUrl = image ? await uploadImage() : null;
       
       // Use email as the author for the post
       const authorEmail = auth.currentUser.email;
   
+      // Add new document to communityPosts collection
       await addDoc(collection(db, 'communityPosts'), {
         title: title.trim(),
         content: content.trim(),
@@ -155,6 +201,7 @@ const CreatePost = ({ navigation }) => {
         comments: []
       });
       
+      // Show success message and navigate back
       Alert.alert(
         'Success', 
         'Your post has been published!',
@@ -174,11 +221,13 @@ const CreatePost = ({ navigation }) => {
     }
   };
   
-  
+  // Component rendering
   return (
     <SafeAreaView style={[styles.container, { paddingTop: insets.top }]}>
+      {/* Status bar configuration */}
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
       
+      {/* Header with navigation and publish button */}
       <Animated.View 
         style={[
           styles.header,
@@ -211,6 +260,7 @@ const CreatePost = ({ navigation }) => {
         </TouchableOpacity>
       </Animated.View>
       
+      {/* Main content area with keyboard avoiding behavior */}
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardAvoid}
@@ -220,6 +270,7 @@ const CreatePost = ({ navigation }) => {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
+          {/* User information display */}
           <Animated.View 
             style={[
               styles.userInfo,
@@ -238,7 +289,9 @@ const CreatePost = ({ navigation }) => {
             <Text style={[styles.userName, fontStyle]}>{currentUser.displayName}</Text>
           </Animated.View>
           
+          {/* Post content inputs */}
           <Animated.View style={{ opacity: fadeAnim }}>
+            {/* Title input field */}
             <TextInput 
               style={[styles.titleInput, fontStyle]} 
               placeholder="Write an engaging title..." 
@@ -250,6 +303,7 @@ const CreatePost = ({ navigation }) => {
               onSubmitEditing={() => contentInputRef.current?.focus()}
             />
             
+            {/* Content input field */}
             <TextInput 
               ref={contentInputRef}
               style={[styles.contentInput, fontStyle]} 
@@ -262,10 +316,12 @@ const CreatePost = ({ navigation }) => {
               maxLength={2000}
             />
             
+            {/* Character counter */}
             <Text style={[styles.charCounter, fontStyle]}>
               {charCount}/2000 characters
             </Text>
             
+            {/* Image preview if an image is selected */}
             {image && (
               <View style={styles.imagePreviewContainer}>
                 <Image 
@@ -285,6 +341,7 @@ const CreatePost = ({ navigation }) => {
         </ScrollView>
       </KeyboardAvoidingView>
       
+      {/* Bottom toolbar with post enhancement options */}
       <Animated.View 
         style={[
           styles.toolbar,
@@ -294,6 +351,7 @@ const CreatePost = ({ navigation }) => {
           }
         ]}
       >
+        {/* Image picker button */}
         <TouchableOpacity 
           style={styles.toolbarButton} 
           onPress={pickImage}
@@ -302,11 +360,13 @@ const CreatePost = ({ navigation }) => {
           <Text style={[styles.toolbarText, fontStyle]}>Add Image</Text>
         </TouchableOpacity>
         
+        {/* Poll creation button (placeholder functionality) */}
         <TouchableOpacity style={styles.toolbarButton}>
           <Icon name="poll" size={20} color="#0066FF" />
           <Text style={[styles.toolbarText, fontStyle]}>Create Poll</Text>
         </TouchableOpacity>
         
+        {/* Location button (placeholder functionality) */}
         <TouchableOpacity style={styles.toolbarButton}>
           <Icon name="map-marker-alt" size={20} color="#0066FF" />
           <Text style={[styles.toolbarText, fontStyle]}>Add Location</Text>
@@ -316,6 +376,7 @@ const CreatePost = ({ navigation }) => {
   );
 };
 
+// StyleSheet for component styling
 const styles = StyleSheet.create({
   container: {
     flex: 1,

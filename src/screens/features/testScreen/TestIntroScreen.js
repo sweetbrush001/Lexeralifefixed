@@ -1,14 +1,31 @@
-import React from "react";
-import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, Dimensions } from "react-native";
-import { useNavigation } from "@react-navigation/native";
-import { LinearGradient } from "expo-linear-gradient";
+import React from "react"; // Import React for component creation
+import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, Dimensions } from "react-native"; // Import basic React Native components
+import { useNavigation } from "@react-navigation/native"; // Import navigation hook for screen transitions
+import { LinearGradient } from "expo-linear-gradient"; // Import for creating gradient backgrounds
 import { Ionicons } from "@expo/vector-icons"; // Import Ionicons for the back button
 
+// Get device width for responsive design
 const { width } = Dimensions.get("window");
 
+/**
+ * TestIntroScreen Component
+ * Landing screen for the dyslexia test feature with options to start test or view results
+ * 
+ * @returns {JSX.Element} Rendered TestIntroScreen component
+ */
 const TestIntroScreen = () => {
+  // Get navigation object for screen transitions
   const navigation = useNavigation();
 
+  /**
+   * Renders a card with gradient background for test options
+   * 
+   * @param {string} title - The title of the card
+   * @param {string} description - Descriptive text for the card option
+   * @param {Function} onPress - Function to execute when card is pressed
+   * @param {string[]} gradientColors - Array of colors for gradient background
+   * @returns {JSX.Element} Card component with specified properties
+   */
   const renderCard = (title, description, onPress, gradientColors) => (
     <TouchableOpacity 
       style={styles.card}
@@ -29,6 +46,7 @@ const TestIntroScreen = () => {
 
   return (
     <SafeAreaView style={styles.container}>
+      {/* Back button to return to home screen */}
       <TouchableOpacity 
         style={styles.backButton}
         onPress={() => navigation.navigate("Home")}
@@ -36,6 +54,7 @@ const TestIntroScreen = () => {
         <Ionicons name="arrow-back" size={24} color="#333" />
       </TouchableOpacity>
 
+      {/* Header section with title and subtitle */}
       <View style={styles.header}>
         <Text style={styles.title}>Dyslexia{'\n'}Screening</Text>
         <Text style={styles.subtitle}>
@@ -43,7 +62,9 @@ const TestIntroScreen = () => {
         </Text>
       </View>
 
+      {/* Container for option cards */}
       <View style={styles.cardsContainer}>
+        {/* Card to start a new test */}
         {renderCard(
           "Start New Test",
           "Begin a comprehensive dyslexia screening assessment",
@@ -51,6 +72,7 @@ const TestIntroScreen = () => {
           ["#4158D0", "#C850C0"]
         )}
 
+        {/* Card to view previous test results */}
         {renderCard(
           "View Results",
           "Access and analyze your previous screening results",
@@ -62,6 +84,10 @@ const TestIntroScreen = () => {
   );
 };
 
+/**
+ * StyleSheet for component styling
+ * Includes styles for layout, cards, typography, and visual elements
+ */
 const styles = StyleSheet.create({
   container: {
     flex: 1,

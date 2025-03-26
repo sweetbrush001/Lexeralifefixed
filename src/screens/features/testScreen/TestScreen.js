@@ -1,3 +1,10 @@
+/**
+ * DyslexiaTestScreen Component
+ * 
+ * This component implements a comprehensive dyslexia screening test with age-appropriate questions.
+ * It provides an interactive UI for users to answer yes/no questions across multiple categories,
+ * tracks progress, and handles various states (loading, error, test-taking).
+ */
 import React, { useState, useEffect, useRef } from "react";
 import {
   View,
@@ -21,30 +28,46 @@ import { useTextStyle } from '../../../hooks/useTextStyle';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 
+// Get device dimensions for responsive design
 const { width, height } = Dimensions.get("window");
 
 const DyslexiaTestScreen = () => {
-  const [categories, setCategories] = useState([]);
-  const [categoryIndex, setCategoryIndex] = useState(0);
-  const [questionIndex, setQuestionIndex] = useState(0);
-  const [answers, setAnswers] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [userAgeRange, setUserAgeRange] = useState(null);
-  const [loadingProgress, setLoadingProgress] = useState(20); // Initial loading state
-  const navigation = useNavigation();
-  const questionAnim = useRef(new Animated.Value(0)).current;
-  const fadeAnim = useRef(new Animated.Value(1)).current;
-  const progressAnim = useRef(new Animated.Value(0)).current;
-  const buttonScaleYes = useRef(new Animated.Value(1)).current;
-  const buttonScaleNo = useRef(new Animated.Value(1)).current;
-  const textStyle = useTextStyle();
-
-  // Track total questions for progress calculation
-  const [totalQuestions, setTotalQuestions] = useState(0);
+  // ---- STATE MANAGEMENT ----
+  // Questions and category tracking
+  const [categories, setCategories] = useState([]); // Stores all question categories
+  const [categoryIndex, setCategoryIndex] = useState(0); // Current category index
+  const [questionIndex, setQuestionIndex] = useState(0); // Current question index within category
+  const [answers, setAnswers] = useState([]); // Stores user's answers (true/false)
   
+  // UI state management
+  const [loading, setLoading] = useState(true); // Controls loading screen visibility
+  const [error, setError] = useState(null); // Stores error messages if any
+  const [userAgeRange, setUserAgeRange] = useState(null); // User's age range for question filtering
+  const [loadingProgress, setLoadingProgress] = useState(20); // Visual loading progress (0-100)
+  const [totalQuestions, setTotalQuestions] = useState(0); // Total number of questions across all categories
+  
+  // Hooks
+  const navigation = useNavigation(); // Navigation controller
+  const textStyle = useTextStyle(); // Custom text styling for accessibility
+  
+  // Animation references
+  const questionAnim = useRef(new Animated.Value(0)).current; // Controls question card scale/position animation
+  const fadeAnim = useRef(new Animated.Value(1)).current; // Controls fade transitions
+  const progressAnim = useRef(new Animated.Value(0)).current; // Controls progress bar animation
+  const buttonScaleYes = useRef(new Animated.Value(1)).current; // Controls Yes button scale animation
+  const buttonScaleNo = useRef(new Animated.Value(1)).current; // Controls No button scale animation
+
+  /**
+   * Primary useEffect hook - Fetches user age range and appropriate questions
+   * 
+   * This effect runs once on component mount and:
+   * 1. Animates the loading progress bar
+   * 2. Verifies user is logged in and has an age range set
+   * 3. Fetches age-appropriate questions from Firestore
+   * 4. Organizes questions into categories
+   */
   useEffect(() => {
-    // Start loading animation
+    // Start animated loading progress
     const loadingInterval = setInterval(() => {
       setLoadingProgress(prev => {
         if (prev >= 70) clearInterval(loadingInterval);
@@ -52,10 +75,13 @@ const DyslexiaTestScreen = () => {
       });
     }, 200);
 
-    // First fetch the user's age range
+    /**
+     * Function to fetch the user's age range from Firestore
+     * This is necessary to serve age-appropriate questions
+     */
     const fetchUserAgeRange = async () => {
       try {
-        // Check if user is logged in
+        // Verify user authentication
         const currentUser = auth.currentUser;
         if (!currentUser) {
           setError("You must be logged in to take the test.");
@@ -68,12 +94,13 @@ const DyslexiaTestScreen = () => {
         // Get user document from Firestore
         const userDoc = await getDoc(doc(db, "users", currentUser.uid));
         
-        // Check if user document exists and has ageRange field
+        // Validate user document exists and contains age range
         if (!userDoc.exists()) {
           console.log("User document doesn't exist");
           setLoading(false);
           clearInterval(loadingInterval);
           
+          // Redirect to age range selection if missing
           setTimeout(() => {
             Alert.alert(
               "Age Range Needed",
@@ -84,12 +111,14 @@ const DyslexiaTestScreen = () => {
           return;
         }
         
+        // Check if age range exists in user data
         const userData = userDoc.data();
         if (!userData.ageRange) {
           console.log("No age range in user data");
           setLoading(false);
           clearInterval(loadingInterval);
           
+          // Redirect to age range selection if missing
           setTimeout(() => {
             Alert.alert(
               "Age Range Needed",
@@ -100,11 +129,11 @@ const DyslexiaTestScreen = () => {
           return;
         }
 
-        // We have confirmed user has an age range, now proceed
+        // User has a valid age range, proceed with test
         console.log(`User age range found: ${userData.ageRange}`);
         setUserAgeRange(userData.ageRange);
         
-        // ONLY fetch questions if we have a valid age range
+        // Fetch questions for the specific age range
         await fetchQuestionsByAgeRange(userData.ageRange);
         
       } catch (error) {
@@ -115,7 +144,10 @@ const DyslexiaTestScreen = () => {
       }
     };
 
-    // Function to fetch questions by age range
+    /**
+     * Function to fetch and format questions based on user's age range
+     * @param {string} ageRange - The user's age range (e.g. "5-7", "8-12", etc.)
+     */
     const fetchQuestionsByAgeRange = async (ageRange) => {
       if (!ageRange) {
         console.error("Attempted to fetch questions without a valid age range");
@@ -126,21 +158,24 @@ const DyslexiaTestScreen = () => {
 
       try {
         console.log(`Fetching questions for age range: ${ageRange}`);
-        setLoadingProgress(80);
+        setLoadingProgress(80); // Update visual loading progress
+        
+        // Get all age range question documents from Firestore
         const querySnapshot = await getDocs(collection(db, "ageRangeQuestions"));
         const allQuestions = querySnapshot.docs.map(doc => doc.data());
         
-        // Find the questions that match the user's age range
+        // Find questions that match user's age range
         const matchingQuestions = allQuestions.find(q => q.ageRange === ageRange);
         
+        // Handle case where no questions exist for this age range
         if (!matchingQuestions) {
           setError(`No questions found for age range: ${ageRange}`);
           setLoading(false);
           return;
         }
         
-        // Transform the questions into the format expected by the test screen
-        // The current format uses categories, so we'll create a single category
+        // Transform the flat question list into categorized format
+        // Each category focuses on a specific aspect of dyslexia screening
         const formattedQuestions = [
           {
             category: "Reading & Writing",
@@ -164,39 +199,51 @@ const DyslexiaTestScreen = () => {
           }
         ];
         
+        // Update state with formatted categories
         setCategories(formattedQuestions);
         
-        // Calculate total questions for progress tracking
+        // Calculate total question count for progress tracking
         const total = formattedQuestions.reduce(
           (acc, cat) => acc + cat.questions.length, 
           0
         );
         setTotalQuestions(total);
-        setLoadingProgress(100);
+        setLoadingProgress(100); // Complete loading animation
         
       } catch (error) {
         console.error("Error fetching questions:", error);
         setError("Unable to load test questions. Please check your connection and try again.");
       } finally {
-        setLoading(false);
+        setLoading(false); // End loading state regardless of outcome
       }
     };
     
-    // Start the process
+    // Start the data fetching process
     fetchUserAgeRange();
     
+    // Cleanup loading interval when component unmounts
     return () => clearInterval(loadingInterval);
   }, [navigation]);
 
+  /**
+   * Animation effect hook - Manages animations when questions change
+   * 
+   * This effect runs whenever the current question changes and:
+   * 1. Animates the new question's entrance
+   * 2. Resets button scales
+   * 3. Updates the progress bar
+   */
   useEffect(() => {
-    // Animate question appearance
+    // Animate question appearance with parallel animations
     Animated.parallel([
+      // Scale animation for question card
       Animated.spring(questionAnim, {
         toValue: 1,
         friction: 7,
         tension: 40,
         useNativeDriver: true,
       }),
+      // Fade-in animation
       Animated.timing(fadeAnim, {
         toValue: 1,
         duration: 500,
@@ -204,11 +251,11 @@ const DyslexiaTestScreen = () => {
       }),
     ]).start();
     
-    // Reset button scales
+    // Reset button scales to default
     buttonScaleYes.setValue(1);
     buttonScaleNo.setValue(1);
     
-    // Update progress bar
+    // Animate progress bar based on number of answers
     Animated.timing(progressAnim, {
       toValue: answers.length / totalQuestions,
       duration: 600,
@@ -217,14 +264,21 @@ const DyslexiaTestScreen = () => {
     }).start();
   }, [categoryIndex, questionIndex, answers.length, totalQuestions]);
 
+  /**
+   * Handles user's answer selection (Yes/No)
+   * 
+   * @param {boolean} answer - User's response (true = Yes, false = No)
+   */
   const handleAnswer = (answer) => {
-    // Animate button press
+    // Animate button press effect
     Animated.sequence([
+      // Scale down on press
       Animated.timing(answer ? buttonScaleYes : buttonScaleNo, {
         toValue: 0.95,
         duration: 100,
         useNativeDriver: true,
       }),
+      // Scale back to normal
       Animated.timing(answer ? buttonScaleYes : buttonScaleNo, {
         toValue: 1,
         duration: 100,
@@ -232,10 +286,12 @@ const DyslexiaTestScreen = () => {
       })
     ]).start();
     
-    // Provide haptic feedback
+    // Provide haptic feedback for better user experience
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     
+    // Animate question transition out
     Animated.parallel([
+      // Scale and fade out current question
       Animated.timing(questionAnim, {
         toValue: 0,
         duration: 300,
@@ -248,24 +304,33 @@ const DyslexiaTestScreen = () => {
         useNativeDriver: true,
       }),
     ]).start(() => {
+      // Store user's answer
       const updatedAnswers = [...answers, answer];
       setAnswers(updatedAnswers);
 
+      // Determine next action: next question, next category, or end test
       if (questionIndex < categories[categoryIndex].questions.length - 1) {
+        // Move to next question in current category
         setQuestionIndex(questionIndex + 1);
       } else if (categoryIndex < categories.length - 1) {
+        // Move to first question in next category
         setCategoryIndex(categoryIndex + 1);
         setQuestionIndex(0);
       } else {
+        // All questions answered, navigate to results screen
         navigation.navigate("Results", { answers: updatedAnswers });
       }
     });
   };
 
+  /**
+   * Handles user's request to exit the test
+   * Shows confirmation dialog with options to continue or exit
+   */
   const handleExit = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     
-    // Show confirmation dialog using Alert
+    // Show confirmation dialog to prevent accidental exits
     Alert.alert(
       "Exit Test",
       "Are you sure you want to exit the test? Your progress will be lost.",
@@ -278,7 +343,7 @@ const DyslexiaTestScreen = () => {
           text: "Exit",
           style: "destructive",
           onPress: () => {
-            // Navigate to Teststarting screen when confirmed
+            // Navigate to test intro screen when confirmed
             navigation.navigate("Teststarting");
           }
         }
@@ -287,14 +352,23 @@ const DyslexiaTestScreen = () => {
     );
   };
 
+  /**
+   * Calculates overall test progress percentage
+   * @returns {number} Progress percentage (0-100)
+   */
   const calculateProgress = () => {
     if (!totalQuestions) return 0;
     return (answers.length / totalQuestions) * 100;
   };
 
+  /**
+   * Calculates the current question number across all categories
+   * @returns {number} Current question number (1-based)
+   */
   const getCurrentQuestionNumber = () => {
     if (!categories.length || categoryIndex >= categories.length) return 0;
     
+    // Sum questions in previous categories
     let previousCategoriesQuestions = 0;
     for (let i = 0; i < categoryIndex; i++) {
       if (categories[i] && categories[i].questions) {
@@ -302,9 +376,11 @@ const DyslexiaTestScreen = () => {
       }
     }
     
+    // Add current question index (plus 1 for human-readable numbering)
     return previousCategoriesQuestions + questionIndex + 1;
   };
 
+  // ---- RENDER LOADING STATE ----
   if (loading) {
     return (
       <ImageBackground
@@ -330,6 +406,7 @@ const DyslexiaTestScreen = () => {
     );
   }
 
+  // ---- RENDER ERROR STATE ----
   if (error) {
     return (
       <ImageBackground
@@ -389,6 +466,7 @@ const DyslexiaTestScreen = () => {
     );
   }
 
+  // ---- RENDER MAIN TEST INTERFACE ----
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="dark-content" />
@@ -397,12 +475,13 @@ const DyslexiaTestScreen = () => {
         style={styles.background}
         resizeMode="cover"
       >
+        {/* Semi-transparent gradient overlay for better text readability */}
         <LinearGradient 
           colors={['rgba(255, 255, 255, 0.9)', 'rgba(255, 255, 255, 0.7)']} 
           style={styles.overlay} 
         />
 
-        {/* Header */}
+        {/* Header with title and exit button */}
         <View style={styles.header}>
           <TouchableOpacity 
             style={styles.exitButton} 
@@ -419,7 +498,7 @@ const DyslexiaTestScreen = () => {
           <View style={styles.headerRightPlaceholder} />
         </View>
 
-        {/* Progress Bar */}
+        {/* Progress tracking section */}
         <View style={styles.progressContainer}>
           <View style={styles.progressInfo}>
             <View style={styles.questionCounter}>
@@ -433,6 +512,7 @@ const DyslexiaTestScreen = () => {
             </Text>
           </View>
           
+          {/* Animated progress bar */}
           <View style={styles.progressBar}>
             <Animated.View
               style={[
@@ -447,8 +527,9 @@ const DyslexiaTestScreen = () => {
           </View>
         </View>
 
+        {/* Main content area with question and answer buttons */}
         <View style={styles.contentContainer}>
-          {/* Only render the question card if categories and the current category exist */}
+          {/* Question card - only shown when data is available */}
           {categories.length > 0 && categories[categoryIndex] ? (
             <Animated.View
               style={[
@@ -467,6 +548,7 @@ const DyslexiaTestScreen = () => {
                 },
               ]}
             >
+              {/* Category badge shows current question type */}
               <View style={styles.categoryBadge}>
                 <FontAwesome5 
                   name={getCategoryIcon(categories[categoryIndex].category)} 
@@ -479,22 +561,23 @@ const DyslexiaTestScreen = () => {
                 </Text>
               </View>
               
+              {/* Question text */}
               <Text style={[styles.questionText, textStyle]}>
                 {categories[categoryIndex].questions && 
                  categories[categoryIndex].questions[questionIndex]}
               </Text>
             </Animated.View>
           ) : (
-            // Show a loading indicator if categories aren't ready yet
             <View style={styles.loadingFallback}>
               <ActivityIndicator size="large" color="#1976D2" />
               <Text style={[styles.loadingText, textStyle]}>Loading questions...</Text>
             </View>
           )}
 
-          {/* Only show buttons if we have valid data */}
+          {/* Yes/No answer buttons */}
           {categories.length > 0 && categories[categoryIndex] && (
             <View style={styles.buttonContainer}>
+              {/* Yes button with animation */}
               <Animated.View 
                 style={{ 
                   transform: [{ scale: buttonScaleYes }],
@@ -520,6 +603,7 @@ const DyslexiaTestScreen = () => {
                 </TouchableOpacity>
               </Animated.View>
 
+              {/* No button with animation */}
               <Animated.View 
                 style={{ 
                   transform: [{ scale: buttonScaleNo }],
@@ -547,7 +631,7 @@ const DyslexiaTestScreen = () => {
             </View>
           )}
           
-          {/* Add help text */}
+          {/* Help text for user guidance */}
           <View style={styles.helpContainer}>
             <Ionicons name="information-circle-outline" size={18} color="#78909C" />
             <Text style={[styles.helpText, textStyle]}>
@@ -560,13 +644,19 @@ const DyslexiaTestScreen = () => {
   );
 };
 
-// Helper function to determine icon based on category
+/**
+ * Utility function to determine appropriate icon for each question category
+ * @param {string} category - Category name
+ * @returns {string} FontAwesome5 icon name matching the category
+ */
 const getCategoryIcon = (category) => {
   const lowerCategory = category.toLowerCase();
   if (lowerCategory.includes('reading')) return 'book-reader';
+  if (lowerCategory.includes('phonological')) return 'microphone-alt';
   if (lowerCategory.includes('writing')) return 'pencil-alt';
   if (lowerCategory.includes('memory')) return 'brain';
-  if (lowerCategory.includes('attention')) return 'eye';
+  if (lowerCategory.includes('attention') || lowerCategory.includes('concentration')) return 'eye';
+  if (lowerCategory.includes('directional') || lowerCategory.includes('spatial')) return 'compass';
   if (lowerCategory.includes('organization')) return 'tasks';
   if (lowerCategory.includes('time')) return 'clock';
   if (lowerCategory.includes('math')) return 'calculator';
@@ -574,6 +664,7 @@ const getCategoryIcon = (category) => {
   return 'clipboard-list';
 };
 
+// Component styles
 const styles = StyleSheet.create({
   safeArea: { 
     flex: 1, 

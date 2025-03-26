@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'; // Import React and hooks for state, effects, memoization and refs
 import { 
   View, 
   Text, 
@@ -16,31 +16,40 @@ import {
   Easing,
   Platform,
   Alert
-} from 'react-native'; 
-import { collection, arrayRemove, doc, getDoc, updateDoc, arrayUnion, increment, deleteDoc, onSnapshot, query, orderBy, limit } from 'firebase/firestore';
-import Icon from 'react-native-vector-icons/FontAwesome5';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { db, auth } from '../../../config/firebaseConfig';
+} from 'react-native'; // Import core React Native components for UI building
+import { collection, arrayRemove, doc, getDoc, updateDoc, arrayUnion, increment, deleteDoc, onSnapshot, query, orderBy, limit } from 'firebase/firestore'; // Import Firestore functions for database operations
+import Icon from 'react-native-vector-icons/FontAwesome5'; // Import icon set for UI elements
+import { useSafeAreaInsets } from 'react-native-safe-area-context'; // Import for safe area padding
+import { db, auth } from '../../../config/firebaseConfig'; // Import Firebase configuration
 import LottieView from 'lottie-react-native';  // Import LottieView for animations
-import { FadeIn, SlideInRight, SlideInDown, SlideOutDown } from 'react-native-reanimated';
-import LoadingScreen from '../../../screens/loading/LoadingScreen';
-import OrbitLoader from '../../../components/ui/OrbitLoader';
+import { FadeIn, SlideInRight, SlideInDown, SlideOutDown } from 'react-native-reanimated'; // Import animations
+import LoadingScreen from '../../../screens/loading/LoadingScreen'; // Import loading screen component
+import OrbitLoader from '../../../components/ui/OrbitLoader'; // Import custom loader component
 // Import useTextStyle hook
-import { useTextStyle } from '../../../hooks/useTextStyle';
+import { useTextStyle } from '../../../hooks/useTextStyle'; // Import custom hook for text styling
 
+/**
+ * CommunityPage Component
+ * Displays a social feed of community posts with interactive features
+ * Includes post listing, commenting, liking, and post creation
+ * 
+ * @param {Object} navigation - Navigation object for screen transitions
+ * @returns {JSX.Element} Rendered CommunityPage component
+ */
 const CommunityPage = ({ navigation }) => {
-    const [posts, setPosts] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [refreshing, setRefreshing] = useState(false);
-    const [searchQuery, setSearchQuery] = useState('');
-    const [commentTexts, setCommentTexts] = useState({});
-    const [expandedPostId, setExpandedPostId] = useState(null);
-    const [replyToCommentId, setReplyToCommentId] = useState(null);
-    const [visibleOptions, setVisibleOptions] = useState(null);
-    const [searchVisible, setSearchVisible] = useState(false);
-    const [scrollY] = useState(new Animated.Value(0));
+    // State variables for managing posts and UI
+    const [posts, setPosts] = useState([]); // Store fetched posts
+    const [loading, setLoading] = useState(true); // Track initial loading state
+    const [refreshing, setRefreshing] = useState(false); // Track pull-to-refresh state
+    const [searchQuery, setSearchQuery] = useState(''); // Store search input
+    const [commentTexts, setCommentTexts] = useState({}); // Store draft comments by post ID
+    const [expandedPostId, setExpandedPostId] = useState(null); // Track which post is expanded
+    const [replyToCommentId, setReplyToCommentId] = useState(null); // Track which comment is being replied to
+    const [visibleOptions, setVisibleOptions] = useState(null); // Track which post has options menu open
+    const [searchVisible, setSearchVisible] = useState(false); // Toggle search bar visibility
+    const [scrollY] = useState(new Animated.Value(0)); // Track scroll position for animations
     
-    const insets = useSafeAreaInsets();
+    const insets = useSafeAreaInsets(); // Get safe area insets for layout
     
     // Get text style settings and extract just the font family
     const textStyleSettings = useTextStyle();
@@ -50,22 +59,29 @@ const CommunityPage = ({ navigation }) => {
     }, [textStyleSettings]);
     
     // Animation for the floating action button
-    const fabAnim = useRef(new Animated.Value(0)).current;
-    const lastScrollY = useRef(0);
+    const fabAnim = useRef(new Animated.Value(0)).current; // Animation value for FAB
+    const lastScrollY = useRef(0); // Reference to track last scroll position
     
     // Pagination and loading more content
-    const [postsLimit, setPostsLimit] = useState(10);
-    const [hasMorePosts, setHasMorePosts] = useState(true);
-    const [loadingMore, setLoadingMore] = useState(false);
+    const [postsLimit, setPostsLimit] = useState(10); // Number of posts to fetch initially
+    const [hasMorePosts, setHasMorePosts] = useState(true); // Track if more posts can be loaded
+    const [loadingMore, setLoadingMore] = useState(false); // Track pagination loading state
 
+    /**
+     * Fetch posts from Firestore
+     * Sets up a real-time listener for post updates
+     * Handles pagination and loading states
+     */
     const fetchPosts = useCallback(() => {
         setLoading(true);
+        // Create query to fetch posts sorted by timestamp with pagination
         const postsQuery = query(
             collection(db, 'communityPosts'),
             orderBy('timestamp', 'desc'),
             limit(postsLimit)
         );
         
+        // Set up real-time listener for post updates
         onSnapshot(postsQuery, (querySnapshot) => {
             const postsList = querySnapshot.docs.map(doc => ({
                 id: doc.id,
@@ -74,6 +90,7 @@ const CommunityPage = ({ navigation }) => {
                 comments: doc.data().comments || []
             }));
             
+            // Update state with fetched posts
             setPosts(postsList);
             setLoading(false);
             setRefreshing(false);
@@ -84,10 +101,15 @@ const CommunityPage = ({ navigation }) => {
         });
     }, [postsLimit]);
 
+    // Initial fetch on component mount
     useEffect(() => {
         fetchPosts();
     }, [fetchPosts]);
 
+    /**
+     * Handle pull-to-refresh action
+     * Resets pagination and fetches latest posts
+     */
     const onRefresh = useCallback(() => {
         setRefreshing(true);
         // Reset to initial posts count when refreshing
@@ -95,6 +117,10 @@ const CommunityPage = ({ navigation }) => {
         fetchPosts();
     }, [fetchPosts]);
     
+    /**
+     * Load more posts for infinite scrolling
+     * Increases post limit to fetch next batch
+     */
     const loadMorePosts = () => {
         if (hasMorePosts && !loadingMore) {
             setLoadingMore(true);
@@ -102,7 +128,10 @@ const CommunityPage = ({ navigation }) => {
         }
     };
 
-    // Handle scroll events for hiding/showing the FAB
+    /**
+     * Handle scroll events for hiding/showing the FAB
+     * Uses Animated.event for performance and native driver
+     */
     const handleScroll = Animated.event(
         [{ nativeEvent: { contentOffset: { y: scrollY } } }],
         { 
@@ -131,6 +160,12 @@ const CommunityPage = ({ navigation }) => {
         }
     );
 
+    /**
+     * Handle post liking with optimistic UI updates
+     * Updates both local state and Firebase database
+     * 
+     * @param {string} postId - ID of the post to like/unlike
+     */
     const handleLike = useCallback(async (postId) => {
         // Get current user email
         const userEmail = auth.currentUser?.email;
@@ -192,6 +227,14 @@ const CommunityPage = ({ navigation }) => {
         }
     }, [posts]);
 
+    /**
+     * Handle adding comments to posts
+     * Supports both top-level comments and replies
+     * 
+     * @param {string} postId - ID of the post to comment on
+     * @param {string} commentText - Text content of the comment
+     * @param {string|null} replyTo - ID of parent comment if this is a reply
+     */
     const handleComment = async (postId, commentText, replyTo = null) => {
         if (!commentText.trim()) {
             // Don't submit empty comments
@@ -225,6 +268,13 @@ const CommunityPage = ({ navigation }) => {
         }
     };
 
+    /**
+     * Handle liking/unliking comments
+     * Updates the comment's like count and liked users array
+     * 
+     * @param {string} postId - ID of the post containing the comment
+     * @param {string} commentId - ID of the comment to like/unlike
+     */
     const handleCommentLike = async (postId, commentId) => {
         const postRef = doc(db, 'communityPosts', postId);
         const userEmail = auth.currentUser?.email;
@@ -261,6 +311,12 @@ const CommunityPage = ({ navigation }) => {
         }
     };
 
+    /**
+     * Handle post deletion with confirmation
+     * Displays alert dialog before deleting from Firebase
+     * 
+     * @param {string} postId - ID of the post to delete
+     */
     const deletePost = async (postId) => {
         try {
             // Show confirmation dialog
@@ -289,6 +345,12 @@ const CommunityPage = ({ navigation }) => {
         }
     };
 
+    /**
+     * Handle sharing post content
+     * Uses React Native Share API to open native share dialog
+     * 
+     * @param {Object} post - Post object to share
+     */
     const handleShare = async (post) => {
         try {
             const postTitle = post.title || 'Check out this community post!';
@@ -302,6 +364,11 @@ const CommunityPage = ({ navigation }) => {
         }
     };
 
+    /**
+     * Filter posts based on search query
+     * Searches through title, content, and author fields
+     * Memoized to prevent unnecessary recalculations
+     */
     const filteredPosts = useMemo(() => {
         if (!searchQuery) return posts;
         
@@ -312,6 +379,13 @@ const CommunityPage = ({ navigation }) => {
         );
     }, [posts, searchQuery]);
 
+    /**
+     * Format timestamp into relative time (e.g., "2h ago")
+     * Adapts display based on how long ago the event occurred
+     * 
+     * @param {Date|Object} timestamp - Firebase timestamp or Date object
+     * @returns {string} Formatted relative time string
+     */
     const formatTimestamp = (timestamp) => {
         if (!timestamp) return '';
         const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
@@ -330,6 +404,13 @@ const CommunityPage = ({ navigation }) => {
         return date.toLocaleDateString();
     };
 
+    /**
+     * Handle comment deletion with confirmation
+     * Removes comment from the post's comments array
+     * 
+     * @param {string} postId - ID of the post containing the comment
+     * @param {string} commentId - ID of the comment to delete
+     */
     const deleteComment = async (postId, commentId) => {
         // Show confirmation dialog
         Alert.alert(
@@ -371,7 +452,14 @@ const CommunityPage = ({ navigation }) => {
         );
     };
 
-    // Add the missing safeTimeout utility function
+    /**
+     * Safely execute a callback after a delay, checking if component is still mounted
+     * Prevents memory leaks and updates to unmounted components
+     * 
+     * @param {Function} callback - Function to execute after delay
+     * @param {number} delay - Time to wait in milliseconds
+     * @returns {number|null} Timeout ID or null if component unmounted
+     */
     const safeTimeout = useCallback((callback, delay) => {
         if (!isMountedRef.current) return null;
         
@@ -387,12 +475,21 @@ const CommunityPage = ({ navigation }) => {
     // Add a mounted ref to track component lifecycle
     const isMountedRef = useRef(true);
     
+    // Cleanup on component unmount
     useEffect(() => {
         return () => {
             isMountedRef.current = false;
         };
     }, []);
 
+    /**
+     * Render a single comment with replies and actions
+     * Supports replying, liking, and deleting comments
+     * 
+     * @param {Object} comment - Comment object to render
+     * @param {string} postId - ID of the post containing the comment
+     * @returns {JSX.Element} Rendered comment component
+     */
     const renderComment = (comment, postId) => (
         <Animated.View 
             style={[styles.commentItem, { opacity: new Animated.Value(1) }]} 
@@ -489,6 +586,14 @@ const CommunityPage = ({ navigation }) => {
         </Animated.View>
     );
 
+    /**
+     * Render an individual post item for the FlatList
+     * Includes post content, author info, and interaction buttons
+     * 
+     * @param {Object} item - Post object to render
+     * @param {number} index - Index of the post in the list
+     * @returns {JSX.Element} Rendered post item component
+     */
     const renderItem = ({ item, index }) => {
         const userEmail = auth.currentUser?.email;
         const isPostOwner = userEmail === item.author;
@@ -695,10 +800,13 @@ const CommunityPage = ({ navigation }) => {
         );
     };
 
+    // Main component render
     return (
         <SafeAreaView style={[styles.container, { paddingTop: insets.top }]}>
+            {/* Status bar configuration */}
             <StatusBar barStyle="dark-content" backgroundColor="#fff" />
             
+            {/* Header with back button, title and search toggle */}
             <View style={styles.header}>
                 <TouchableOpacity onPress={() => navigation.goBack()}>
                     <Icon name="arrow-left" size={20} color="#333" />
@@ -709,6 +817,7 @@ const CommunityPage = ({ navigation }) => {
                 </TouchableOpacity>
             </View>
 
+            {/* Animated search bar that slides in/out */}
             <Animated.View 
                 style={[
                     styles.searchContainer,
@@ -735,6 +844,7 @@ const CommunityPage = ({ navigation }) => {
                 )}
             </Animated.View>
 
+            {/* Show loading screen or post list */}
             {loading ? (
                 <LoadingScreen message="Loading community posts..." />
             ) : (
@@ -798,6 +908,7 @@ const CommunityPage = ({ navigation }) => {
                 />
             )}
 
+            {/* Floating action button for creating new posts */}
             <Animated.View
                 style={[
                     styles.fab,
@@ -822,6 +933,7 @@ const CommunityPage = ({ navigation }) => {
 
 export default CommunityPage;
 
+// StyleSheet for component styling - keeping intact
 const styles = StyleSheet.create({
   container: {
     flex: 1,

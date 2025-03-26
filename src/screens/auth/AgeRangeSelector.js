@@ -1,3 +1,10 @@
+/**
+ * AgeRangeSelector Component
+ * 
+ * This component allows users to select their age range during the authentication process.
+ * It displays three age range options with different designs and characters.
+ * After selection, the user's age range is saved to Firestore.
+ */
 import React, { useState } from 'react';
 import { 
   StyleSheet, 
@@ -21,11 +28,17 @@ import * as Haptics from 'expo-haptics';
 // Get screen dimensions for responsive sizing
 const { width, height } = Dimensions.get('window');
 
-// Calculate responsive sizes
+/**
+ * Utility functions for responsive design
+ * These functions calculate sizes based on screen dimensions to ensure
+ * UI elements scale properly across different device sizes
+ */
 const responsiveWidth = (percentage) => (width * percentage) / 100;
 const responsiveHeight = (percentage) => (height * percentage) / 100;
 const fontSize = (size) => {
+  // Increase font size for tablets (screens wider than 550px)
   const baseSize = width > 550 ? size * 1.3 : size;
+  // Scale font size based on screen width relative to iPhone 8 (375px width)
   return Math.round(baseSize * width / 375);
 };
 

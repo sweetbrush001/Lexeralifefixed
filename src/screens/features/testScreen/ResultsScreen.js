@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo } from "react"; // Import React and hooks for state, effects, and memoization
 import { 
   View, 
   Text, 
@@ -9,27 +9,42 @@ import {
   ScrollView,
   Dimensions,
   Animated
-} from "react-native";
-import { useNavigation } from "@react-navigation/native";
-import { Ionicons, FontAwesome5 } from "@expo/vector-icons";
-import { auth, db } from "../../../config/firebaseConfig";
-import { collection, addDoc } from "firebase/firestore";
-import { useTextStyle } from '../../../hooks/useTextStyle';
-import * as Haptics from 'expo-haptics';
-import { LinearGradient } from 'expo-linear-gradient';
+} from "react-native"; // Import React Native components for UI
+import { useNavigation } from "@react-navigation/native"; // Import navigation hook for screen transitions
+import { Ionicons, FontAwesome5 } from "@expo/vector-icons"; // Import icon sets
+import { auth, db } from "../../../config/firebaseConfig"; // Import Firebase configuration
+import { collection, addDoc } from "firebase/firestore"; // Import Firestore functions for database operations
+import { useTextStyle } from '../../../hooks/useTextStyle'; // Import custom text styling hook
+import * as Haptics from 'expo-haptics'; // Import haptic feedback capabilities
+import { LinearGradient } from 'expo-linear-gradient'; // Import gradient component for UI elements
 
+/**
+ * ResultsScreen Component
+ * Displays and saves test results with dynamic feedback based on score
+ * 
+ * @param {Object} route - Route object containing test answers
+ * @returns {JSX.Element} Rendered ResultsScreen component
+ */
 const ResultsScreen = ({ route }) => {
+  // Extract test answers from navigation params
   const { answers } = route.params;
   const navigation = useNavigation();
-  const user = auth.currentUser;
-  const [isSaving, setIsSaving] = useState(true);
-  const [showDetails, setShowDetails] = useState(false);
-  const rawTextStyle = useTextStyle();
-  const fadeAnim = useState(new Animated.Value(0))[0];
-  const slideAnim = useState(new Animated.Value(50))[0];
-  const pulseAnim = useState(new Animated.Value(1))[0];
+  const user = auth.currentUser; // Get current authenticated user
+  
+  // State variables
+  const [isSaving, setIsSaving] = useState(true); // Track saving state for database operations
+  const [showDetails, setShowDetails] = useState(false); // Toggle for showing detailed test answers
+  const rawTextStyle = useTextStyle(); // Get text style from global settings
+  
+  // Animation values
+  const fadeAnim = useState(new Animated.Value(0))[0]; // Animation for fading in elements
+  const slideAnim = useState(new Animated.Value(50))[0]; // Animation for sliding in elements
+  const pulseAnim = useState(new Animated.Value(1))[0]; // Animation for pulsing percentage circle
 
-  // Create optimized text styles for different UI components
+  /**
+   * Create optimized text styles for different UI components
+   * Extracts font family from global settings while preserving specific style attributes
+   */
   const textStyle = useMemo(() => {
     // Use only font family from settings, preserve other styles
     const { fontFamily } = rawTextStyle;
@@ -64,6 +79,10 @@ const ResultsScreen = ({ route }) => {
     return { fontFamily };
   }, [textStyle]);
 
+  /**
+   * Set up animations when component mounts
+   * Includes fade-in, slide-up, and pulsing effects
+   */
   useEffect(() => {
     // Animate in the content
     Animated.parallel([
@@ -96,13 +115,22 @@ const ResultsScreen = ({ route }) => {
     ).start();
   }, []);
 
+  /**
+   * Calculate test results based on user answers
+   * Returns percentage score, result text, and detailed explanation
+   * 
+   * @returns {Object} Object containing result metrics
+   */
   const getResult = () => {
+    // Calculate how many 'yes' answers were given
     const yesAnswers = answers.filter((answer) => answer === true).length;
+    // Calculate percentage score
     const percentage = ((yesAnswers / answers.length) * 100).toFixed(0);
 
     let resultText = "";
     let detailedText = "";
     
+    // Determine result category and detailed explanation based on percentage
     if (percentage >= 75) {
       resultText = "High likelihood of dyslexia";
       detailedText = "Your responses strongly indicate signs of dyslexia. We recommend consulting with a specialized educational psychologist or a dyslexia specialist for a comprehensive assessment.";
@@ -124,8 +152,16 @@ const ResultsScreen = ({ route }) => {
     };
   };
 
+  // Extract result data from the getResult function
   const { text: resultText, detailedText, percentage } = getResult();
 
+  /**
+   * Determine color scheme based on percentage score
+   * Returns colors for UI elements that reflect risk level
+   * 
+   * @param {string} percentage - Score percentage
+   * @returns {Object} Object containing color values
+   */
   const getPercentageColor = (percentage) => {
     if (percentage >= 75) return { main: "#FF453A", gradient: ["#FF5252", "#FF1744"] }; // Red for high
     if (percentage >= 50) return { main: "#FF9F0A", gradient: ["#FFB74D", "#FF9800"] }; // Orange for medium-high
@@ -133,11 +169,16 @@ const ResultsScreen = ({ route }) => {
     return { main: "#34C759", gradient: ["#4CAF50", "#2E7D32"] }; // Green for low
   };
 
+  // Get color scheme based on result percentage
   const colorScheme = getPercentageColor(percentage);
 
-  // Auto-save the result when the screen loads
+  /**
+   * Save test result to Firebase when component mounts
+   * Creates a document in the testResults collection
+   */
   useEffect(() => {
     const saveResultToFirebase = async () => {
+      // Ensure user is logged in before saving
       if (!user) {
         Alert.alert("Error", "You must be logged in to save results.");
         setIsSaving(false);
@@ -145,6 +186,7 @@ const ResultsScreen = ({ route }) => {
       }
 
       try {
+        // Add new document to testResults collection
         await addDoc(collection(db, "testResults"), {
           userId: user.uid,
           percentage: parseInt(percentage),
@@ -167,6 +209,12 @@ const ResultsScreen = ({ route }) => {
     saveResultToFirebase();
   }, []);
 
+  /**
+   * Render recommendation section based on test results
+   * Only shows for scores above 50%
+   * 
+   * @returns {JSX.Element|null} Recommendations section or null
+   */
   const renderRecommendations = () => {
     if (parseInt(percentage) >= 50) {
       return (
@@ -190,16 +238,28 @@ const ResultsScreen = ({ route }) => {
     return null;
   };
 
+  /**
+   * Toggle display of detailed test answers
+   * Provides haptic feedback for interaction
+   */
   const toggleDetails = () => {
     setShowDetails(!showDetails);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   };
 
+  /**
+   * Navigate back to home screen
+   * Provides haptic feedback for interaction
+   */
   const handleGoHome = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     navigation.navigate("Home");
   };
 
+  /**
+   * Navigate to previous results screen
+   * Provides haptic feedback for interaction
+   */
   const handleViewPreviousResults = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     navigation.navigate("PreviousResults");
@@ -214,12 +274,14 @@ const ResultsScreen = ({ route }) => {
         ]}
       >
         <View style={styles.card}>
+          {/* Background gradient for card */}
           <LinearGradient
             colors={['#6C63FF20', '#FFFFFF']}
             style={styles.cardGradient}
           />
           <Text style={[styles.title, headingStyle]}>Your Results</Text>
 
+          {/* Percentage indicator with dynamic coloring */}
           <View style={styles.percentageContainer}>
             <Animated.View 
               style={[
@@ -237,6 +299,8 @@ const ResultsScreen = ({ route }) => {
                 <Text style={[styles.percentageText, { color: colorScheme.main }, percentageStyle]}>{percentage}%</Text>
               </LinearGradient>
             </Animated.View>
+            
+            {/* Result category badge */}
             <View style={styles.resultCategoryContainer}>
               <LinearGradient
                 colors={colorScheme.gradient}
@@ -249,10 +313,13 @@ const ResultsScreen = ({ route }) => {
             </View>
           </View>
 
+          {/* Detailed explanation text */}
           <Text style={[styles.resultText, contentStyle]}>{detailedText}</Text>
 
+          {/* Conditional recommendations section */}
           {renderRecommendations()}
 
+          {/* Toggle button for detailed test answers */}
           <TouchableOpacity 
             style={[styles.detailsButton, showDetails && styles.detailsButtonActive]}
             onPress={toggleDetails}
@@ -261,7 +328,7 @@ const ResultsScreen = ({ route }) => {
               style={[
                 styles.detailsButtonText, 
                 showDetails && styles.detailsButtonTextActive,
-                detailsButtonTextStyle // Use the special style that doesn't override the color
+                detailsButtonTextStyle
               ]}
             >
               {showDetails ? "Hide Test Details" : "Show Test Details"}
@@ -269,10 +336,11 @@ const ResultsScreen = ({ route }) => {
             <Ionicons 
               name={showDetails ? "chevron-up" : "chevron-down"} 
               size={24} 
-              color={showDetails ? "#FFFFFF" : "#FF8500"} // Updated from "#6C63FF" to "#FF8500" to match text
+              color={showDetails ? "#FFFFFF" : "#FF8500"}
             />
           </TouchableOpacity>
 
+          {/* Detailed test answers - conditionally rendered */}
           {showDetails && (
             <View style={styles.answersContainer}>
               <Text style={[styles.answersTitle, headingStyle]}>Your Responses:</Text>
@@ -296,12 +364,14 @@ const ResultsScreen = ({ route }) => {
             </View>
           )}
 
+          {/* Loading indicator while saving results */}
           {isSaving ? (
             <View style={styles.savingContainer}>
               <ActivityIndicator size="large" color="#6C63FF" />
               <Text style={[styles.savingText, contentStyle]}>Saving your results...</Text>
             </View>
           ) : (
+            // Navigation buttons once saved
             <View style={styles.buttonContainer}>
               <TouchableOpacity 
                 style={[styles.buttonWrapper, styles.historyButtonWrapper]} 
@@ -337,6 +407,7 @@ const ResultsScreen = ({ route }) => {
             </View>
           )}
 
+          {/* Disclaimer message */}
           <View style={styles.disclaimerContainer}>
             <Ionicons name="information-circle-outline" size={20} color="#666" />
             <Text style={[styles.disclaimerText, contentStyle]}>
@@ -349,8 +420,10 @@ const ResultsScreen = ({ route }) => {
   );
 };
 
+// Get device width for responsive design
 const { width } = Dimensions.get('window');
 
+// StyleSheet for component styling
 const styles = StyleSheet.create({
   scrollView: {
     flex: 1,
