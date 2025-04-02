@@ -82,12 +82,12 @@ const WordScrambleGame = ({ navigation, route }) => {
         
         // Verify paths before trying to load
         console.log('Verifying sound file paths...');
-        const correctPath = require('../../../assets/sounds/correct.mp3');
-        const errorPath = require('../../../assets/sounds/error.mp3');
-        const checkPath = require('../../../assets/sounds/check.mp3');
-        const hintPath = require('../../../assets/sounds/hint.mp3');
-        const skipPath = require('../../../assets/sounds/skip.mp3');
-        const completePath = require('../../../assets/sounds/level-complete.mp3');
+        const correctPath = require('../../../../assets/sounds/correct.mp3');
+        const errorPath = require('../../../../assets/sounds/error.mp3');
+        const checkPath = require('../../../../assets/sounds/check.mp3');
+        const hintPath = require('../../../../assets/sounds/hint.mp3');
+        const skipPath = require('../../../../assets/sounds/skip.mp3');
+        const completePath = require('../../../../assets/sounds/level-complete.mp3');
         
         verifyFilePath(correctPath);
         verifyFilePath(errorPath);
