@@ -168,10 +168,10 @@ const WordScrambleGame = ({ navigation, route }) => {
 
   const getBackgroundImage = () => {
     switch (level.toLowerCase()) {
-      case 'easy': return require('../assets/images/easy-background.png');
-      case 'medium': return require('../assets/images/medium-background.png');
-      case 'hard': return require('../assets/images/hard-background.png');
-      default: return require('../assets/images/default-background.png');
+      case 'easy': return require('../assets/images/wordScramble/easy-background.webp');
+      case 'medium': return require('../assets/images/wordScramble/medium-background.webp');
+      case 'hard': return require('../assets/images/.wordScramblehard-background.webp');
+      default: return require('../assets/images/wordScramble/default-background.png');
     }
   };
 
