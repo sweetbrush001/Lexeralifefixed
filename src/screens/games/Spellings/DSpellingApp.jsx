@@ -311,8 +311,6 @@ const DSpellingGame = () => {
     }
   };
 
-  // Remove the duplicate positionLetters function and replace with a single implementation
-  // Removed duplicate declaration of positionLetters
 
   // Fix the generateLetterSet function to add proper error handling and unique IDs
   const generateLetterSet = (wordLetters) => {
