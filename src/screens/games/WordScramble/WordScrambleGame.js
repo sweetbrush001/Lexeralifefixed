@@ -529,22 +529,24 @@ const styles = StyleSheet.create({
   },
   levelText: {
     fontFamily: 'OpenDyslexic-Bold',
-    fontSize: 40,
-    fontStyle: 'bold',
-    color: '#f6daff',
-    marginTop: 30, 
-    marginBottom: 40, 
+    fontSize: 30,
+    fontStyle:'bold',
+    color: 'white',
+    marginTop: 25, 
+    marginBottom: 36, 
   },
   scoreText: {
     fontFamily: 'OpenDyslexic-Bold',
     fontSize: 22,
     color: 'white',
-    marginBottom: 5,
+    marginBottom: 3,
   },
   progressText: {
     fontFamily: 'OpenDyslexic',
     fontSize: 18,
     color: '#d1a7e7',
+    marginBottom: 3,
+
   },
   timerContainer: {
     marginBottom: 30,
