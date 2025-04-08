@@ -168,7 +168,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     marginBottom: 15,
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'center', 
     alignItems: 'center',
     width: '100%',
   },
@@ -189,6 +189,7 @@ const styles = StyleSheet.create({
     fontFamily: 'OpenDyslexic-Bold',
     fontSize: 20,
     color: 'white',
+    textAlign: 'center', 
   },
   levelDescription: {
     fontFamily: 'OpenDyslexic',
