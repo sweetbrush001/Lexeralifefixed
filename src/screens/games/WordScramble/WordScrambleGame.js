@@ -82,10 +82,10 @@ const WordScrambleGame = ({ navigation, route }) => {
         
         // Verify paths before trying to load
         console.log('Verifying sound file paths...');
-        const correctPath = '../../assets/sounds/correct.mp3';
+        const correctPath = '../assets/sounds/correct.mp3';
         const errorPath = '../assets/sounds/error.mp3';
         const checkPath = '../assets/sounds/check.mp3';
-        const hintPath = '../../assets/sounds/hint.mp3';
+        const hintPath = '../assets/sounds/hint.mp3';
         const skipPath = '../assets/sounds/skip.mp3';
         const completePath = '../assets/sounds/level-complete.mp3';
         
@@ -100,7 +100,7 @@ const WordScrambleGame = ({ navigation, route }) => {
         // This pattern avoids conflicts with other audio components
         try {
           const correctSound = new Audio.Sound();
-          await correctSound.loadAsync(require('../assets/sounds/correct.mp3'));
+          await correctSound.loadAsync(require('../../games/assets/sounds/correct.mp3'));
           soundEffects.correct = correctSound;
           console.log('Correct sound loaded');
         } catch (error) {
@@ -209,17 +209,17 @@ const WordScrambleGame = ({ navigation, route }) => {
           await sound.unloadAsync().catch(() => {});
           
           if (soundType === 'correct') {
-            await sound.loadAsync(require('../assets/sounds/correct.mp3'));
+            await sound.loadAsync(require('../../games/assets/sounds/correct.mp3'));
           } else if (soundType === 'incorrect') {
-            await sound.loadAsync(require('../assets/sounds/error.mp3'));
+            await sound.loadAsync(require('../../games/assets/sounds/error.mp3'));
           } else if (soundType === 'check') {
-            await sound.loadAsync(require('../assets/sounds/check.mp3'));
+            await sound.loadAsync(require('../../games/assets/sounds/check.mp3'));
           } else if (soundType === 'hint') {
-            await sound.loadAsync(require('../assets/sounds/hint.mp3'));
+            await sound.loadAsync(require('../../games/assets/sounds/hint.mp3'));
           } else if (soundType === 'skip') {
-            await sound.loadAsync(require('../assets/sounds/skip.mp3'));
+            await sound.loadAsync(require('../../games/assets/sounds/skip.mp3'));
           } else if (soundType === 'complete') {
-            await sound.loadAsync(require('../assets/sounds/level-complete.mp3'));
+            await sound.loadAsync(require('../../games/assets/sounds/level-complete.mp3'));
           }
           
           await sound.playAsync().catch(() => {});
