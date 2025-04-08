@@ -26,7 +26,7 @@ const WordScrambleEntry = ({ navigation }) => {
   return (
     <SafeAreaView style={styles.safeArea}>
       <ImageBackground 
-        source={require('../assets/images/wordScramble/default-background.png')} 
+        source={require('../assets/images/wordScramble/background.webp')} 
         style={styles.backgroundImage}
       >
         <ScrollView contentContainerStyle={styles.scrollContainer}>
