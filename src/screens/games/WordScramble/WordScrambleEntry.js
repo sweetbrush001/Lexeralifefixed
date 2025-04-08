@@ -53,7 +53,7 @@ const WordScrambleEntry = ({ navigation }) => {
                   onPress={() => handleLevelSelect('Easy')}
                 >
                   <Text style={styles.levelButtonText}>Easy</Text>
-                  <Text style={styles.levelDescription}>3-4 letter words</Text>
+                  
                 </TouchableOpacity>
                 
                 <TouchableOpacity
@@ -65,7 +65,7 @@ const WordScrambleEntry = ({ navigation }) => {
                   onPress={() => handleLevelSelect('Medium')}
                 >
                   <Text style={styles.levelButtonText}>Medium</Text>
-                  <Text style={styles.levelDescription}>5-6 letter words</Text>
+                 
                 </TouchableOpacity>
                 
                 <TouchableOpacity
@@ -77,7 +77,7 @@ const WordScrambleEntry = ({ navigation }) => {
                   onPress={() => handleLevelSelect('Hard')}
                 >
                   <Text style={styles.levelButtonText}>Hard</Text>
-                  <Text style={styles.levelDescription}>7+ letter words</Text>
+                  
                 </TouchableOpacity>
               </View>
               
@@ -99,14 +99,7 @@ const WordScrambleEntry = ({ navigation }) => {
                 <Text style={styles.scoreboardButtonText}>View Scoreboard</Text>
               </TouchableOpacity>
               
-              <View style={styles.rulesContainer}>
-                <Text style={styles.rulesTitle}>How to Play:</Text>
-                <Text style={styles.rulesText}>• Unscramble the given word</Text>
-                <Text style={styles.rulesText}>• Type your answer and press "Check"</Text>
-                <Text style={styles.rulesText}>• You can use a hint once per word</Text>
-                <Text style={styles.rulesText}>• Skip difficult words (with penalty)</Text>
-                <Text style={styles.rulesText}>• Score more points by solving quickly!</Text>
-              </View>
+              
             </View>
           </View>
         </ScrollView>
@@ -148,7 +141,7 @@ const styles = StyleSheet.create({
   title: {
     fontFamily: 'OpenDyslexic-Bold',
     fontSize: 32,
-    color: '#E0B0FF',
+    color: 'white',
     marginBottom: 10,
     textAlign: 'center',
   },
