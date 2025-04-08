@@ -40,11 +40,10 @@ const WordScrambleEntry = ({ navigation }) => {
             
             <View style={styles.content}>
               <Text style={styles.title}>Word Scramble</Text>
-              <Text style={styles.subtitle}>Unscramble words against the clock!</Text>
+              <Text style={styles.subtitle}>Unscramble words in Outerspace</Text>
               
               <View style={styles.levelSelectionContainer}>
-                <Text style={styles.selectText}>Select Difficulty:</Text>
-                
+                            
                 <TouchableOpacity
                   style={[
                     styles.levelButton,
