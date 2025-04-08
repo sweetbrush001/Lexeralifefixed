@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   StyleSheet,
   View,
@@ -10,34 +10,76 @@ import {
   KeyboardAvoidingView,
   Platform,
   Alert,
+  Image,
+  Dimensions,
+  SafeAreaView,
+  StatusBar,
 } from "react-native";
-import Flashcard from "./Flashcard";
-import { generateFlashcards } from "./api";
-import { saveFlashcards } from "./storage";
+import { LinearGradient } from "expo-linear-gradient";
+import Flashcard from "../Flashcards/Flashcard";
+import { generateFlashcards } from "../Flashcards/api";
+import { saveFlashcards } from "../Flashcards/storage";
+import { Ionicons } from "@expo/vector-icons";
+
+const { width } = Dimensions.get("window");
 
 const COLORS = {
-  primary: "#6200ee",
-  background: "#f8f8f8",
-  card: "#ffffff",
+  primary: "#7C4DFF", // Purple primary color
+  primaryLight: "#B39DDB",
+  secondary: "#FF9800", // Orange accent
+  background: "#F5F7FA",
+  card: "#FFFFFF",
   text: "#333333",
-  border: "#e0e0e0",
-  success: "#4caf50",
-  error: "#f44336",
+  textLight: "#78909C",
+  border: "#E0E0E0",
+  success: "#4CAF50",
+  error: "#F44336",
+  shadow: "#000",
 };
 
 const CATEGORIES = [
-  { label: "Technology", value: "technology" },
-  { label: "Geography", value: "geography" },
-  { label: "History", value: "history" },
-  { label: "Science", value: "science" },
-  { label: "Other", value: "other" },
+  { 
+    label: "Technology", 
+    value: "technology",
+    icon: "laptop-outline",
+    color: "#7C4DFF"
+  },
+  { 
+    label: "Geography", 
+    value: "geography",
+    icon: "earth-outline",
+    color: "#26A69A"
+  },
+  { 
+    label: "History", 
+    value: "history",
+    icon: "time-outline",
+    color: "#EF5350"
+  },
+  { 
+    label: "Science", 
+    value: "science",
+    icon: "flask-outline",
+    color: "#42A5F5"
+  },
+  { 
+    label: "Other", 
+    value: "other",
+    icon: "apps-outline",
+    color: "#FFA726"
+  },
 ];
 
 const FLASHCARD_COLORS = [
-  "#ffffff", "#96ADFC", "#DB1F1F", "#B987DC", "#A8F29A", "#F8FD89"
+  "#FFFFFF", // White
+  "#E3F2FD", // Light Blue
+  "#F3E5F5", // Light Purple
+  "#E8F5E9", // Light Green
+  "#FFF8E1", // Light Yellow
+  "#FFEBEE", // Light Red
 ];
 
-export default function GenerateScreen({ setActiveTab }) {
+export default function GenerateScreen({ setActiveTab, navigation }) {
   const [category, setCategory] = useState("technology");
   const [subtopic, setSubtopic] = useState("");
   const [userQuestions, setUserQuestions] = useState("");
@@ -48,6 +90,13 @@ export default function GenerateScreen({ setActiveTab }) {
   const [selectedColor, setSelectedColor] = useState(FLASHCARD_COLORS[0]);
   const [newFlashcards, setNewFlashcards] = useState([]);
   const [showNewFlashcardFields, setShowNewFlashcardFields] = useState(false);
+  const [step, setStep] = useState(1); // 1: Input, 2: Results
+
+  useEffect(() => {
+    if (flashcards.length > 0) {
+      setStep(2);
+    }
+  }, [flashcards]);
 
   const handleGenerate = async () => {
     if (!subtopic.trim()) {
@@ -58,7 +107,6 @@ export default function GenerateScreen({ setActiveTab }) {
     setLoading(true);
     setError("");
     setSuccessMessage("");
-    setFlashcards([]);
 
     try {
       const questionsArray = userQuestions
@@ -74,6 +122,7 @@ export default function GenerateScreen({ setActiveTab }) {
 
       if (!generatedFlashcards || generatedFlashcards.length === 0) {
         setError("No flashcards were generated. Please try again.");
+        setLoading(false);
         return;
       }
 
@@ -122,11 +171,12 @@ export default function GenerateScreen({ setActiveTab }) {
 
       Alert.alert(
         "Success",
-        `Flashcards saved to "${subtopic}" collection!`,
+        `${allFlashcards.length} flashcards saved to "${subtopic}" collection!`,
         [
           {
             text: "View Collection",
             onPress: () => setActiveTab('saved'),
+            style: "default",
           },
           {
             text: "Create More",
@@ -137,6 +187,7 @@ export default function GenerateScreen({ setActiveTab }) {
               setSuccessMessage("");
               setNewFlashcards([]);
               setShowNewFlashcardFields(false);
+              setStep(1);
             },
           },
         ]
@@ -165,305 +216,528 @@ export default function GenerateScreen({ setActiveTab }) {
     setNewFlashcards(updatedFlashcards);
   };
 
-  return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      style={styles.container}
-    >
-      <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
-        <View style={styles.inputContainer}>
-          <Text style={styles.label}>Select a category</Text>
-          <View style={styles.picker}>
-            {CATEGORIES.map((cat) => (
-              <TouchableOpacity
-                key={cat.value}
+  const renderInputScreen = () => (
+    <View style={styles.inputScreen}>
+      <Text style={styles.screenTitle}>Create Flashcards</Text>
+      
+      <View style={styles.inputContainer}>
+        <Text style={styles.label}>Select a category</Text>
+        <ScrollView 
+          horizontal 
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.categoriesContainer}
+        >
+          {CATEGORIES.map((cat) => (
+            <TouchableOpacity
+              key={cat.value}
+              style={[
+                styles.categoryItem,
+                { backgroundColor: cat.color + '20' }, // 20% opacity
+                category === cat.value && { 
+                  backgroundColor: cat.color + '30',
+                  borderColor: cat.color,
+                  borderWidth: 2,
+                },
+              ]}
+              onPress={() => setCategory(cat.value)}
+            >
+              <Ionicons 
+                name={cat.icon} 
+                size={24} 
+                color={cat.color} 
+                style={styles.categoryIcon} 
+              />
+              <Text
                 style={[
-                  styles.pickerItem,
-                  category === cat.value && styles.pickerItemSelected,
+                  styles.categoryText,
+                  { color: cat.color },
                 ]}
-                onPress={() => setCategory(cat.value)}
               >
-                <Text
-                  style={[
-                    styles.pickerItemText,
-                    category === cat.value && styles.pickerItemTextSelected,
-                  ]}
-                >
-                  {cat.label}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
+                {cat.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      </View>
 
-        <View style={styles.inputContainer}>
-          <Text style={styles.label}>Enter a subtopic</Text>
+      <View style={styles.inputContainer}>
+        <Text style={styles.label}>Enter a subtopic</Text>
+        <View style={styles.inputWrapper}>
+          <Ionicons name="book-outline" size={20} color={COLORS.textLight} style={styles.inputIcon} />
           <TextInput
             style={styles.input}
             value={subtopic}
             onChangeText={setSubtopic}
             placeholder="e.g., JavaScript Promises"
-            placeholderTextColor="#999"
+            placeholderTextColor={COLORS.textLight}
             accessibilityLabel="Enter a subtopic"
           />
         </View>
+      </View>
 
-        <View style={styles.inputContainer}>
-          <Text style={styles.label}>Enter your questions (optional)</Text>
+      <View style={styles.inputContainer}>
+        <Text style={styles.label}>Enter your questions (optional)</Text>
+        <View style={styles.textareaWrapper}>
           <TextInput
-            style={[styles.input, { height: 100, textAlignVertical: "top" }]}
+            style={styles.textarea}
             value={userQuestions}
             onChangeText={setUserQuestions}
             placeholder="Enter questions separated by commas or new lines"
-            placeholderTextColor="#999"
+            placeholderTextColor={COLORS.textLight}
             multiline={true}
+            textAlignVertical="top"
             accessibilityLabel="Enter your questions"
           />
         </View>
+      </View>
 
-        <View style={styles.inputContainer}>
-          <Text style={styles.label}>Select a flashcard color</Text>
-          <View style={styles.colorPicker}>
-            {FLASHCARD_COLORS.map((color) => (
-              <TouchableOpacity
-                key={color}
-                style={[
-                  styles.colorOption,
-                  { backgroundColor: color },
-                  selectedColor === color && styles.colorOptionSelected,
-                ]}
-                onPress={() => setSelectedColor(color)}
-              />
-            ))}
-          </View>
+      <View style={styles.inputContainer}>
+        <Text style={styles.label}>Select a flashcard color</Text>
+        <View style={styles.colorPicker}>
+          {FLASHCARD_COLORS.map((color) => (
+            <TouchableOpacity
+              key={color}
+              style={[
+                styles.colorOption,
+                { backgroundColor: color },
+                selectedColor === color && styles.colorOptionSelected,
+              ]}
+              onPress={() => setSelectedColor(color)}
+            />
+          ))}
         </View>
+      </View>
 
-        <TouchableOpacity
-          style={[styles.generateButton, loading && styles.disabledButton]}
-          onPress={handleGenerate}
-          disabled={loading}
-        >
-          {loading ? (
-            <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <ActivityIndicator color="#fff" size="small" />
-              <Text style={[styles.buttonText, { marginLeft: 8 }]}>Generating...</Text>
-            </View>
-          ) : (
+      <TouchableOpacity
+        style={[styles.generateButton, loading && styles.disabledButton]}
+        onPress={handleGenerate}
+        disabled={loading}
+      >
+        {loading ? (
+          <View style={styles.buttonContent}>
+            <ActivityIndicator color="#fff" size="small" />
+            <Text style={styles.buttonText}>Generating...</Text>
+          </View>
+        ) : (
+          <View style={styles.buttonContent}>
+            <Ionicons name="flash-outline" size={20} color="#fff" />
             <Text style={styles.buttonText}>Generate Flashcards</Text>
-          )}
-        </TouchableOpacity>
-
-        {error ? <Text style={styles.errorText}>{error}</Text> : null}
-        {successMessage ? <Text style={styles.successText}>{successMessage}</Text> : null}
-
-        {flashcards.length > 0 && (
-          <View style={styles.resultContainer}>
-            <Text style={styles.collectionTitle}>{subtopic} Collection</Text>
-            {flashcards.map((flashcard) => (
-              <View key={flashcard.id} style={[styles.flashcardWrapper, { backgroundColor: flashcard.color }]}>
-                <Flashcard flashcard={flashcard} />
-              </View>
-            ))}
           </View>
         )}
+      </TouchableOpacity>
 
-        {flashcards.length > 0 && !showNewFlashcardFields && (
-          <TouchableOpacity
-            style={styles.addButton}
-            onPress={() => setShowNewFlashcardFields(true)}
-          >
-            <Text style={styles.buttonText}>Add Flashcard</Text>
-          </TouchableOpacity>
-        )}
+      {error ? (
+        <View style={styles.messageContainer}>
+          <Ionicons name="alert-circle-outline" size={20} color={COLORS.error} />
+          <Text style={styles.errorText}>{error}</Text>
+        </View>
+      ) : null}
+    </View>
+  );
 
-        {showNewFlashcardFields && (
-          <View style={styles.newFlashcardsContainer}>
-            {newFlashcards.map((flashcard, index) => (
-              <View key={index} style={styles.newFlashcard}>
+  const renderResultsScreen = () => (
+    <View style={styles.resultsScreen}>
+      <View style={styles.resultsHeader}>
+        <TouchableOpacity 
+          style={styles.backButton}
+          onPress={() => setStep(1)}
+        >
+          <Ionicons name="arrow-back" size={24} color={COLORS.primary} />
+        </TouchableOpacity>
+        <Text style={styles.collectionTitle}>{subtopic}</Text>
+        <Text style={styles.flashcardCount}>{flashcards.length} flashcards</Text>
+      </View>
+
+      {flashcards.map((flashcard, index) => (
+        <View 
+          key={flashcard.id || index} 
+          style={[
+            styles.flashcardWrapper, 
+            { backgroundColor: flashcard.color }
+          ]}
+        >
+          <Flashcard flashcard={flashcard} />
+        </View>
+      ))}
+
+      {!showNewFlashcardFields && (
+        <TouchableOpacity
+          style={styles.addButton}
+          onPress={() => setShowNewFlashcardFields(true)}
+        >
+          <Ionicons name="add-outline" size={20} color="#fff" />
+          <Text style={styles.buttonText}>Add Custom Flashcard</Text>
+        </TouchableOpacity>
+      )}
+
+      {showNewFlashcardFields && (
+        <View style={styles.newFlashcardsContainer}>
+          <Text style={styles.sectionTitle}>Custom Flashcards</Text>
+          
+          {newFlashcards.map((flashcard, index) => (
+            <View key={index} style={styles.newFlashcard}>
+              <View style={styles.inputWrapper}>
+                <Ionicons name="help-outline" size={20} color={COLORS.textLight} style={styles.inputIcon} />
                 <TextInput
                   style={styles.input}
                   value={flashcard.question}
                   onChangeText={(text) => handleNewFlashcardChange(index, "question", text)}
                   placeholder="Question"
-                  placeholderTextColor="#999"
+                  placeholderTextColor={COLORS.textLight}
                 />
+              </View>
+              
+              <View style={[styles.inputWrapper, { marginTop: 10 }]}>
+                <Ionicons name="chatbubble-outline" size={20} color={COLORS.textLight} style={styles.inputIcon} />
                 <TextInput
-                  style={[styles.input, { marginTop: 10 }]}
+                  style={styles.input}
                   value={flashcard.answer}
                   onChangeText={(text) => handleNewFlashcardChange(index, "answer", text)}
                   placeholder="Answer"
-                  placeholderTextColor="#999"
+                  placeholderTextColor={COLORS.textLight}
                 />
-                <TouchableOpacity
-                  style={styles.removeButton}
-                  onPress={() => handleRemoveFlashcard(index)}
-                >
-                  <Text style={styles.removeButtonText}>Remove</Text>
-                </TouchableOpacity>
               </View>
-            ))}
-            {newFlashcards.length < 3 && (
+              
               <TouchableOpacity
-                style={styles.addButton}
-                onPress={handleAddFlashcard}
+                style={styles.removeButton}
+                onPress={() => handleRemoveFlashcard(index)}
               >
-                <Text style={styles.buttonText}>Add Another Flashcard</Text>
+                <Ionicons name="trash-outline" size={16} color="#fff" />
+                <Text style={styles.removeButtonText}>Remove</Text>
               </TouchableOpacity>
-            )}
-          </View>
-        )}
+            </View>
+          ))}
+          
+          {newFlashcards.length < 3 && (
+            <TouchableOpacity
+              style={styles.addMoreButton}
+              onPress={handleAddFlashcard}
+            >
+              <Ionicons name="add-circle-outline" size={20} color={COLORS.primary} />
+              <Text style={styles.addMoreButtonText}>Add Another Flashcard</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      )}
 
-        {(flashcards.length > 0 || newFlashcards.length > 0) && (
-          <TouchableOpacity
-            style={styles.saveButton}
-            onPress={handleSave}
-          >
-            <Text style={styles.buttonText}>Save Collection</Text>
-          </TouchableOpacity>
-        )}
-      </ScrollView>
-    </KeyboardAvoidingView>
+      <TouchableOpacity
+        style={styles.saveButton}
+        onPress={handleSave}
+      >
+        <Ionicons name="save-outline" size={20} color="#fff" />
+        <Text style={styles.buttonText}>Save Collection</Text>
+      </TouchableOpacity>
+
+      {successMessage ? (
+        <View style={styles.messageContainer}>
+          <Ionicons name="checkmark-circle-outline" size={20} color={COLORS.success} />
+          <Text style={styles.successText}>{successMessage}</Text>
+        </View>
+      ) : null}
+    </View>
+  );
+
+  return (
+    <SafeAreaView style={styles.safeArea}>
+      <StatusBar barStyle="dark-content" backgroundColor={COLORS.background} />
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={styles.container}
+      >
+        <ScrollView 
+          contentContainerStyle={styles.scrollContent} 
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          {step === 1 ? renderInputScreen() : renderResultsScreen()}
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: COLORS.background,
+  },
   container: {
     flex: 1,
     backgroundColor: COLORS.background,
   },
   scrollContent: {
     padding: 20,
+    paddingBottom: 40,
+  },
+  inputScreen: {
+    width: "100%",
+  },
+  resultsScreen: {
+    width: "100%",
+  },
+  screenTitle: {
+    fontSize: 28,
+    fontWeight: "700",
+    color: COLORS.primary,
+    marginBottom: 24,
+    textAlign: "center",
   },
   inputContainer: {
-    marginBottom: 20,
+    marginBottom: 24,
   },
   label: {
     fontSize: 16,
-    fontWeight: "500",
-    marginBottom: 8,
+    fontWeight: "600",
+    marginBottom: 12,
     color: COLORS.text,
   },
-  picker: {
-    backgroundColor: COLORS.card,
-    borderRadius: 8,
+  categoriesContainer: {
+    paddingVertical: 8,
+  },
+  categoryItem: {
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 16,
+    borderRadius: 16,
+    marginRight: 12,
+    width: 120,
+    height: 100,
     borderWidth: 1,
     borderColor: COLORS.border,
-    padding: 10,
   },
-  pickerItem: {
-    paddingVertical: 10,
+  categoryIcon: {
+    marginBottom: 8,
   },
-  pickerItemSelected: {
-    backgroundColor: COLORS.primary,
+  categoryText: {
+    fontSize: 14,
+    fontWeight: "600",
+    textAlign: "center",
   },
-  pickerItemText: {
-    fontSize: 16,
-    color: COLORS.text,
+  inputWrapper: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: COLORS.card,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    paddingHorizontal: 16,
+    height: 56,
+    shadowColor: COLORS.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 2,
   },
-  pickerItemTextSelected: {
-    color: "#fff",
+  textareaWrapper: {
+    backgroundColor: COLORS.card,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    shadowColor: COLORS.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  inputIcon: {
+    marginRight: 12,
   },
   input: {
-    backgroundColor: COLORS.card,
-    borderRadius: 8,
-    padding: 15,
+    flex: 1,
     fontSize: 16,
-    borderWidth: 1,
-    borderColor: COLORS.border,
+    color: COLORS.text,
+    height: 56,
+  },
+  textarea: {
+    width: "100%",
+    height: 120,
+    fontSize: 16,
+    color: COLORS.text,
   },
   colorPicker: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
   },
   colorOption: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    margin: 5,
-    borderWidth: 2,
-    borderColor: 'transparent',
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    margin: 8,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    shadowColor: COLORS.shadow,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
   },
   colorOptionSelected: {
+    borderWidth: 3,
     borderColor: COLORS.primary,
   },
   generateButton: {
     backgroundColor: COLORS.primary,
-    borderRadius: 8,
-    padding: 15,
+    borderRadius: 12,
+    height: 56,
+    justifyContent: "center",
     alignItems: "center",
-    marginBottom: 20,
+    marginTop: 8,
+    shadowColor: COLORS.shadow,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  buttonContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
   },
   disabledButton: {
     opacity: 0.7,
-  },
-  saveButton: {
-    backgroundColor: COLORS.success,
-    borderRadius: 8,
-    padding: 15,
-    alignItems: "center",
-    marginTop: 15,
-  },
-  addButton: {
-    backgroundColor: COLORS.primary,
-    borderRadius: 8,
-    padding: 15,
-    alignItems: "center",
-    marginTop: 15,
   },
   buttonText: {
     color: "#fff",
     fontSize: 16,
     fontWeight: "600",
+    marginLeft: 8,
   },
-  resultContainer: {
-    marginTop: 20,
-  },
-  collectionTitle: {
-    fontSize: 20,
-    fontWeight: "600",
-    color: COLORS.primary,
-    marginBottom: 16,
-    textAlign: "center",
-  },
-  flashcardWrapper: {
-    marginBottom: 20,
-    borderRadius: 12,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
+  messageContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 16,
+    padding: 12,
+    borderRadius: 8,
+    backgroundColor: COLORS.card,
   },
   errorText: {
     color: COLORS.error,
-    marginBottom: 15,
-    textAlign: "center",
+    marginLeft: 8,
+    fontSize: 14,
   },
   successText: {
     color: COLORS.success,
-    marginBottom: 15,
+    marginLeft: 8,
+    fontSize: 14,
     fontWeight: "500",
-    textAlign: "center",
+  },
+  resultsHeader: {
+    marginBottom: 24,
+  },
+  backButton: {
+    padding: 8,
+    borderRadius: 8,
+    marginBottom: 16,
+  },
+  collectionTitle: {
+    fontSize: 24,
+    fontWeight: "700",
+    color: COLORS.primary,
+    marginBottom: 8,
+  },
+  flashcardCount: {
+    fontSize: 16,
+    color: COLORS.textLight,
+    marginBottom: 16,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: "600",
+    color: COLORS.text,
+    marginBottom: 16,
+    marginTop: 24,
+  },
+  flashcardWrapper: {
+    marginBottom: 20,
+    borderRadius: 16,
+    shadowColor: COLORS.shadow,
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 6,
+    overflow: "hidden",
+  },
+  addButton: {
+    backgroundColor: COLORS.primary,
+    borderRadius: 12,
+    height: 56,
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    marginTop: 24,
+    shadowColor: COLORS.shadow,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  saveButton: {
+    backgroundColor: COLORS.success,
+    borderRadius: 12,
+    height: 56,
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    marginTop: 24,
+    shadowColor: COLORS.shadow,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
   },
   newFlashcardsContainer: {
-    marginTop: 20,
+    marginTop: 16,
   },
   newFlashcard: {
-    marginBottom: 20,
+    backgroundColor: COLORS.card,
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 16,
+    shadowColor: COLORS.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   removeButton: {
     backgroundColor: COLORS.error,
     borderRadius: 8,
     padding: 10,
+    flexDirection: "row",
     alignItems: "center",
-    marginTop: 10,
+    justifyContent: "center",
+    marginTop: 16,
+    alignSelf: "flex-end",
+    width: 100,
   },
   removeButtonText: {
     color: "#fff",
     fontSize: 14,
     fontWeight: "600",
+    marginLeft: 4,
+  },
+  addMoreButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 12,
+    borderWidth: 1,
+    borderColor: COLORS.primary,
+    borderRadius: 12,
+    backgroundColor: COLORS.card,
+    marginTop: 8,
+  },
+  addMoreButtonText: {
+    color: COLORS.primary,
+    fontSize: 16,
+    fontWeight: "600",
+    marginLeft: 8,
   },
 });
