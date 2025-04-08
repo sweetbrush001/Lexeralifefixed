@@ -118,10 +118,12 @@ const styles = StyleSheet.create({
   },
   scrollContainer: {
     flexGrow: 1,
+    justifyContent: 'center', // Add this
   },
   container: {
     flex: 1,
     padding: 20,
+    justifyContent: 'center', // Add this
   },
   backButton: {
     position: 'absolute',
@@ -136,7 +138,7 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 60,
+    marginTop: 0, // Change from 60 to 0
   },
   title: {
     fontFamily: 'OpenDyslexic-Bold',

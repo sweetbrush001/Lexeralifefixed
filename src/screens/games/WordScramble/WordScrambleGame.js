@@ -525,13 +525,15 @@ const styles = StyleSheet.create({
   gameInfo: {
     alignItems: 'center',
     marginBottom: 20,
-    marginTop: 40,
+    marginTop: 60, // Increased from 40
   },
   levelText: {
     fontFamily: 'OpenDyslexic-Bold',
-    fontSize: 26,
-    color: '#E0B0FF',
-    marginBottom: 5,
+    fontSize: 40,
+    fontStyle: 'bold',
+    color: '#f6daff',
+    marginTop: 30, 
+    marginBottom: 40, 
   },
   scoreText: {
     fontFamily: 'OpenDyslexic-Bold',
@@ -578,7 +580,7 @@ const styles = StyleSheet.create({
     fontFamily: 'OpenDyslexic',
     fontSize: 18,
     color: '#DA90E7',
-    marginBottom: 15,
+    marginBottom: 20,
   },
   scrambledWord: {
     fontFamily: 'OpenDyslexic-Bold',
