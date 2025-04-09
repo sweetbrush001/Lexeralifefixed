@@ -507,18 +507,27 @@ export default function PhonicsGame({ onBackToHome = () => {} }) {
     setOptions(allOptions)
   }
 
-  // Preload audio for a question (only syllable audio)
+  // Preload audio for a question
   const preloadAudio = async (question) => {
     if (!question) return;
     
-    // First clear any existing reference
-    syllableSoundRef.current = null;
-    
     try {
-      // For now, just log that we're preparing the audio without actually loading it
-      console.log("Preparing audio for syllable:", question.target_syllable.text);
+      // Unload previous audio if it exists
+      if (syllableSoundRef.current) {
+        const status = await syllableSoundRef.current.getStatusAsync();
+        if (status.isLoaded) {
+          await syllableSoundRef.current.unloadAsync();
+        }
+      }
+
+      // Load new audio
+      const { sound } = await Audio.Sound.createAsync(
+        question.target_syllable.audio_url,
+        { volume: 1.0 }
+      );
+      syllableSoundRef.current = sound;
     } catch (error) {
-      console.error("Error preparing audio:", error);
+      console.error("Error preloading syllable audio:", error);
       syllableSoundRef.current = null;
     }
   }
@@ -556,24 +565,30 @@ export default function PhonicsGame({ onBackToHome = () => {} }) {
     }
   }
 
-  // Play the target syllable audio - simplified to avoid audio errors
+  // Play the target syllable audio
   const playSyllableAudio = async () => {
-    if (isPlaying || isSpeaking) return;
+    if (isPlaying || isSpeaking || !syllableSoundRef.current) return;
 
     try {
-      // Start the "playing" state for UI feedback
       setIsPlaying(true);
-      
-      // Visual feedback
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      
-      // Simulate playing sound for 1 second
-      setTimeout(() => {
+
+      const status = await syllableSoundRef.current.getStatusAsync();
+      if (status.isLoaded) {
+        await syllableSoundRef.current.setPositionAsync(0);
+        await syllableSoundRef.current.playAsync();
+        
+        // Wait for sound to finish
+        syllableSoundRef.current.setOnPlaybackStatusUpdate((status) => {
+          if (status.didJustFinish) {
+            setIsPlaying(false);
+          }
+        });
+      } else {
         setIsPlaying(false);
-      }, 1000);
-      
+      }
     } catch (error) {
-      console.error("Error simulating audio playback:", error);
+      console.error("Error playing syllable audio:", error);
       setIsPlaying(false);
     }
   }
