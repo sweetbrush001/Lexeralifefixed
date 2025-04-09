@@ -319,19 +319,23 @@ export default function PhonicsGame({ onBackToHome }) {
 
       // Clean up all sounds when component unmounts
       const cleanupSound = async (ref) => {
-        if (ref.current) {
-          try {
+        try {
+          // Only attempt to unload if ref exists and has a sound object with unloadAsync method
+          if (ref && ref.current && typeof ref.current === "object" && ref.current.unloadAsync) {
             await ref.current.unloadAsync().catch(() => {})
-          } catch (error) {
-            console.error("Error cleaning up sound:", error)
           }
-          ref.current = null
+        } catch (error) {
+          // Silently handle errors to prevent crashes during cleanup
+          console.log("Cleanup handled gracefully")
         }
       }
 
       // Clean up each sound
       cleanupSound(soundRef)
-      cleanupSound(syllableSoundRef)
+
+      // For syllableSoundRef, we're now storing just the audio resource path, not a sound object
+      // So we don't need to unload it, just clear the reference
+      syllableSoundRef.current = null
     }
   }, [])
 
@@ -394,7 +398,7 @@ export default function PhonicsGame({ onBackToHome }) {
   const playSound = async (soundFile) => {
     try {
       // Unload any previous sound
-      if (soundRef.current) {
+      if (soundRef.current && typeof soundRef.current === "object" && soundRef.current.unloadAsync) {
         await soundRef.current.unloadAsync().catch(() => {})
         soundRef.current = null
       }
@@ -406,7 +410,9 @@ export default function PhonicsGame({ onBackToHome }) {
       // Set up a listener to clean up when done
       sound.setOnPlaybackStatusUpdate((status) => {
         if (status.didJustFinish) {
-          sound.unloadAsync().catch(() => {})
+          if (sound && sound.unloadAsync) {
+            sound.unloadAsync().catch(() => {})
+          }
           if (soundRef.current === sound) {
             soundRef.current = null
           }
@@ -510,7 +516,9 @@ export default function PhonicsGame({ onBackToHome }) {
       sound.setOnPlaybackStatusUpdate((status) => {
         if (status.didJustFinish) {
           setIsPlaying(false)
-          sound.unloadAsync().catch(() => {})
+          if (sound && sound.unloadAsync) {
+            sound.unloadAsync().catch(() => {})
+          }
         }
       })
     } catch (error) {
@@ -829,7 +837,7 @@ export default function PhonicsGame({ onBackToHome }) {
           <View style={styles.animationContainer}>
             <LottieView
               source={require(".//assets/animations/monkey-right.json")}
-              autoPlay
+              autoPlay={true}
               loop={false}
               style={styles.animation}
             />
@@ -841,7 +849,7 @@ export default function PhonicsGame({ onBackToHome }) {
           <View style={styles.animationContainer}>
             <LottieView
               source={require(".//assets/animations/pirate-wrong.json")}
-              autoPlay
+              autoPlay={true}
               loop={false}
               style={styles.animation}
             />

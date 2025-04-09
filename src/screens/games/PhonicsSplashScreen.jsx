@@ -38,9 +38,13 @@ export default function PhonicsSplashScreen({ onStartGame, onBackToHome }) {
       if (soundRef.current) {
         const cleanup = async () => {
           try {
-            await soundRef.current.unloadAsync().catch(() => {})
+            // Check if the sound object exists and has the unloadAsync method
+            if (typeof soundRef.current === "object" && soundRef.current.unloadAsync) {
+              await soundRef.current.unloadAsync().catch(() => {})
+            }
           } catch (error) {
-            console.error("Error cleaning up splash screen sound:", error)
+            // Silently handle errors to prevent crashes during cleanup
+            console.log("Cleanup handled gracefully")
           }
         }
         cleanup()
@@ -72,7 +76,9 @@ export default function PhonicsSplashScreen({ onStartGame, onBackToHome }) {
         console.log("Splash screen sound loaded successfully")
       } else {
         // Clean up if component unmounted during loading
-        await sound.unloadAsync().catch(() => {})
+        if (sound && typeof sound === "object" && sound.unloadAsync) {
+          await sound.unloadAsync().catch(() => {})
+        }
       }
     } catch (error) {
       console.error("Error loading pirate sound:", error)
@@ -84,9 +90,11 @@ export default function PhonicsSplashScreen({ onStartGame, onBackToHome }) {
     if (soundRef.current) {
       const cleanup = async () => {
         try {
-          await soundRef.current.unloadAsync().catch(() => {})
+          if (typeof soundRef.current === "object" && soundRef.current.unloadAsync) {
+            await soundRef.current.unloadAsync().catch(() => {})
+          }
         } catch (error) {
-          console.error("Error stopping sound:", error)
+          console.log("Error stopping sound:", error)
         }
       }
       cleanup()
@@ -99,9 +107,11 @@ export default function PhonicsSplashScreen({ onStartGame, onBackToHome }) {
     if (soundRef.current) {
       const cleanup = async () => {
         try {
-          await soundRef.current.unloadAsync().catch(() => {})
+          if (typeof soundRef.current === "object" && soundRef.current.unloadAsync) {
+            await soundRef.current.unloadAsync().catch(() => {})
+          }
         } catch (error) {
-          console.error("Error stopping sound:", error)
+          console.log("Error stopping sound:", error)
         }
       }
       cleanup()

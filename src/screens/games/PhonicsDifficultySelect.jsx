@@ -52,7 +52,9 @@ export default function PhonicsDifficultySelect({ onSelectDifficulty, onBackToHo
         } else {
           // If component unmounted during setup, clean up immediately
           try {
-            await sound.unloadAsync()
+            if (sound && typeof sound === "object" && sound.unloadAsync) {
+              await sound.unloadAsync()
+            }
           } catch (error) {
             console.error("Error unloading sound during cleanup:", error)
           }
@@ -73,9 +75,14 @@ export default function PhonicsDifficultySelect({ onSelectDifficulty, onBackToHo
       if (soundRef.current) {
         const cleanup = async () => {
           try {
-            soundRef.current.unloadAsync().catch(() => {})
+            // Check if the sound object exists and has the unloadAsync method
+            if (typeof soundRef.current === "object" && soundRef.current.unloadAsync) {
+              await soundRef.current.unloadAsync().catch(() => {})
+              console.log("Difficulty select sound cleaned up successfully")
+            }
           } catch (error) {
-            console.log("Error cleaning up difficulty select sound:", error)
+            // Silently handle errors to prevent crashes during cleanup
+            console.log("Cleanup handled gracefully")
           } finally {
             soundRef.current = null
           }
@@ -104,7 +111,9 @@ export default function PhonicsDifficultySelect({ onSelectDifficulty, onBackToHo
     const stopSound = async () => {
       if (soundRef.current && soundLoaded) {
         try {
-          await soundRef.current.unloadAsync().catch(() => {})
+          if (typeof soundRef.current === "object" && soundRef.current.unloadAsync) {
+            await soundRef.current.unloadAsync().catch(() => {})
+          }
         } catch (error) {
           console.log("Error stopping sound on select:", error)
         }
@@ -124,7 +133,9 @@ export default function PhonicsDifficultySelect({ onSelectDifficulty, onBackToHo
     const stopSound = async () => {
       if (soundRef.current && soundLoaded) {
         try {
-          await soundRef.current.unloadAsync().catch(() => {})
+          if (typeof soundRef.current === "object" && soundRef.current.unloadAsync) {
+            await soundRef.current.unloadAsync().catch(() => {})
+          }
         } catch (error) {
           console.log("Error stopping sound on back:", error)
         }
