@@ -1,5 +1,7 @@
 import { FontAwesome, MaterialIcons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
 import { Audio } from 'expo-av';
+import * as Haptics from "expo-haptics";
 import * as Speech from 'expo-speech';
 import LottieView from 'lottie-react-native';
 import React, { useEffect, useRef, useState } from 'react';
@@ -17,8 +19,6 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import 'react-native-url-polyfill/auto';
-import * as Haptics from "expo-haptics"
-import { useNavigation } from '@react-navigation/native';
 
 const { width, height } = Dimensions.get('window');
 
@@ -88,14 +88,17 @@ const DSpellingGame = () => {
   useEffect(() => {
     const loadSounds = async () => {
       try {
-        await Promise.all(
-          Object.keys(SOUNDS).map(async (key) => {
+        for (const key of Object.keys(SOUNDS)) {
+          try {
             const { sound } = await Audio.Sound.createAsync(SOUNDS[key].source);
             SOUNDS[key].object = sound;
-          })
-        );
+          } catch (error) {
+            console.log(`Error loading sound ${key}:`, error);
+            // Continue with other sounds if one fails
+          }
+        }
       } catch (error) {
-        console.log('Error loading sounds:', error);
+        console.log('Error in loadSounds:', error);
       }
     };
 
@@ -104,7 +107,11 @@ const DSpellingGame = () => {
     return () => {
       Object.keys(SOUNDS).forEach((key) => {
         if (SOUNDS[key].object) {
-          SOUNDS[key].object.unloadAsync();
+          try {
+            SOUNDS[key].object.unloadAsync();
+          } catch (error) {
+            console.log(`Error unloading sound ${key}:`, error);
+          }
         }
       });
     };
@@ -113,14 +120,14 @@ const DSpellingGame = () => {
   // Play sound helper function
   const playSound = async (soundKey) => {
     if (isMuted) return;
-    
+
     try {
-      const sound = SOUNDS[soundKey].object;
+      const sound = SOUNDS[soundKey]?.object;
       if (sound) {
         await sound.replayAsync();
       }
     } catch (error) {
-      console.log('Error playing sound:', error);
+      console.log(`Error playing sound ${soundKey}:`, error);
     }
   };
 
@@ -128,12 +135,16 @@ const DSpellingGame = () => {
   const toggleMute = async () => {
     const newMuteState = !isMuted;
     setIsMuted(newMuteState);
-    
-    if (SOUNDS.background.object) {
-      if (newMuteState) {
-        await SOUNDS.background.object.pauseAsync();
-      } else {
-        await SOUNDS.background.object.playAsync();
+
+    if (SOUNDS.background?.object) {
+      try {
+        if (newMuteState) {
+          await SOUNDS.background.object.pauseAsync();
+        } else {
+          await SOUNDS.background.object.playAsync();
+        }
+      } catch (error) {
+        console.log('Error toggling mute:', error);
       }
     }
   };
@@ -141,9 +152,9 @@ const DSpellingGame = () => {
   // Play background music
   const playBackgroundMusic = async () => {
     if (isMuted) return;
-    
+
     try {
-      if (SOUNDS.background.object) {
+      if (SOUNDS.background?.object) {
         await SOUNDS.background.object.setIsLoopingAsync(true);
         await SOUNDS.background.object.playAsync();
       }
@@ -170,7 +181,7 @@ const DSpellingGame = () => {
     if (gameState === 'game') {
       setGameOver(false);
       const wordsForThisDifficulty = [...GAME_DATA[difficulty]];
-      
+
       setTimeout(() => {
         setupGameWithWords(wordsForThisDifficulty);
       }, 300);
@@ -814,8 +825,12 @@ const DSpellingGame = () => {
     setGameOver(true);
     playSound('complete');
 
-    if (SOUNDS.background.object) {
-      SOUNDS.background.object.stopAsync();
+    try {
+      if (SOUNDS.background?.object) {
+        SOUNDS.background.object.stopAsync();
+      }
+    } catch (error) {
+      console.log('Error stopping background music:', error);
     }
 
     if (animation.current) {
@@ -837,10 +852,15 @@ const DSpellingGame = () => {
           text: "Quit",
           style: "destructive",
           onPress: () => {
-            if (SOUNDS.background.object) {
-              SOUNDS.background.object.stopAsync();
+            try {
+              if (SOUNDS.background?.object) {
+                SOUNDS.background.object.stopAsync();
+              }
+            } catch (error) {
+              console.log('Error stopping background music:', error);
+            } finally {
+              setGameState('difficulty');
             }
-            setGameState('difficulty');
           }
         }
       ]
@@ -1249,7 +1269,7 @@ const DSpellingGame = () => {
               <Text style={styles.buttonText}>Back to Menu</Text>
             </TouchableOpacity>
           </View>
-          
+
           <TouchableOpacity
             style={styles.backButton}
             onPress={() => navigation.navigate('Games')}
