@@ -27,14 +27,22 @@ export default function PirateAudio({ isPlaying = true }) {
         })
 
         // Create and load the sound
-        const { sound: pirateSound } = await Audio.Sound.createAsync(require("./assets/sounds/ocean-ambience.mp3"), {
-          isLooping: true,
-          volume: 0.3,
-          // Don't auto-play, we'll control this manually
-          shouldPlay: false,
-        })
+        const { sound: pirateSound } = await Audio.Sound.createAsync(
+          require("../screens/games/assets/sounds/ocean-ambience.mp3"), 
+          {
+            isLooping: true,
+            volume: 0.3,
+            shouldPlay: false,
+          }
+        );
 
-        soundObject = pirateSound
+        // Check if sound object is valid
+        if (!pirateSound) {
+          console.error("Failed to create sound object");
+          return;
+        }
+
+        soundObject = pirateSound;
 
         // Only set state if component is still mounted
         if (isMountedRef.current) {
@@ -42,7 +50,9 @@ export default function PirateAudio({ isPlaying = true }) {
 
           // Play sound if it should be playing and not muted
           if (isPlaying && !isMuted) {
-            await pirateSound.playAsync()
+            await pirateSound.playAsync().catch(err => 
+              console.error("Error playing initial sound:", err)
+            );
           }
         }
       } catch (error) {
@@ -60,8 +70,8 @@ export default function PirateAudio({ isPlaying = true }) {
       if (soundObject) {
         const cleanup = async () => {
           try {
-            await soundObject.stopAsync()
-            await soundObject.unloadAsync()
+            await soundObject.stopAsync().catch(() => {});
+            await soundObject.unloadAsync().catch(() => {});
           } catch (error) {
             console.error("Error cleaning up sound:", error)
           }
@@ -78,9 +88,13 @@ export default function PirateAudio({ isPlaying = true }) {
     const updatePlayback = async () => {
       try {
         if (isPlaying && !isMuted) {
-          await sound.playAsync()
+          await sound.playAsync().catch(err => 
+            console.error("Error playing sound:", err)
+          );
         } else {
-          await sound.pauseAsync()
+          await sound.pauseAsync().catch(err => 
+            console.error("Error pausing sound:", err)
+          );
         }
       } catch (error) {
         console.error("Error updating sound playback:", error)
@@ -102,9 +116,13 @@ export default function PirateAudio({ isPlaying = true }) {
 
       // Update sound playback based on new state
       if (newMutedState) {
-        await sound.pauseAsync()
+        await sound.pauseAsync().catch(err => 
+          console.error("Error pausing sound on toggle:", err)
+        );
       } else {
-        await sound.playAsync()
+        await sound.playAsync().catch(err => 
+          console.error("Error playing sound on toggle:", err)
+        );
       }
     } catch (error) {
       console.error("Error toggling sound:", error)
@@ -119,7 +137,7 @@ export default function PirateAudio({ isPlaying = true }) {
               accessibilityLabel={isMuted ? "Turn on jungle sounds" : "Turn off jungle sounds"}
             >
               <Image
-                source={isMuted ? require("./assets/images/volume-mute.png") : require("./assets/images/volume-on.png")}
+                source={isMuted ? require("../screens/games/assets/images/volume-mute.png") : require("../screens/games/assets/images/volume-on.png")}
                 style={styles.soundIcon}
               />
             </TouchableOpacity>

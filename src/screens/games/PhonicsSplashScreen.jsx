@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react"
 import { View, Text, TouchableOpacity, StyleSheet, ImageBackground, Animated, Dimensions } from "react-native"
 import { Audio } from "expo-av"
 import LottieView from "lottie-react-native"
-import * as Haptics from "./utils/mock-haptics"
+import * as Haptics from "expo-haptics"
 
 const { width, height } = Dimensions.get("window")
 
@@ -39,22 +39,35 @@ export default function PhonicsSplashScreen({ onStartGame, onBackToHome }) {
 
   const loadSound = async () => {
     try {
-      const { sound } = await Audio.Sound.createAsync(require("./assets/sounds/ocean-ambience.mp3"), {
-        isLooping: true,
-        shouldPlay: true,
-        volume: 0.7,
-      })
-      soundRef.current = sound
-      setSoundLoaded(true)
+      // Use the createAsync method correctly
+      const { sound } = await Audio.Sound.createAsync(
+        require("../games/assets/sounds/ocean-ambience.mp3"), 
+        {
+          isLooping: true,
+          shouldPlay: true,
+          volume: 0.7,
+        }
+      );
+      
+      soundRef.current = sound;
+      setSoundLoaded(true);
+      console.log("Splash screen sound loaded successfully");
     } catch (error) {
-      console.error("Error loading pirate sound:", error)
+      console.error("Error loading pirate sound:", error);
     }
   }
 
   const handleStartGame = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy)
     if (soundRef.current) {
-      soundRef.current.stopAsync()
+      try {
+        // First stop the sound, then unload it
+        soundRef.current.stopAsync()
+          .then(() => soundRef.current.unloadAsync())
+          .catch(error => console.error("Error stopping sound:", error));
+      } catch (error) {
+        console.error("Error handling sound cleanup:", error);
+      }
     }
     onStartGame()
   }
@@ -62,13 +75,20 @@ export default function PhonicsSplashScreen({ onStartGame, onBackToHome }) {
   const handleBackToHome = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
     if (soundRef.current) {
-      soundRef.current.stopAsync()
+      try {
+        // First stop the sound, then unload it
+        soundRef.current.stopAsync()
+          .then(() => soundRef.current.unloadAsync())
+          .catch(error => console.error("Error stopping sound:", error));
+      } catch (error) {
+        console.error("Error handling sound cleanup:", error);
+      }
     }
     onBackToHome()
   }
 
   return (
-    <ImageBackground source={require("./assets/images/splash-screen.webp")} style={styles.container} resizeMode="cover">
+    <ImageBackground source={require("../games/assets/images/Phonics/splash-screen.webp")} style={styles.container} resizeMode="cover">
       <View style={styles.overlay}>
         
 
@@ -86,7 +106,7 @@ export default function PhonicsSplashScreen({ onStartGame, onBackToHome }) {
           <Text style={styles.subtitle}>Sail the seas of sounds!</Text>
 
           <LottieView
-            source={require("./assets/animations/parrot.json")}
+            source={require("../games/assets/animations/parrot.json")}
             autoPlay
             loop
             style={styles.treasureAnimation}
@@ -96,7 +116,7 @@ export default function PhonicsSplashScreen({ onStartGame, onBackToHome }) {
           <View style={styles.buttonsContainer}>
             <TouchableOpacity style={styles.startButton} onPress={handleStartGame} activeOpacity={0.7}>
               <ImageBackground
-                source={require("./assets/images/pirate-wood.png")}
+                source={require("../games/assets/images/Phonics/pirate-wood.png")}
                 style={styles.woodenButton}
                 resizeMode="stretch"
               >
@@ -106,7 +126,7 @@ export default function PhonicsSplashScreen({ onStartGame, onBackToHome }) {
 
             <TouchableOpacity style={styles.backButton} onPress={handleBackToHome} activeOpacity={0.7}>
               <ImageBackground
-                source={require("./assets/images/pirate-grey.png")}
+                source={require("../games/assets/images/Phonics/pirate-grey.png")}
                 style={styles.woodenButtonSmall}
                 resizeMode="stretch"
               >
@@ -119,7 +139,7 @@ export default function PhonicsSplashScreen({ onStartGame, onBackToHome }) {
         {/* Waves animation at the bottom */}
         <View style={styles.bottomSection}>
           <LottieView
-            source={require("./assets/animations/sea-waves.json")}
+            source={require("../games/assets/animations/sea-waves.json")}
             autoPlay
             loop
             style={styles.wavesAnimation}

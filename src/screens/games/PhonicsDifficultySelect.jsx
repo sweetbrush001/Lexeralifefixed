@@ -35,65 +35,70 @@ export default function PhonicsDifficultySelect({ onSelectDifficulty, onBackToHo
           shouldDuckAndroid: true,
           playThroughEarpieceAndroid: false,
           staysActiveInBackground: false,
-        })
+        });
 
         // Create and load the sound
-        const soundObject = new Audio.Sound()
-        await soundObject.loadAsync(require("./assets/sounds/ocean-ambience.mp3"))
-        await soundObject.setIsLoopingAsync(true)
-        await soundObject.setVolumeAsync(0.5)
+        const { sound } = await Audio.Sound.createAsync(
+          require(".//assets/sounds/ocean-ambience.mp3"),
+          {
+            shouldPlay: true,  // Play immediately
+            isLooping: true,   // Set looping directly in the options
+            volume: 0.5,
+          }
+        );
 
         // Only set state if component is still mounted
         if (isMounted.current) {
-          soundRef.current = soundObject
-          setSoundLoaded(true)
-
-          // Play the sound
-          await soundObject.playAsync()
-          console.log("Difficulty select sound loaded and playing")
+          soundRef.current = sound;
+          setSoundLoaded(true);
+          console.log("Difficulty select sound loaded and playing");
         } else {
           // If component unmounted during setup, clean up immediately
-          await soundObject.unloadAsync()
+          try {
+            await sound.unloadAsync();
+          } catch (error) {
+            console.error("Error unloading sound during cleanup:", error);
+          }
         }
       } catch (error) {
-        console.error("Error setting up difficulty select sound:", error)
+        console.error("Error setting up difficulty select sound:", error);
       }
-    }
+    };
 
-    setupAudio()
+    setupAudio();
 
     // Cleanup function
     return () => {
-      console.log("PhonicsDifficultySelect unmounting, cleaning up resources")
-      isMounted.current = false
+      console.log("PhonicsDifficultySelect unmounting, cleaning up resources");
+      isMounted.current = false;
 
       // Clean up sound
       if (soundRef.current) {
         const cleanup = async () => {
           try {
-            const status = await soundRef.current.getStatusAsync()
-            if (status.isLoaded) {
-              await soundRef.current.stopAsync()
-              await soundRef.current.unloadAsync()
-              console.log("Difficulty select sound cleaned up successfully")
+            const status = await soundRef.current.getStatusAsync().catch(() => null);
+            if (status && status.isLoaded) {
+              await soundRef.current.stopAsync().catch(() => {});
+              await soundRef.current.unloadAsync().catch(() => {});
+              console.log("Difficulty select sound cleaned up successfully");
             }
           } catch (error) {
-            console.log("Error cleaning up difficulty select sound:", error)
+            console.log("Error cleaning up difficulty select sound:", error);
           } finally {
-            soundRef.current = null
+            soundRef.current = null;
           }
-        }
+        };
 
-        cleanup()
+        cleanup();
       }
-    }
-  }, [])
+    };
+  }, []);
 
   // Try to load animation
   useEffect(() => {
     try {
       // Verify animation file exists
-      require("./assets/animations/loading.json")
+      require(".//assets/animations/loading.json")
     } catch (error) {
       console.error("Error loading animation:", error)
       setAnimationLoaded(false)
@@ -101,54 +106,54 @@ export default function PhonicsDifficultySelect({ onSelectDifficulty, onBackToHo
   }, [])
 
   const handleSelect = (difficulty) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
     // Stop sound before navigating
     const stopSound = async () => {
       if (soundRef.current && soundLoaded) {
         try {
-          const status = await soundRef.current.getStatusAsync()
-          if (status.isLoaded) {
-            await soundRef.current.stopAsync()
+          const status = await soundRef.current.getStatusAsync().catch(() => null);
+          if (status && status.isLoaded) {
+            await soundRef.current.stopAsync().catch(() => {});
           }
         } catch (error) {
-          console.log("Error stopping sound on select:", error)
+          console.log("Error stopping sound on select:", error);
         }
       }
 
       // Navigate after attempting to stop sound
-      onSelectDifficulty(difficulty)
-    }
+      onSelectDifficulty(difficulty);
+    };
 
-    stopSound()
-  }
+    stopSound();
+  };
 
   const handleBackToHome = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
     // Stop sound before navigating
     const stopSound = async () => {
       if (soundRef.current && soundLoaded) {
         try {
-          const status = await soundRef.current.getStatusAsync()
-          if (status.isLoaded) {
-            await soundRef.current.stopAsync()
+          const status = await soundRef.current.getStatusAsync().catch(() => null);
+          if (status && status.isLoaded) {
+            await soundRef.current.stopAsync().catch(() => {});
           }
         } catch (error) {
-          console.log("Error stopping sound on back:", error)
+          console.log("Error stopping sound on back:", error);
         }
       }
 
       // Navigate after attempting to stop sound
-      onBackToHome()
-    }
+      onBackToHome();
+    };
 
-    stopSound()
-  }
+    stopSound();
+  };
 
   return (
     <ImageBackground
-      source={require("./assets/images/treasure.webp")}
+      source={require(".//assets/images/Phonics/treasure.webp")}
       style={styles.container}
       resizeMode="cover"
     >
@@ -158,7 +163,7 @@ export default function PhonicsDifficultySelect({ onSelectDifficulty, onBackToHo
         <Animated.View style={[styles.buttonsContainer, { transform: [{ scale: scaleAnim }] }]}>
           <TouchableOpacity style={styles.difficultyButton} onPress={() => handleSelect("easy")} activeOpacity={0.7}>
             <ImageBackground
-              source={require("./assets/images/pirate-green.png")}
+              source={require(".//assets/images/Phonics/pirate-green.png")}
               style={styles.woodenSign1}
               resizeMode="contain"
             >
@@ -168,7 +173,7 @@ export default function PhonicsDifficultySelect({ onSelectDifficulty, onBackToHo
 
           <TouchableOpacity style={styles.difficultyButton} onPress={() => handleSelect("medium")} activeOpacity={0.7}>
             <ImageBackground
-              source={require("./assets/images/pirate-yellow.png")}
+              source={require(".//assets/images/Phonics/pirate-yellow.png")}
               style={styles.woodenSign2}
               resizeMode="contain"
             >
@@ -178,7 +183,7 @@ export default function PhonicsDifficultySelect({ onSelectDifficulty, onBackToHo
 
           <TouchableOpacity style={styles.difficultyButton} onPress={() => handleSelect("hard")} activeOpacity={0.7}>
             <ImageBackground
-              source={require("./assets/images/pirate-red.png")}
+              source={require(".//assets/images/Phonics/pirate-red.png")}
               style={styles.woodenSign2}
               resizeMode="contain"
             >
@@ -189,7 +194,7 @@ export default function PhonicsDifficultySelect({ onSelectDifficulty, onBackToHo
 
         <TouchableOpacity style={styles.backButton} onPress={handleBackToHome} activeOpacity={0.7}>
           <ImageBackground
-            source={require("./assets/images/pirate-wood.png")}
+            source={require(".//assets/images/Phonics/pirate-wood.png")}
             style={styles.woodenButtonSmall}
             resizeMode="stretch"
           >
@@ -200,7 +205,7 @@ export default function PhonicsDifficultySelect({ onSelectDifficulty, onBackToHo
         {animationLoaded && (
           <View style={styles.animationContainer}>
             <LottieView
-              source={require("./assets/animations/ship-load.json")}
+              source={require(".//assets/animations/ship-load.json")}
               autoPlay
               loop
               style={styles.shipAnimation}

@@ -33,11 +33,11 @@ export default function PhonicsGameSummary({
   // Get the appropriate animation based on score
   const getAnimation = () => {
     if (percentage >= 80) {
-      return require("./assets/animations/great-treasure.json")
+      return require("../games/assets/animations/great-treasure.json")
     } else if (percentage >= 50) {
-      return require("./assets/animations/good-treasure.json")
+      return require("../games/assets/animations/good-treasure.json")
     } else {
-      return require("./assets/animations/poor-treasure.json")
+      return require("../games/assets/animations/poor-treasure.json")
     }
   }
 
@@ -53,14 +53,14 @@ export default function PhonicsGameSummary({
   }
 
   return (
-    <ImageBackground source={require("./assets/images/pirate-splash-bg.png")} style={styles.container}>
+    <ImageBackground source={require("../games/assets/images/Phonics/pirate-splash-bg.png")} style={styles.container}>
       <View style={styles.overlay}>
         <LottieView source={getAnimation()} autoPlay loop style={styles.animation} />
 
         <Text style={styles.title}>Adventure Complete!</Text>
 
         <ImageBackground
-          source={require("./assets/images/pirate-scroll.png")}
+          source={require("../games/assets/images/Phonics/pirate-scroll.png")}
           style={styles.statsContainer}
           resizeMode="stretch"
         >
@@ -82,7 +82,7 @@ export default function PhonicsGameSummary({
         <View style={styles.buttonsContainer}>
           <TouchableOpacity style={styles.button} onPress={handlePlayAgain} activeOpacity={0.7}>
             <ImageBackground
-              source={require("./assets/images/pirate-wood.png")}
+              source={require("../games/assets/images/Phonics/pirate-wood.png")}
               style={styles.woodenButton}
               resizeMode="stretch"
             >
@@ -92,7 +92,7 @@ export default function PhonicsGameSummary({
 
           <TouchableOpacity style={styles.button} onPress={handleChangeDifficulty} activeOpacity={0.7}>
             <ImageBackground
-              source={require("./assets/images/pirate-wood.png")}
+              source={require("../games/assets/images/Phonics/pirate-wood.png")}
               style={styles.woodenButton}
               resizeMode="stretch"
             >
@@ -102,7 +102,7 @@ export default function PhonicsGameSummary({
 
           <TouchableOpacity style={styles.button} onPress={handleBackToHome} activeOpacity={0.7}>
             <ImageBackground
-              source={require("./assets/images/pirate-wood.png")}
+              source={require("../games/assets/images/Phonics/pirate-wood.png")}
               style={styles.woodenButton}
               resizeMode="stretch"
             >
