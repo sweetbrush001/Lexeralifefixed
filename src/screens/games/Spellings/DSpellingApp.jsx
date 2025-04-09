@@ -165,8 +165,10 @@ const DSpellingGame = () => {
 
   // Initialize splash screen
   useEffect(() => {
-    if (gameState === 'splash' && splashAnimation.current) {
-      splashAnimation.current.play();
+    if (gameState === 'splash') {
+      if (splashAnimation.current) {
+        splashAnimation.current.play();
+      }
 
       const timer = setTimeout(() => {
         setGameState('difficulty');
@@ -174,7 +176,7 @@ const DSpellingGame = () => {
 
       return () => clearTimeout(timer);
     }
-  }, [gameState, splashAnimation]);
+  }, [gameState]);
 
   // Initialize game when difficulty is selected
   useEffect(() => {
@@ -979,11 +981,6 @@ const DSpellingGame = () => {
         style={styles.container}
       >
         <View style={styles.overlay}>
-          <LottieView
-            ref={splashAnimation}
-            source={require('./assets/animations/correct.json')}
-            style={styles.animation}
-          />
 
           <Animated.View style={styles.titleContainer}>
             <Text style={styles.title}>Ocean Spelling Game</Text>
