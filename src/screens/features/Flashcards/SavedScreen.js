@@ -169,6 +169,10 @@ export default function SavedScreen({ setActiveTab, setFlashcards, setTimer }) {
     return Object.entries(filtered);
   };
 
+  const navigateToGenerate = () => {
+        setActiveTab('generate');
+  };
+
   const renderCollection = ({ item: [subtopic, cards] }) => {
     const isExpanded = expandedCollection === subtopic;
 
@@ -350,8 +354,14 @@ export default function SavedScreen({ setActiveTab, setFlashcards, setTimer }) {
   const renderHeader = () => (
     <View style={styles.header}>
       <View style={styles.headerRow}>
-        <Text style={styles.headerTitle}>My Collections</Text>
-        
+        <TouchableOpacity 
+          style={styles.headerTitleContainer}
+          onPress={navigateToGenerate}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
+          <Ionicons name="arrow-back" size={24} color={COLORS.text} />
+          <Text style={styles.headerTitle}>My Collections</Text>
+        </TouchableOpacity>
         {isSearching ? (
           <View style={styles.searchContainer}>
             <Ionicons name="search" size={18} color={COLORS.textLight} />
@@ -377,7 +387,6 @@ export default function SavedScreen({ setActiveTab, setFlashcards, setTimer }) {
           </TouchableOpacity>
         )}
       </View>
-      
       {!isSearching && (
         <Text style={styles.headerSubtitle}>
           {Object.keys(collections).length} {Object.keys(collections).length === 1 ? 'collection' : 'collections'} • {
@@ -523,10 +532,15 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
+  headerTitleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   headerTitle: {
     fontSize: 24,
     fontWeight: "600",
     color: COLORS.text,
+    marginLeft: 8, // Add spacing between the arrow and the title
   },
   headerSubtitle: {
     fontSize: 14,
