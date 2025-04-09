@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   StyleSheet, 
   Text, 
@@ -16,15 +16,13 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Audio } from 'expo-av';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import Modal from 'react-native-modal';
-// Import the AudioService singleton
-import AudioService from '../../../services/AudioService';
 
 const WordScrambleGame = ({ navigation, route }) => {
-  // Optional params from navigation
+  // Game parameters
   const params = route.params || {};
   const initialLevel = params.level || 'Easy';
   
-  // State variables
+  // Game state
   const [words, setWords] = useState([]);
   const [currentWordIndex, setCurrentWordIndex] = useState(0);
   const [currentWord, setCurrentWord] = useState('');
@@ -38,195 +36,91 @@ const WordScrambleGame = ({ navigation, route }) => {
   const [isHintModalVisible, setIsHintModalVisible] = useState(false);
   const [level, setLevel] = useState(initialLevel);
   const [isMuted, setIsMuted] = useState(false);
+  const [sounds, setSounds] = useState({});
+  const [isAudioReady, setIsAudioReady] = useState(false);
 
+  // Refs
   const timerRef = React.useRef(null);
   const scoreAnimation = React.useRef(new Animated.Value(0)).current;
   const iconPosition = React.useRef(new Animated.Value(0)).current;
 
-  // Sound references
-  const [soundsLoaded, setSoundsLoaded] = useState(false);
-  // Use regular objects instead of refs for simplicity
-  const soundEffects = {
-    correct: null,
-    incorrect: null,
-    check: null,
-    hint: null,
-    skip: null,
-    complete: null
-  };
-
-  // Add this helper function in your component
-  const verifyFilePath = (path) => {
-    console.log(`Skipping dynamic require check for ${path}`);
-    return true;
-  };
-
-  // Simplified audio initialization
+  // Initialize audio system
   useEffect(() => {
-    const loadSoundEffects = async () => {
+    let isMounted = true;
+    
+    const setupAudio = async () => {
       try {
-        // Set audio mode before loading sounds using numeric values instead of constants
         await Audio.setAudioModeAsync({
           playsInSilentModeIOS: true,
           allowsRecordingIOS: false,
-          interruptionModeIOS: 1, // 1 = INTERRUPTION_MODE_IOS_DO_NOT_MIX
           shouldDuckAndroid: true,
-          interruptionModeAndroid: 1, // 1 = INTERRUPTION_MODE_ANDROID_DO_NOT_MIX
           playThroughEarpieceAndroid: false,
           staysActiveInBackground: true,
         });
-        
-        console.log('Loading sound effects...');
-        // First, ensure AudioService is initialized
-        await AudioService.init();
-        
-        // Verify paths before trying to load
-        console.log('Verifying sound file paths...');
-        const correctPath = '../assets/sounds/correct.mp3';
-        const errorPath = '../assets/sounds/error.mp3';
-        const checkPath = '../assets/sounds/check.mp3';
-        const hintPath = '../assets/sounds/hint.mp3';
-        const skipPath = '../assets/sounds/skip.mp3';
-        const completePath = '../assets/sounds/level-complete.mp3';
-        
-        verifyFilePath(correctPath);
-        verifyFilePath(errorPath);
-        verifyFilePath(checkPath);
-        verifyFilePath(hintPath);
-        verifyFilePath(skipPath);
-        verifyFilePath(completePath);
-        
-        // Then load our sounds directly without dependencies
-        // This pattern avoids conflicts with other audio components
-        try {
-          const correctSound = new Audio.Sound();
-          await correctSound.loadAsync(require('../assets/sounds/correct.mp3'));
-          soundEffects.correct = correctSound;
-          console.log('Correct sound loaded');
-        } catch (error) {
-          console.error('Failed to load correct sound:', error);
+
+        const loadedSounds = {};
+        const soundFiles = {
+          correct: require('../assets/sounds/wordScramble/correct.mp3'),
+          incorrect: require('../assets/sounds/wordScramble/error.mp3'),
+          check: require('../assets/sounds/wordScramble/check.mp3'),
+          hint: require('../assets/sounds/wordScramble/hint.mp3'),
+          skip: require('../assets/sounds/wordScramble/skip.mp3'),
+          complete: require('../assets/sounds/wordScramble/level-complete.mp3'),
+        };
+
+        for (const [key, file] of Object.entries(soundFiles)) {
+          try {
+            const soundObject = new Audio.Sound();
+            await soundObject.loadAsync(file);
+            loadedSounds[key] = soundObject;
+          } catch (error) {
+            console.error(`Error loading sound ${key}:`, error);
+          }
         }
-        
-        try {
-          const incorrectSound = new Audio.Sound();
-          await incorrectSound.loadAsync(require('../assets/sounds/error.mp3'));
-          soundEffects.incorrect = incorrectSound;
-          console.log('Incorrect sound loaded');
-        } catch (error) {
-          console.error('Failed to load incorrect sound:', error);
+
+        if (isMounted) {
+          setSounds(loadedSounds);
+          setIsAudioReady(true);
         }
-        
-        try {
-          const checkSound = new Audio.Sound();
-          await checkSound.loadAsync(require('../assets/sounds/check.mp3'));
-          soundEffects.check = checkSound;
-          console.log('Check sound loaded');
-        } catch (error) {
-          console.error('Failed to load check sound:', error);
-        }
-        
-        try {
-          const hintSound = new Audio.Sound();
-          await hintSound.loadAsync(require('../assets/sounds/hint.mp3'));
-          soundEffects.hint = hintSound;
-          console.log('Hint sound loaded');
-        } catch (error) {
-          console.error('Failed to load hint sound:', error);
-        }
-        
-        try {
-          const skipSound = new Audio.Sound();
-          await skipSound.loadAsync(require('../assets/sounds/skip.mp3'));
-          soundEffects.skip = skipSound;
-          console.log('Skip sound loaded');
-        } catch (error) {
-          console.error('Failed to load skip sound:', error);
-        }
-        
-        try {
-          const completeSound = new Audio.Sound();
-          await completeSound.loadAsync(require('../assets/sounds/level-complete.mp3'));
-          soundEffects.complete = completeSound;
-          console.log('Complete sound loaded');
-        } catch (error) {
-          console.error('Failed to load complete sound:', error);
-        }
-        
-        setSoundsLoaded(true);
       } catch (error) {
-        console.error('Failed to initialize audio system:', error);
+        console.error('Failed to initialize audio:', error);
+        if (isMounted) {
+          setIsAudioReady(false);
+        }
       }
     };
     
-    loadSoundEffects();
+    setupAudio();
     
-    // Cleanup function
     return () => {
-      // Clean up sound objects
-      Object.values(soundEffects).forEach(async (sound) => {
+      isMounted = false;
+      // Cleanup sounds
+      Object.values(sounds).forEach(sound => {
         if (sound) {
-          try {
-            await sound.stopAsync().catch(() => {});
-            await sound.unloadAsync().catch(() => {});
-          } catch (error) {
-            console.log('Error cleaning up sound:', error);
-          }
+          sound.unloadAsync().catch(console.error);
         }
       });
     };
   }, []);
 
-  // Simplified playSound function
+  // Play sound with proper error handling
   const playSound = async (soundType) => {
-    if (isMuted) return;
-    
-    const sound = soundEffects[soundType];
-    
-    if (!sound) {
-      console.warn(`Sound ${soundType} not loaded`);
+    if (isMuted || !isAudioReady || !sounds[soundType]) {
+      console.log(`Sound ${soundType} not played: muted=${isMuted}, ready=${isAudioReady}`);
       return;
     }
     
     try {
-      // Get current playback status
-      const status = await sound.getStatusAsync().catch(() => null);
+      const soundObject = sounds[soundType];
+      const status = await soundObject.getStatusAsync();
       
-      // Only reset position if sound is loaded
-      if (status && status.isLoaded) {
-        // Reset to beginning
-        await sound.setPositionAsync(0).catch(() => {});
-        
-        // Play the sound
-        await sound.playAsync().catch(error => {
-          console.error(`Error playing ${soundType} sound:`, error);
-        });
-      } else {
-        console.warn(`Sound ${soundType} not ready to play`);
-        
-        // Try to reload the sound
-        try {
-          console.log(`Attempting to reload ${soundType} sound...`);
-          await sound.unloadAsync().catch(() => {});
-          
-          if (soundType === 'correct') {
-            await sound.loadAsync(require('../assets/sounds/correct.mp3'));
-          } else if (soundType === 'incorrect') {
-            await sound.loadAsync(require('../assets/sounds/error.mp3'));
-          } else if (soundType === 'check') {
-            await sound.loadAsync(require('../assets/sounds/check.mp3'));
-          } else if (soundType === 'hint') {
-            await sound.loadAsync(require('../assets/sounds/hint.mp3'));
-          } else if (soundType === 'skip') {
-            await sound.loadAsync(require('../assets/sounds/skip.mp3'));
-          } else if (soundType === 'complete') {
-            await sound.loadAsync(require('../assets/sounds/level-complete.mp3'));
-          }
-          
-          await sound.playAsync().catch(() => {});
-          console.log(`Reloaded and playing ${soundType} sound`);
-        } catch (reloadError) {
-          console.error(`Failed to reload ${soundType} sound:`, reloadError);
+      if (status.isLoaded) {
+        // Stop if already playing
+        if (status.isPlaying) {
+          await soundObject.stopAsync();
         }
+        // Replay from start
+        await soundObject.replayAsync();
       }
     } catch (error) {
       console.error(`Error playing ${soundType} sound:`, error);
@@ -238,7 +132,7 @@ const WordScrambleGame = ({ navigation, route }) => {
     setIsMuted(prev => !prev);
   };
 
-  // Utility function to shuffle an array
+  // Game utility functions
   const shuffleArray = (array) => {
     const newArray = [...array];
     for (let i = newArray.length - 1; i > 0; i--) {
@@ -248,12 +142,10 @@ const WordScrambleGame = ({ navigation, route }) => {
     return newArray;
   };
 
-  // Scramble a word
   const scrambleWord = (word) => {
     const wordArray = word.split('');
     let scrambled = word;
 
-    // Make sure the scrambled word is different from the original
     while (scrambled === word) {
       for (let i = wordArray.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
@@ -265,35 +157,25 @@ const WordScrambleGame = ({ navigation, route }) => {
     return scrambled;
   };
 
-  // Set time limit based on difficulty
   const getTimeLimit = () => {
     switch (level.toLowerCase()) {
-      case 'easy':
-        return 20;
-      case 'medium':
-        return 15;
-      case 'hard':
-        return 10;
-      default:
-        return 15;
+      case 'easy': return 20;
+      case 'medium': return 15;
+      case 'hard': return 10;
+      default: return 15;
     }
   };
 
-  // Update the getBackgroundImage function to use correct paths
   const getBackgroundImage = () => {
     switch (level.toLowerCase()) {
-      case 'easy':
-        return require('../assets/images/easy-background.png');
-      case 'medium':
-        return require('../assets/images/medium-background.png');
-      case 'hard':
-        return require('../assets/images/hard-background.png');
-      default:
-        return require('../assets/images/default-background.png');
+      case 'easy': return require('../assets/images/wordScramble/easy-background.webp');
+      case 'medium': return require('../assets/images/wordScramble/medium-background.webp');
+      case 'hard': return require('../assets/images/wordScramble/hard-background.webp');
+      default: return require('../assets/images/wordScramble/default-background.png');
     }
   };
 
-  // Load words from AsyncStorage
+  // Load words from storage
   useEffect(() => {
     const loadWords = async () => {
       try {
@@ -303,7 +185,6 @@ const WordScrambleGame = ({ navigation, route }) => {
           const shuffledWords = shuffleArray(parsedWords);
           setWords(shuffledWords);
 
-          // Set first word
           if (shuffledWords.length > 0) {
             const word = shuffledWords[0];
             setCurrentWord(word);
@@ -311,7 +192,7 @@ const WordScrambleGame = ({ navigation, route }) => {
             setTimeLeft(getTimeLimit());
           }
         } else {
-          // Default words if none are stored
+          // Default words
           const defaultWords = level.toLowerCase() === 'easy' 
             ? ['cat', 'dog', 'sun', 'hat', 'run', 'big', 'red', 'box', 'cup', 'pen'] 
             : level.toLowerCase() === 'medium'
@@ -328,7 +209,6 @@ const WordScrambleGame = ({ navigation, route }) => {
             setTimeLeft(getTimeLimit());
           }
           
-          // Save default words to AsyncStorage
           await AsyncStorage.setItem(`${level.toLowerCase()}Words`, JSON.stringify(defaultWords));
         }
       } catch (error) {
@@ -343,13 +223,12 @@ const WordScrambleGame = ({ navigation, route }) => {
     };
   }, [level]);
 
-  // Start timer
+  // Game timer
   useEffect(() => {
     if (words.length > 0 && !gameOver) {
       timerRef.current = setInterval(() => {
         setTimeLeft((prev) => {
           if (prev <= 1) {
-            // Time's up for this word
             handleTimeUp();
             return getTimeLimit();
           }
@@ -363,7 +242,7 @@ const WordScrambleGame = ({ navigation, route }) => {
     };
   }, [words, currentWordIndex, gameOver]);
 
-  // Animate icon position based on time left
+  // Animation effects
   useEffect(() => {
     Animated.timing(iconPosition, {
       toValue: (timeLeft / getTimeLimit()) * 100,
@@ -372,9 +251,8 @@ const WordScrambleGame = ({ navigation, route }) => {
     }).start();
   }, [timeLeft]);
 
-  // Handle time up for a word
+  // Game actions
   const handleTimeUp = () => {
-    // Move to next word or end game
     if (currentWordIndex < words.length - 1) {
       moveToNextWord();
     } else {
@@ -382,7 +260,6 @@ const WordScrambleGame = ({ navigation, route }) => {
     }
   };
 
-  // Move to next word
   const moveToNextWord = () => {
     const nextIndex = currentWordIndex + 1;
     setCurrentWordIndex(nextIndex);
@@ -393,12 +270,10 @@ const WordScrambleGame = ({ navigation, route }) => {
     setTimeLeft(getTimeLimit());
   };
 
-  // End the game
   const endGame = async () => {
     if (timerRef.current) clearInterval(timerRef.current);
     setGameOver(true);
 
-    // Save score to AsyncStorage
     try {
       const scoreKey = `${level.toLowerCase()}Scores`;
       const storedScores = await AsyncStorage.getItem(scoreKey);
@@ -407,21 +282,19 @@ const WordScrambleGame = ({ navigation, route }) => {
       const newScore = {
         score,
         date: new Date().toISOString(),
-        username: 'Player' // You can replace this with the actual username if available
+        username: 'Player'
       };
       
       scores.push(newScore);
       scores.sort((a, b) => b.score - a.score);
       
-      await AsyncStorage.setItem(scoreKey, JSON.stringify(scores.slice(0, 10))); // Keep top 10
+      await AsyncStorage.setItem(scoreKey, JSON.stringify(scores.slice(0, 10)));
     } catch (error) {
       console.error('Error saving score:', error);
     }
 
-    // Play level completion sound
     await playSound('complete');
 
-    // Show final score alert
     Alert.alert(
       'Game Over!',
       `Your final score: ${score}`,
@@ -452,17 +325,14 @@ const WordScrambleGame = ({ navigation, route }) => {
     );
   };
 
-  // Check user's answer
   const checkAnswer = async () => {
     await playSound('check');
     if (userInput.toLowerCase() === currentWord.toLowerCase()) {
-      // Correct answer
       await playSound('correct');
       const timeBonus = Math.floor(timeLeft * 10);
       const hintPenalty = hintUsed ? 50 : 0;
       const wordScore = 100 + timeBonus - hintPenalty;
 
-      // Animate score
       Animated.sequence([
         Animated.timing(scoreAnimation, {
           toValue: 1,
@@ -476,22 +346,19 @@ const WordScrambleGame = ({ navigation, route }) => {
         }),
       ]).start();
 
-      setScore((prevScore) => prevScore + wordScore);
+      setScore(prev => prev + wordScore);
 
-      // Move to next word or end game
       if (currentWordIndex < words.length - 1) {
         moveToNextWord();
       } else {
         endGame();
       }
     } else {
-      // Wrong answer
       await playSound('incorrect');
       setIsModalVisible(true);
     }
   };
 
-  // Show hint
   const showHint = async () => {
     await playSound('hint');
     if (!hintUsed) {
@@ -502,13 +369,10 @@ const WordScrambleGame = ({ navigation, route }) => {
     }
   };
 
-  // Skip current word
   const skipWord = async () => {
     await playSound('skip');
-    // Penalty for skipping
-    setScore((prevScore) => Math.max(0, prevScore - 25));
+    setScore(prev => Math.max(0, prev - 25));
 
-    // Move to next word or end game
     if (currentWordIndex < words.length - 1) {
       moveToNextWord();
     } else {
@@ -516,7 +380,7 @@ const WordScrambleGame = ({ navigation, route }) => {
     }
   };
 
-  // Score animation style
+  // Animation styles
   const scoreAnimationStyle = {
     transform: [
       {
@@ -532,7 +396,6 @@ const WordScrambleGame = ({ navigation, route }) => {
     }),
   };
 
-  // Icon animation style
   const iconAnimationStyle = {
     transform: [
       {
@@ -646,6 +509,7 @@ const WordScrambleGame = ({ navigation, route }) => {
   );
 };
 
+// Styles remain the same as in your original code
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
@@ -661,24 +525,28 @@ const styles = StyleSheet.create({
   gameInfo: {
     alignItems: 'center',
     marginBottom: 20,
-    marginTop: 40,
+    marginTop: 60, // Increased from 40
   },
   levelText: {
     fontFamily: 'OpenDyslexic-Bold',
-    fontSize: 26,
-    color: '#E0B0FF',
-    marginBottom: 5,
+    fontSize: 30,
+    fontStyle:'bold',
+    color: 'white',
+    marginTop: 25, 
+    marginBottom: 36, 
   },
   scoreText: {
     fontFamily: 'OpenDyslexic-Bold',
     fontSize: 22,
     color: 'white',
-    marginBottom: 5,
+    marginBottom: 3,
   },
   progressText: {
     fontFamily: 'OpenDyslexic',
     fontSize: 18,
     color: '#d1a7e7',
+    marginBottom: 3,
+
   },
   timerContainer: {
     marginBottom: 30,
@@ -714,7 +582,7 @@ const styles = StyleSheet.create({
     fontFamily: 'OpenDyslexic',
     fontSize: 18,
     color: '#DA90E7',
-    marginBottom: 15,
+    marginBottom: 20,
   },
   scrambledWord: {
     fontFamily: 'OpenDyslexic-Bold',

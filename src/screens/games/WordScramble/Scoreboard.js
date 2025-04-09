@@ -85,13 +85,13 @@ const Scoreboard = ({ navigation }) => {
   const getBackgroundImage = () => {
     switch (activeTab.toLowerCase()) {
       case 'easy':
-        return require('../assets/images/easy-background.png');
+        return require('../assets/images/wordScramble/easy-background.webp');
       case 'medium':
-        return require('../assets/images/medium-background.png');
+        return require('../assets/images/wordScramble/medium-background.webp');
       case 'hard':
-        return require('../assets/images/hard-background.png');
+        return require('../assets/images/wordScramble/hard-background.webp');
       default:
-        return require('../assets/images/background.png');
+        return require('../assets/images/wordScramble/background.webp');
     }
   };
 

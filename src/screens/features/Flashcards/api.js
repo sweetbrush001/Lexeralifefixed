@@ -1,4 +1,4 @@
-// Replace this with your actual Hugging Face API token
+
 const blabla = "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";
 
 const generateId = () => {

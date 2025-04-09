@@ -8,11 +8,12 @@ import * as Haptics from "expo-haptics"
 
 const { width, height } = Dimensions.get("window")
 
-export default function PhonicsSplashScreen({ onStartGame, onBackToHome = () => {} }) {
+export default function PhonicsSplashScreen({ onStartGame, onBackToHome }) {
   const [soundLoaded, setSoundLoaded] = useState(false)
   const soundRef = useRef(null)
   const fadeAnim = useRef(new Animated.Value(0)).current
   const scaleAnim = useRef(new Animated.Value(0.9)).current
+  const isMounted = useRef(true)
 
   useEffect(() => {
     loadSound()
@@ -33,118 +34,98 @@ export default function PhonicsSplashScreen({ onStartGame, onBackToHome = () => 
     ]).start()
 
     return () => {
+      isMounted.current = false
       if (soundRef.current) {
         const cleanup = async () => {
           try {
-            if (typeof soundRef.current.getStatusAsync === 'function') {
-              const status = await soundRef.current.getStatusAsync();
-              if (status.isLoaded) {
-                if (typeof soundRef.current.stopAsync === 'function') {
-                  await soundRef.current.stopAsync();
-                }
-                if (typeof soundRef.current.unloadAsync === 'function') {
-                  await soundRef.current.unloadAsync();
-                }
-                console.log("Splash screen sound cleaned up successfully");
-              }
+            // Check if the sound object exists and has the unloadAsync method
+            if (typeof soundRef.current === "object" && soundRef.current.unloadAsync) {
+              await soundRef.current.unloadAsync().catch(() => {})
             }
           } catch (error) {
-            console.log("Error during cleanup, continuing:", error);
-          } finally {
-            soundRef.current = null;
+            // Silently handle errors to prevent crashes during cleanup
+            console.log("Cleanup handled gracefully")
           }
-        };
-        cleanup();
+        }
+        cleanup()
       }
-    };
+    }
   }, [])
 
   const loadSound = async () => {
     try {
-      // Set up audio mode first
+      // Configure audio mode first
       await Audio.setAudioModeAsync({
         allowsRecordingIOS: false,
         playsInSilentModeIOS: true,
         shouldDuckAndroid: true,
         playThroughEarpieceAndroid: false,
-      });
-      
-      // Create the sound with all options in a single call
-      const { sound } = await Audio.Sound.createAsync(
-        require("./assets/sounds/ocean-ambience.mp3"),
-        {
-          isLooping: true,
-          volume: 0.7,
-          shouldPlay: true
+        staysActiveInBackground: false,
+      })
+
+      // Use the createAsync method with all options in the initial config
+      const { sound } = await Audio.Sound.createAsync(require("../games/assets/sounds/ocean-ambience.mp3"), {
+        shouldPlay: true,
+        isLooping: true,
+        volume: 0.7,
+      })
+
+      if (isMounted.current) {
+        soundRef.current = sound
+        setSoundLoaded(true)
+        console.log("Splash screen sound loaded successfully")
+      } else {
+        // Clean up if component unmounted during loading
+        if (sound && typeof sound === "object" && sound.unloadAsync) {
+          await sound.unloadAsync().catch(() => {})
         }
-      );
-      
-      soundRef.current = sound;
-      setSoundLoaded(true);
-      console.log("Splash screen sound loaded successfully");
+      }
     } catch (error) {
-      console.error("Error loading pirate sound:", error);
+      console.error("Error loading pirate sound:", error)
     }
   }
 
   const handleStartGame = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-    
-    // Safer sound stopping - don't try to call methods directly
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy)
     if (soundRef.current) {
-      try {
-        const safeStop = async () => {
-          try {
-            // First check if functions exist
-            if (typeof soundRef.current.getStatusAsync === 'function') {
-              const status = await soundRef.current.getStatusAsync();
-              if (status.isLoaded && typeof soundRef.current.stopAsync === 'function') {
-                await soundRef.current.stopAsync();
-              }
-            }
-          } catch (error) {
-            console.log("Error stopping sound, continuing anyway:", error);
+      const cleanup = async () => {
+        try {
+          if (typeof soundRef.current === "object" && soundRef.current.unloadAsync) {
+            await soundRef.current.unloadAsync().catch(() => {})
           }
-        };
-        
-        // Run but don't wait for completion
-        safeStop();
-      } catch (error) {
-        console.log("Error handling start game sound:", error);
+        } catch (error) {
+          console.log("Error stopping sound:", error)
+        }
       }
+      cleanup()
     }
-    
-    // Always continue with the game regardless of sound issues
-    onStartGame();
+    onStartGame()
   }
 
   const handleBackToHome = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    
-    // Safely stop sound with proper checks
-    try {
-      if (soundRef.current && soundLoaded) {
-        soundRef.current.stopAsync().catch(error => {
-          console.log("Error stopping sound:", error);
-        });
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
+    if (soundRef.current) {
+      const cleanup = async () => {
+        try {
+          if (typeof soundRef.current === "object" && soundRef.current.unloadAsync) {
+            await soundRef.current.unloadAsync().catch(() => {})
+          }
+        } catch (error) {
+          console.log("Error stopping sound:", error)
+        }
       }
-    } catch (error) {
-      console.log("Error handling back to home sound:", error);
+      cleanup()
     }
-    
-    // Only call if it's a function
-    if (typeof onBackToHome === 'function') {
-      onBackToHome();
-    } else {
-      console.warn("onBackToHome is not a function");
-    }
+    onBackToHome()
   }
 
   return (
-    <ImageBackground source={require("./assets/images/splash-screen.webp")} style={styles.container} resizeMode="cover">
+    <ImageBackground
+      source={require("../games/assets/images/Phonics/splash-screen.webp")}
+      style={styles.container}
+      resizeMode="cover"
+    >
       <View style={styles.overlay}>
-        
-
         {/* Main content in the middle */}
         <Animated.View
           style={[
@@ -159,7 +140,7 @@ export default function PhonicsSplashScreen({ onStartGame, onBackToHome = () => 
           <Text style={styles.subtitle}>Sail the seas of sounds!</Text>
 
           <LottieView
-            source={require("./assets/animations/good-score.json")}
+            source={require("../games/assets/animations/parrot.json")}
             autoPlay
             loop
             style={styles.treasureAnimation}
@@ -169,7 +150,7 @@ export default function PhonicsSplashScreen({ onStartGame, onBackToHome = () => 
           <View style={styles.buttonsContainer}>
             <TouchableOpacity style={styles.startButton} onPress={handleStartGame} activeOpacity={0.7}>
               <ImageBackground
-                source={require("./assets/images/wooden-button.png")}
+                source={require("../games/assets/images/Phonics/pirate-wood.png")}
                 style={styles.woodenButton}
                 resizeMode="stretch"
               >
@@ -179,7 +160,7 @@ export default function PhonicsSplashScreen({ onStartGame, onBackToHome = () => 
 
             <TouchableOpacity style={styles.backButton} onPress={handleBackToHome} activeOpacity={0.7}>
               <ImageBackground
-                source={require("./assets/images/wooden-button-small.png")}
+                source={require("../games/assets/images/Phonics/pirate-grey.png")}
                 style={styles.woodenButtonSmall}
                 resizeMode="stretch"
               >
@@ -192,7 +173,7 @@ export default function PhonicsSplashScreen({ onStartGame, onBackToHome = () => 
         {/* Waves animation at the bottom */}
         <View style={styles.bottomSection}>
           <LottieView
-            source={require("./assets/animations/jungle-leaves.json")}
+            source={require("../games/assets/animations/sea-waves.json")}
             autoPlay
             loop
             style={styles.wavesAnimation}
@@ -265,8 +246,8 @@ const styles = StyleSheet.create({
     gap: 15,
   },
   startButton: {
-    width: width * 0.7,
-    height: height * 0.08,
+    width: width * 0.6,
+    height: height * 0.1,
     marginBottom: 10,
   },
   woodenButton: {
@@ -276,14 +257,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   startButtonText: {
-    fontSize: Math.min(width * 0.05, 24),
+    fontSize: Math.min(width * 0.04, 24),
     fontFamily: "OpenDyslexic-Bold",
-    color: "#3E2723",
+    color: "#eb9f2d",
     textAlign: "center",
   },
   backButton: {
-    width: width * 0.5,
-    height: height * 0.06,
+    width: width * 0.6,
+    height: height * 0.1,
   },
   woodenButtonSmall: {
     width: "100%",
@@ -294,7 +275,7 @@ const styles = StyleSheet.create({
   backButtonText: {
     fontSize: Math.min(width * 0.04, 18),
     fontFamily: "OpenDyslexic",
-    color: "#3E2723",
+    color: "#609df7",
     textAlign: "center",
   },
   bottomSection: {
@@ -304,8 +285,7 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
   },
   wavesAnimation: {
-    width: width,
-    height: height * 0.15,
+    width: width * 5,
+    height: height * 0.25,
   },
 })
-

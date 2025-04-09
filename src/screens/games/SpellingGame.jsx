@@ -22,15 +22,15 @@ import DifficultySelect from "../../components/games/DifficultySelect"
 import GameSummary from "../../components/games/GameSummary"
 import SplashScreen from "./SplashScreen"
 import JungleAudio from "../../data/JungleAudio"
-import { getWordsByDifficulty } from "../../utils/supabaseService"
+import { getWordsByDifficulty } from "./../../utils/supabaseService"
 
 const { width, height } = Dimensions.get("window")
 
-const CORRECT_SOUND = require("./assets/sounds/correct.mp3")
-const INCORRECT_SOUND = require("./assets/sounds/incorrect.mp3")
-const GAME_COMPLETE_SOUND = require("./assets/sounds/level-complete.mp3")
+const CORRECT_SOUND = require("../games/assets/sounds/correct.mp3")
+const INCORRECT_SOUND = require("../games/assets/sounds/incorrect.mp3")
+const GAME_COMPLETE_SOUND = require("../games/assets/sounds/level-complete.mp3")
 
-export default function SpellingGame({ onBackToHome = () => {} }) {
+export default function SpellingGame({ onBackToHome }) {
   const [loading, setLoading] = useState(true)
   const [words, setWords] = useState([])
   const [currentWordIndex, setCurrentWordIndex] = useState(0)
@@ -46,7 +46,6 @@ export default function SpellingGame({ onBackToHome = () => {} }) {
   const [gameComplete, setGameComplete] = useState(false)
   const [highScore, setHighScore] = useState(0)
   const [showSplash, setShowSplash] = useState(true)
-  const [selectedOption, setSelectedOption] = useState(null) // Add missing state
 
   const soundRef = useRef(null)
   const correctSoundRef = useRef(null)
@@ -54,7 +53,6 @@ export default function SpellingGame({ onBackToHome = () => {} }) {
   const gameCompleteSoundRef = useRef(null)
   const isMountedRef = useRef(true)
 
-  // Update the cleanup in useEffect to be more robust
   useEffect(() => {
     setupAudio()
     loadHighScore()
@@ -62,14 +60,15 @@ export default function SpellingGame({ onBackToHome = () => {} }) {
     return () => {
       isMountedRef.current = false
 
-      // Clean up all sounds when component unmounts
       const cleanupSound = async (soundRef) => {
         if (soundRef.current) {
           try {
-            const status = await soundRef.current.getStatusAsync()
-            if (status.isLoaded) {
-              await soundRef.current.stopAsync()
-              await soundRef.current.unloadAsync()
+            const status = await soundRef.current.getStatusAsync().catch(() => null)
+
+            if (status && status.isLoaded) {
+              await soundRef.current.unloadAsync().catch(err =>
+                console.log("Error unloading sound:", err)
+              )
             }
           } catch (error) {
             console.error("Error cleaning up sound:", error)
@@ -77,7 +76,6 @@ export default function SpellingGame({ onBackToHome = () => {} }) {
         }
       }
 
-      // Clean up each sound
       cleanupSound(soundRef)
       cleanupSound(correctSoundRef)
       cleanupSound(incorrectSoundRef)
@@ -120,7 +118,6 @@ export default function SpellingGame({ onBackToHome = () => {} }) {
     }
   }
 
-  // Update the setupAudio function to be more robust
   const setupAudio = async () => {
     try {
       await Audio.setAudioModeAsync({
@@ -130,21 +127,33 @@ export default function SpellingGame({ onBackToHome = () => {} }) {
         playThroughEarpieceAndroid: false,
       })
 
+      const correctSound = new Audio.Sound()
+      const incorrectSound = new Audio.Sound()
+      const gameCompleteSound = new Audio.Sound()
+
+      await correctSound.loadAsync(CORRECT_SOUND)
+      await incorrectSound.loadAsync(INCORRECT_SOUND)
+      await gameCompleteSound.loadAsync(GAME_COMPLETE_SOUND)
+
+      correctSoundRef.current = correctSound
+      incorrectSoundRef.current = incorrectSound
+      gameCompleteSoundRef.current = gameCompleteSound
+
       try {
-        // Create sound objects with more safety checks
-        const { sound: correctSound } = await Audio.Sound.createAsync(CORRECT_SOUND);
-        const { sound: incorrectSound } = await Audio.Sound.createAsync(INCORRECT_SOUND);
-        const { sound: gameCompleteSound } = await Audio.Sound.createAsync(GAME_COMPLETE_SOUND);
-
-        // Store references
-        correctSoundRef.current = correctSound;
-        incorrectSoundRef.current = incorrectSound;
-        gameCompleteSoundRef.current = gameCompleteSound;
-
-        console.log("Game sounds loaded successfully!");
-      } catch (soundError) {
-        console.error("Error loading specific sound:", soundError);
+        if (correctSound.setVolumeAsync) {
+          await correctSound.setVolumeAsync(1.0)
+        }
+        if (incorrectSound.setVolumeAsync) {
+          await incorrectSound.setVolumeAsync(1.0)
+        }
+        if (gameCompleteSound.setVolumeAsync) {
+          await gameCompleteSound.setVolumeAsync(1.0)
+        }
+      } catch (volumeError) {
+        console.warn("Could not set volume:", volumeError)
       }
+
+      console.log("Game sounds loaded successfully!")
     } catch (error) {
       console.error("Error setting up audio:", error)
     }
@@ -181,32 +190,32 @@ export default function SpellingGame({ onBackToHome = () => {} }) {
   }
 
   const playWordAudio = async () => {
-    if (!soundRef.current) return;
+    if (!soundRef.current) return
 
     try {
-      // Give haptic feedback regardless
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      
-      // Safe audio check and playback
-      if (typeof soundRef.current.getStatusAsync === 'function') {
-        const status = await soundRef.current.getStatusAsync();
-        if (status.isLoaded) {
-          if (typeof soundRef.current.setRateAsync === 'function') {
-            await soundRef.current.setRateAsync(playbackRate, true);
-          }
-          if (typeof soundRef.current.playFromPositionAsync === 'function') {
-            await soundRef.current.playFromPositionAsync(0);
-          } else if (typeof soundRef.current.playAsync === 'function') {
-            await soundRef.current.playAsync();
-          }
-        } else {
-          console.log("Sound not loaded, can't play");
-        }
+      const status = await soundRef.current.getStatusAsync()
+      if (!status.isLoaded) {
+        console.log("Word audio not loaded, can't play")
+        return
       }
+
+      if (soundRef.current.setRateAsync) {
+        await soundRef.current.setRateAsync(playbackRate, true)
+      }
+
+      if (soundRef.current.replayAsync) {
+        await soundRef.current.replayAsync()
+      } else if (soundRef.current.playFromPositionAsync) {
+        await soundRef.current.playFromPositionAsync(0)
+      } else if (soundRef.current.playAsync) {
+        await soundRef.current.playAsync()
+      }
+
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
     } catch (error) {
-      console.error("Error playing audio:", error);
+      console.error("Error playing audio:", error)
     }
-  };
+  }
 
   const checkAnswer = () => {
     const isCorrect = userInput.toLowerCase().trim() === currentWord.word.toLowerCase()
@@ -225,7 +234,15 @@ export default function SpellingGame({ onBackToHome = () => {} }) {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
 
     try {
-      await correctSoundRef.current?.playFromPositionAsync(0)
+      if (correctSoundRef.current) {
+        const status = await correctSoundRef.current.getStatusAsync()
+        if (status.isLoaded) {
+          await correctSoundRef.current.replayAsync()
+        } else {
+          await correctSoundRef.current.loadAsync(CORRECT_SOUND)
+          await correctSoundRef.current.playAsync()
+        }
+      }
     } catch (error) {
       console.error("Error playing correct sound:", error)
     }
@@ -236,35 +253,30 @@ export default function SpellingGame({ onBackToHome = () => {} }) {
     }, 1500)
   }
 
-  // Update the handleIncorrectAnswer function to check if sound is loaded
   const handleIncorrectAnswer = async () => {
     setShowFailure(true)
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)
 
     try {
       if (incorrectSoundRef.current) {
-        try {
-          const status = await incorrectSoundRef.current.getStatusAsync()
-          if (status.isLoaded) {
-            await incorrectSoundRef.current.setPositionAsync(0)
-            await incorrectSoundRef.current.playAsync()
-          }
-        } catch (soundError) {
-          console.log("Error with sound playback:", soundError)
+        const status = await incorrectSoundRef.current.getStatusAsync()
+        if (status.isLoaded) {
+          await incorrectSoundRef.current.replayAsync()
+        } else {
+          console.log("Incorrect sound not loaded, attempting to reload")
+          await incorrectSoundRef.current.loadAsync(INCORRECT_SOUND)
+          await incorrectSoundRef.current.playAsync()
         }
       }
     } catch (error) {
-      console.error("Error handling incorrect answer:", error)
+      console.error("Error playing incorrect sound:", error)
     }
 
     setTimeout(() => {
       setShowFailure(false)
-      setSelectedOption(null)
-      moveToNextWord() // Change to moveToNextWord instead of moveToNextQuestion
     }, 1500)
   }
 
-  // Update the moveToNextWord function to check if sound is loaded
   const moveToNextWord = async () => {
     if (currentWordIndex < words.length - 1) {
       setCurrentWordIndex(currentWordIndex + 1)
@@ -273,11 +285,9 @@ export default function SpellingGame({ onBackToHome = () => {} }) {
         if (gameCompleteSoundRef.current) {
           const status = await gameCompleteSoundRef.current.getStatusAsync()
           if (status.isLoaded) {
-            await gameCompleteSoundRef.current.setPositionAsync(0)
-            await gameCompleteSoundRef.current.playAsync()
+            await gameCompleteSoundRef.current.replayAsync()
           } else {
             console.log("Game complete sound not loaded, attempting to reload")
-            // Try to reload the sound if it's not loaded
             await gameCompleteSoundRef.current.loadAsync(GAME_COMPLETE_SOUND)
             await gameCompleteSoundRef.current.playAsync()
           }
@@ -297,11 +307,9 @@ export default function SpellingGame({ onBackToHome = () => {} }) {
     moveToNextWord()
   }
 
-  // Update the handleEndGame function to check if sound is loaded
   const handleEndGame = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy)
 
-    // Keep using the standard Alert but modify the callback
     Alert.alert("End Game", "Are you sure you want to end the game?", [
       {
         text: "Cancel",
@@ -314,25 +322,18 @@ export default function SpellingGame({ onBackToHome = () => {} }) {
             if (gameCompleteSoundRef.current) {
               const status = await gameCompleteSoundRef.current.getStatusAsync()
               if (status.isLoaded) {
-                await gameCompleteSoundRef.current.setPositionAsync(0)
-                await gameCompleteSoundRef.current.playAsync()
+                await gameCompleteSoundRef.current.replayAsync()
               } else {
                 console.log("Game complete sound not loaded, attempting to reload")
-                try {
-                  await gameCompleteSoundRef.current.loadAsync(GAME_COMPLETE_SOUND)
-                  await gameCompleteSoundRef.current.playAsync()
-                } catch (loadError) {
-                  console.error("Error reloading game complete sound:", loadError)
-                }
+                await gameCompleteSoundRef.current.loadAsync(GAME_COMPLETE_SOUND)
+                await gameCompleteSoundRef.current.playAsync()
               }
 
-              // Wait for the sound to play a bit before ending the game
               setTimeout(async () => {
                 await updateHighScore(score)
                 setGameComplete(true)
               }, 500)
             } else {
-              // If sound reference doesn't exist, just end the game
               await updateHighScore(score)
               setGameComplete(true)
             }
@@ -354,7 +355,6 @@ export default function SpellingGame({ onBackToHome = () => {} }) {
     setShowSuccess(false)
     setShowFailure(false)
     setGameComplete(false)
-    // Shuffle words for a new game
     setWords([...words].sort(() => Math.random() - 0.5))
   }
 
@@ -373,12 +373,31 @@ export default function SpellingGame({ onBackToHome = () => {} }) {
     setShowSplash(false)
   }
 
+  const safeGoBack = () => {
+    if (typeof onBackToHome === "function") {
+      onBackToHome()
+    } else {
+      console.warn("onBackToHome is not defined")
+      setShowSplash(true)
+    }
+  }
+
   if (showSplash) {
-    return <SplashScreen onStartGame={handleStartGame} onBackToHome={onBackToHome} />
+    return (
+      <SplashScreen
+        onStartGame={handleStartGame}
+        onBackToHome={typeof onBackToHome === "function" ? onBackToHome : () => console.warn("onBackToHome not available")}
+      />
+    )
   }
 
   if (!difficulty) {
-    return <DifficultySelect onSelectDifficulty={setDifficulty} onBackToHome={onBackToHome} />
+    return (
+      <DifficultySelect
+        onSelectDifficulty={setDifficulty}
+        onBackToHome={typeof onBackToHome === "function" ? onBackToHome : () => console.warn("onBackToHome not available")}
+      />
+    )
   }
 
   if (loading) {
@@ -407,7 +426,7 @@ export default function SpellingGame({ onBackToHome = () => {} }) {
         highScore={highScore}
         onPlayAgain={handlePlayAgain}
         onChangeDifficulty={handleChangeDifficulty}
-        onBackToHome={onBackToHome}
+        onBackToHome={typeof onBackToHome === "function" ? onBackToHome : () => console.warn("onBackToHome not available")}
       />
     )
   }
@@ -415,14 +434,14 @@ export default function SpellingGame({ onBackToHome = () => {} }) {
   return (
     <ImageBackground source={require("./assets/images/game-screen-bg.jpg")} style={styles.container}>
       <JungleAudio />
-  
+
       <View style={styles.overlay}>
         <ScoreBoard score={score} total={words.length} currentIndex={currentWordIndex} />
-  
+
         {currentWord && (
           <View style={styles.gameContent}>
             <Text style={styles.levelText}>{difficulty.charAt(0).toUpperCase() + difficulty.slice(1)} Level</Text>
-  
+
             {currentWord.image_url && (
               <ImageBackground
                 source={require("./assets/images/wooden-frame.png")}
@@ -432,7 +451,7 @@ export default function SpellingGame({ onBackToHome = () => {} }) {
                 <Image source={{ uri: currentWord.image_url }} style={styles.wordImage} resizeMode="contain" />
               </ImageBackground>
             )}
-  
+
             <View style={styles.inputContainer}>
               <TextInput
                 style={styles.input}
@@ -453,10 +472,9 @@ export default function SpellingGame({ onBackToHome = () => {} }) {
                 </ImageBackground>
               </TouchableOpacity>
             </View>
-  
-            {/* Ensure AudioControls is used correctly */}
+
             <AudioControls onPlayAudio={playWordAudio} playbackRate={playbackRate} setPlaybackRate={setPlaybackRate} />
-  
+
             <View style={styles.gameButtons}>
               <TouchableOpacity style={styles.skipButton} onPress={handleSkip}>
                 <ImageBackground
@@ -467,7 +485,7 @@ export default function SpellingGame({ onBackToHome = () => {} }) {
                   <Text style={styles.skipButtonText}>Skip</Text>
                 </ImageBackground>
               </TouchableOpacity>
-  
+
               <TouchableOpacity style={styles.endGameButton} onPress={handleEndGame}>
                 <ImageBackground
                   source={require("./assets/images/red-button.png")}
@@ -480,7 +498,7 @@ export default function SpellingGame({ onBackToHome = () => {} }) {
             </View>
           </View>
         )}
-  
+
         {showSuccess && (
           <View style={styles.animationContainer}>
             <LottieView
@@ -491,7 +509,7 @@ export default function SpellingGame({ onBackToHome = () => {} }) {
             />
           </View>
         )}
-  
+
         {showFailure && (
           <View style={styles.animationContainer}>
             <LottieView
@@ -516,7 +534,7 @@ const styles = StyleSheet.create({
   overlay: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.2)",
-    padding: 20,
+    padding: width > 600 ? 40 : 20,
   },
   loadingContainer: {
     flex: 1,
@@ -530,12 +548,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   loadingAnimation: {
-    width: Math.min(width * 0.5, 200),
-    height: Math.min(width * 0.5, 200),
+    width: Math.min(width * 0.4, 250),
+    height: Math.min(width * 0.4, 250),
   },
   loadingText: {
     marginTop: 20,
-    fontSize: Math.min(width * 0.06, 24),
+    fontSize: width > 600 ? 22 : 18,
     fontFamily: "OpenDyslexic",
     color: "#FFFFFF",
     textShadowColor: "rgba(0, 0, 0, 0.75)",
@@ -546,23 +564,24 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
+    paddingVertical: height * 0.02,
   },
   levelText: {
-    fontSize: Math.min(width * 0.06, 24),
+    fontSize: width > 600 ? 22 : 18,
     fontFamily: "OpenDyslexic-Bold",
     color: "#FFFFFF",
     textShadowColor: "rgba(0, 0, 0, 0.85)",
     textShadowOffset: { width: -1, height: 1 },
     textShadowRadius: 10,
-    marginTop: height * 0.01,
+    marginTop: height * 0.03,
   },
   woodenFrame: {
-    width: Math.min(width * 0.9, 350),
-    height: Math.min(height * 0.3, 400),
+    width: width > 600 ? 400 : width * 0.8,
+    height: width > 600 ? Math.min(height * 0.25, 300) : height * 0.25,
     justifyContent: "center",
     alignItems: "center",
-    padding: 20,
-    marginVertical: height * 0.01,
+    padding: width > 600 ? 20 : 15,
+    marginVertical: height * 0.02,
   },
   wordImage: {
     width: "70%",
@@ -576,19 +595,20 @@ const styles = StyleSheet.create({
   },
   input: {
     backgroundColor: "#cf9853",
-    padding: 10,
+    padding: width > 600 ? 15 : 10,
     borderRadius: 10,
-    fontSize: Math.min(width * 0.05, 16),
+    fontSize: width > 600 ? 18 : 16,
     fontFamily: "OpenDyslexic",
     marginBottom: 10,
     textAlign: "center",
     borderWidth: 3,
     borderColor: "#B2711D",
-    width: "90%",
+    width: width > 600 ? "80%" : "90%",
+    maxWidth: 500,
   },
   submitButton: {
-    width: Math.min(width * 0.8, 200),
-    height: Math.min(height * 0.08, 70),
+    width: width > 600 ? 250 : width * 0.7,
+    height: width > 600 ? 60 : height * 0.07,
     alignItems: "center",
   },
   woodenButtonLong: {
@@ -599,48 +619,49 @@ const styles = StyleSheet.create({
   },
   submitButtonText: {
     color: "white",
-    fontSize: Math.min(width * 0.05, 20),
+    fontSize: width > 600 ? 20 : 16,
     fontFamily: "OpenDyslexic-Bold",
   },
   gameButtons: {
     flexDirection: "row",
     justifyContent: "space-between",
-    width: "80%",
+    width: width > 600 ? "70%" : "85%",
+    maxWidth: 600,
     marginTop: height * 0.03,
-    marginBottom: height * 0.05,
+    marginBottom: height * 0.04,
   },
   skipButton: {
-    padding: 10,
-    paddingHorizontal: 20,
+    padding: width > 600 ? 15 : 10,
+    paddingHorizontal: width > 600 ? 25 : 20,
   },
   greyButton: {
-    width: Math.min(width * 0.3, 120),
-    height: Math.min(height * 0.06, 50),
+    width: width > 600 ? 140 : width * 0.25,
+    height: width > 600 ? 50 : height * 0.055,
     justifyContent: "center",
     alignItems: "center",
   },
   skipButtonText: {
     color: "#FFFFFF",
-    fontSize: Math.min(width * 0.04, 16),
-    fontFamily: "OpenDysic",
+    fontSize: width > 600 ? 16 : 14,
+    fontFamily: "OpenDyslexic",
     textShadowColor: "rgba(0, 0, 0, 0.75)",
     textShadowOffset: { width: -1, height: 1 },
     textShadowRadius: 5,
     textAlign: "center",
   },
   endGameButton: {
-    padding: 10,
-    paddingHorizontal: 20,
+    padding: width > 600 ? 15 : 10,
+    paddingHorizontal: width > 600 ? 25 : 20,
   },
   redButton: {
-    width: Math.min(width * 0.35, 150),
-    height: Math.min(height * 0.06, 50),
+    width: width > 600 ? 160 : width * 0.3,
+    height: width > 600 ? 50 : height * 0.055,
     justifyContent: "center",
     alignItems: "center",
   },
   endGameButtonText: {
     color: "#FFFFFF",
-    fontSize: Math.min(width * 0.04, 16),
+    fontSize: width > 600 ? 16 : 14,
     fontFamily: "OpenDyslexic",
     textShadowColor: "rgba(0, 0, 0, 0.75)",
     textShadowOffset: { width: -1, height: 1 },
@@ -659,8 +680,8 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   animation: {
-    width: Math.min(width * 0.5, 200),
-    height: Math.min(width * 0.5, 200),
+    width: width > 600 ? 250 : width * 0.4,
+    height: width > 600 ? 250 : width * 0.4,
   },
 })
 

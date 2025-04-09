@@ -10,7 +10,6 @@ import AsyncStorage from "@react-native-async-storage/async-storage"
 import PhonicsSplashScreen from "./PhonicsSplashScreen"
 import PhonicsDifficultySelect from "./PhonicsDifficultySelect"
 import PhonicsGameSummary from "./PhonicsGameSummary"
-import PirateAudio from "../../data/PirateAudio"
 
 const { width, height } = Dimensions.get("window")
 
@@ -19,261 +18,261 @@ const WORD_DATA = {
   easy: [
     {
       word: "apple",
-      image_url: require("./assets/images/phonics-images/easy/apple.png"),
+      image_url: require(".//assets/images/phonics-images/easy/apple.png"),
       syllables: [
-        { text: "a", audio_url: require("./assets/sounds/phonics-sounds/easy/apple-a.mp3") },
-        { text: "pple", audio_url: require("./assets/sounds/phonics-sounds/easy/apple-pl.mp3") },
+        { text: "a", audio_url: require(".//assets/sounds/phonics-sounds/easy/apple-a.mp3") },
+        { text: "pple", audio_url: require(".//assets/sounds/phonics-sounds/easy/apple-pl.mp3") },
       ],
     },
     {
       word: "ball",
-      image_url: require("./assets/images/phonics-images/easy/ball.png"),
+      image_url: require(".//assets/images/phonics-images/easy/ball.png"),
       syllables: [
-        { text: "ba", audio_url: require("./assets/sounds/phonics-sounds/easy/ball-ba.mp3") },
-        { text: "wl", audio_url: require("./assets/sounds/phonics-sounds/easy/ball-al.mp3") },
+        { text: "ba", audio_url: require(".//assets/sounds/phonics-sounds/easy/ball-ba.mp3") },
+        { text: "wl", audio_url: require(".//assets/sounds/phonics-sounds/easy/ball-al.mp3") },
       ],
     },
     {
       word: "car",
-      image_url: require("./assets/images/phonics-images/easy/car.png"),
+      image_url: require(".//assets/images/phonics-images/easy/car.png"),
       syllables: [
-        { text: "ca", audio_url: require("./assets/sounds/phonics-sounds/easy/car-ca.mp3") },
-        { text: "r", audio_url: require("./assets/sounds/phonics-sounds/easy/car-r.mp3") },
+        { text: "ca", audio_url: require(".//assets/sounds/phonics-sounds/easy/car-ca.mp3") },
+        { text: "r", audio_url: require(".//assets/sounds/phonics-sounds/easy/car-r.mp3") },
       ],
     },
     {
       word: "fan",
-      image_url: require("./assets/images/phonics-images/easy/fan.png"),
+      image_url: require(".//assets/images/phonics-images/easy/fan.png"),
       syllables: [
-        { text: "fa", audio_url: require("./assets/sounds/phonics-sounds/easy/fan-fa.mp3") },
-        { text: "n", audio_url: require("./assets/sounds/phonics-sounds/easy/fan-n.mp3") },
+        { text: "fa", audio_url: require(".//assets/sounds/phonics-sounds/easy/fan-fa.mp3") },
+        { text: "n", audio_url: require(".//assets/sounds/phonics-sounds/easy/fan-n.mp3") },
       ],
     },
     {
       word: "jar",
-      image_url: require("./assets/images/phonics-images/easy/jar.png"),
+      image_url: require(".//assets/images/phonics-images/easy/jar.png"),
       syllables: [
-        { text: "j", audio_url: require("./assets/sounds/phonics-sounds/easy/jar-j.mp3") },
-        { text: "ar", audio_url: require("./assets/sounds/phonics-sounds/easy/jar-ar.mp3") },
+        { text: "j", audio_url: require(".//assets/sounds/phonics-sounds/easy/jar-j.mp3") },
+        { text: "ar", audio_url: require(".//assets/sounds/phonics-sounds/easy/jar-ar.mp3") },
       ],
     },
     {
       word: "kite",
-      image_url: require("./assets/images/phonics-images/easy/kite.png"),
+      image_url: require(".//assets/images/phonics-images/easy/kite.png"),
       syllables: [
-        { text: "k", audio_url: require("./assets/sounds/phonics-sounds/easy/kite-k.mp3") },
-        { text: "ite", audio_url: require("./assets/sounds/phonics-sounds/easy/kite-ite.mp3") },
+        { text: "k", audio_url: require(".//assets/sounds/phonics-sounds/easy/kite-k.mp3") },
+        { text: "ite", audio_url: require(".//assets/sounds/phonics-sounds/easy/kite-ite.mp3") },
       ],
     },
     {
       word: "lamp",
-      image_url: require("./assets/images/phonics-images/easy/lamp.png"),
+      image_url: require(".//assets/images/phonics-images/easy/lamp.png"),
       syllables: [
-        { text: "l", audio_url: require("./assets/sounds/phonics-sounds/easy/lamp-la.mp3") },
-        { text: "am", audio_url: require("./assets/sounds/phonics-sounds/easy/lamp-am.mp3") },
-        { text: "p", audio_url: require("./assets/sounds/phonics-sounds/easy/lamp-p.mp3") },
+        { text: "l", audio_url: require(".//assets/sounds/phonics-sounds/easy/lamp-la.mp3") },
+        { text: "am", audio_url: require(".//assets/sounds/phonics-sounds/easy/lamp-am.mp3") },
+        { text: "p", audio_url: require(".//assets/sounds/phonics-sounds/easy/lamp-p.mp3") },
       ],
     },
     {
       word: "milk",
-      image_url: require("./assets/images/phonics-images/easy/milk.png"),
+      image_url: require(".//assets/images/phonics-images/easy/milk.png"),
       syllables: [
-        { text: "mi", audio_url: require("./assets/sounds/phonics-sounds/easy/milk-mi.mp3") },
-        { text: "l", audio_url: require("./assets/sounds/phonics-sounds/easy/milk-l.mp3") },
-        { text: "k", audio_url: require("./assets/sounds/phonics-sounds/easy/milk-k.mp3") },
+        { text: "mi", audio_url: require(".//assets/sounds/phonics-sounds/easy/milk-mi.mp3") },
+        { text: "l", audio_url: require(".//assets/sounds/phonics-sounds/easy/milk-l.mp3") },
+        { text: "k", audio_url: require(".//assets/sounds/phonics-sounds/easy/milk-k.mp3") },
       ],
     },
     {
       word: "rat",
-      image_url: require("./assets/images/phonics-images/easy/rat.png"),
+      image_url: require(".//assets/images/phonics-images/easy/rat.png"),
       syllables: [
-        { text: "ra", audio_url: require("./assets/sounds/phonics-sounds/easy/rat-ra.mp3") },
-        { text: "t", audio_url: require("./assets/sounds/phonics-sounds/easy/rat-t.mp3") },
+        { text: "ra", audio_url: require(".//assets/sounds/phonics-sounds/easy/rat-ra.mp3") },
+        { text: "t", audio_url: require(".//assets/sounds/phonics-sounds/easy/rat-t.mp3") },
       ],
     },
     {
       word: "top",
-      image_url: require("./assets/images/phonics-images/easy/top.png"),
+      image_url: require(".//assets/images/phonics-images/easy/top.png"),
       syllables: [
-        { text: "to", audio_url: require("./assets/sounds/phonics-sounds/easy/top-to.mp3") },
-        { text: "p", audio_url: require("./assets/sounds/phonics-sounds/easy/top-p.mp3") },
+        { text: "to", audio_url: require(".//assets/sounds/phonics-sounds/easy/top-to.mp3") },
+        { text: "p", audio_url: require(".//assets/sounds/phonics-sounds/easy/top-p.mp3") },
       ],
     },
   ],
   medium: [
     {
       word: "book",
-      image_url: require("./assets/images/phonics-images/medium/book.png"),
+      image_url: require(".//assets/images/phonics-images/medium/book.png"),
       syllables: [
-        { text: "b", audio_url: require("./assets/sounds/phonics-sounds/medium/book-b.mp3") },
-        { text: "oo", audio_url: require("./assets/sounds/phonics-sounds/medium/book-oo.mp3") },
-        { text: "k", audio_url: require("./assets/sounds/phonics-sounds/medium/book-k.mp3") },
+        { text: "b", audio_url: require(".//assets/sounds/phonics-sounds/medium/book-b.mp3") },
+        { text: "oo", audio_url: require(".//assets/sounds/phonics-sounds/medium/book-oo.mp3") },
+        { text: "k", audio_url: require(".//assets/sounds/phonics-sounds/medium/book-k.mp3") },
       ],
     },
     {
       word: "chair",
-      image_url: require("./assets/images/phonics-images/medium/chair.png"),
+      image_url: require(".//assets/images/phonics-images/medium/chair.png"),
       syllables: [
-        { text: "ch", audio_url: require("./assets/sounds/phonics-sounds/medium/chair-ch.mp3") },
-        { text: "air", audio_url: require("./assets/sounds/phonics-sounds/medium/chair-air.mp3") },
+        { text: "ch", audio_url: require(".//assets/sounds/phonics-sounds/medium/chair-ch.mp3") },
+        { text: "air", audio_url: require(".//assets/sounds/phonics-sounds/medium/chair-air.mp3") },
       ],
     },
     {
       word: "clock",
-      image_url: require("./assets/images/phonics-images/medium/clock.png"),
+      image_url: require(".//assets/images/phonics-images/medium/clock.png"),
       syllables: [
-        { text: "cl", audio_url: require("./assets/sounds/phonics-sounds/medium/clock-cl.mp3") },
-        { text: "ock", audio_url: require("./assets/sounds/phonics-sounds/medium/clock-ock.mp3") },
+        { text: "cl", audio_url: require(".//assets/sounds/phonics-sounds/medium/clock-cl.mp3") },
+        { text: "ock", audio_url: require(".//assets/sounds/phonics-sounds/medium/clock-ock.mp3") },
       ],
     },
     {
       word: "flower",
-      image_url: require("./assets/images/phonics-images/medium/flower.png"),
+      image_url: require(".//assets/images/phonics-images/medium/flower.png"),
       syllables: [
-        { text: "fl", audio_url: require("./assets/sounds/phonics-sounds/medium/flower-fl.mp3") },
-        { text: "ow", audio_url: require("./assets/sounds/phonics-sounds/medium/flower-ow.mp3") },
-        { text: "er", audio_url: require("./assets/sounds/phonics-sounds/medium/flower-er.mp3") },
+        { text: "fl", audio_url: require(".//assets/sounds/phonics-sounds/medium/flower-fl.mp3") },
+        { text: "ow", audio_url: require(".//assets/sounds/phonics-sounds/medium/flower-ow.mp3") },
+        { text: "er", audio_url: require(".//assets/sounds/phonics-sounds/medium/flower-er.mp3") },
       ],
     },
     {
       word: "house",
-      image_url: require("./assets/images/phonics-images/medium/house.png"),
+      image_url: require(".//assets/images/phonics-images/medium/house.png"),
       syllables: [
-        { text: "h", audio_url: require("./assets/sounds/phonics-sounds/medium/house-h.mp3") },
-        { text: "ou", audio_url: require("./assets/sounds/phonics-sounds/medium/house-ou.mp3") },
-        { text: "se", audio_url: require("./assets/sounds/phonics-sounds/medium/house-se.mp3") },
+        { text: "h", audio_url: require(".//assets/sounds/phonics-sounds/medium/house-h.mp3") },
+        { text: "ou", audio_url: require(".//assets/sounds/phonics-sounds/medium/house-ou.mp3") },
+        { text: "se", audio_url: require(".//assets/sounds/phonics-sounds/medium/house-se.mp3") },
       ],
     },
     {
       word: "piano",
-      image_url: require("./assets/images/phonics-images/medium/piano.png"),
+      image_url: require(".//assets/images/phonics-images/medium/piano.png"),
       syllables: [
-        { text: "pi", audio_url: require("./assets/sounds/phonics-sounds/medium/piano-pi.mp3") },
-        { text: "a", audio_url: require("./assets/sounds/phonics-sounds/medium/piano-a.mp3") },
-        { text: "no", audio_url: require("./assets/sounds/phonics-sounds/medium/piano-no.mp3") },
+        { text: "pi", audio_url: require(".//assets/sounds/phonics-sounds/medium/piano-pi.mp3") },
+        { text: "a", audio_url: require(".//assets/sounds/phonics-sounds/medium/piano-a.mp3") },
+        { text: "no", audio_url: require(".//assets/sounds/phonics-sounds/medium/piano-no.mp3") },
       ],
     },
     {
       word: "queen",
-      image_url: require("./assets/images/phonics-images/medium/queen.png"),
+      image_url: require(".//assets/images/phonics-images/medium/queen.png"),
       syllables: [
-        { text: "qu", audio_url: require("./assets/sounds/phonics-sounds/medium/queen-q.mp3") },
-        { text: "een", audio_url: require("./assets/sounds/phonics-sounds/medium/queen-een.mp3") },
+        { text: "qu", audio_url: require(".//assets/sounds/phonics-sounds/medium/queen-q.mp3") },
+        { text: "een", audio_url: require(".//assets/sounds/phonics-sounds/medium/queen-een.mp3") },
       ],
     },
     {
       word: "rose",
-      image_url: require("./assets/images/phonics-images/medium/rose.png"),
+      image_url: require(".//assets/images/phonics-images/medium/rose.png"),
       syllables: [
-        { text: "ro", audio_url: require("./assets/sounds/phonics-sounds/medium/rose-ro.mp3") },
-        { text: "se", audio_url: require("./assets/sounds/phonics-sounds/medium/rose-se.mp3") },
+        { text: "ro", audio_url: require(".//assets/sounds/phonics-sounds/medium/rose-ro.mp3") },
+        { text: "se", audio_url: require(".//assets/sounds/phonics-sounds/medium/rose-se.mp3") },
       ],
     },
     {
       word: "tree",
-      image_url: require("./assets/images/phonics-images/medium/tree.png"),
+      image_url: require(".//assets/images/phonics-images/medium/tree.png"),
       syllables: [
-        { text: "tr", audio_url: require("./assets/sounds/phonics-sounds/medium/tree-tr.mp3") },
-        { text: "ee", audio_url: require("./assets/sounds/phonics-sounds/medium/tree-ee.mp3") },
+        { text: "tr", audio_url: require(".//assets/sounds/phonics-sounds/medium/tree-tr.mp3") },
+        { text: "ee", audio_url: require(".//assets/sounds/phonics-sounds/medium/tree-ee.mp3") },
       ],
     },
     {
       word: "truck",
-      image_url: require("./assets/images/phonics-images/medium/truck.png"),
+      image_url: require(".//assets/images/phonics-images/medium/truck.png"),
       syllables: [
-        { text: "tr", audio_url: require("./assets/sounds/phonics-sounds/medium/truck-tr.mp3") },
-        { text: "uck", audio_url: require("./assets/sounds/phonics-sounds/medium/truck-ck.mp3") },
+        { text: "tr", audio_url: require(".//assets/sounds/phonics-sounds/medium/truck-tr.mp3") },
+        { text: "uck", audio_url: require(".//assets/sounds/phonics-sounds/medium/truck-ck.mp3") },
       ],
     },
   ],
   hard: [
     {
       word: "balloon",
-      image_url: require("./assets/images/phonics-images/hard/balloon.png"),
+      image_url: require(".//assets/images/phonics-images/hard/balloon.png"),
       syllables: [
-        { text: "ba", audio_url: require("./assets/sounds/phonics-sounds/hard/balloon-ba.mp3") },
-        { text: "loon", audio_url: require("./assets/sounds/phonics-sounds/hard/balloon-loon.mp3") },
+        { text: "ba", audio_url: require(".//assets/sounds/phonics-sounds/hard/balloon-ba.mp3") },
+        { text: "loon", audio_url: require(".//assets/sounds/phonics-sounds/hard/balloon-loon.mp3") },
       ],
     },
     {
       word: "computer",
-      image_url: require("./assets/images/phonics-images/hard/computer.png"),
+      image_url: require(".//assets/images/phonics-images/hard/computer.png"),
       syllables: [
-        { text: "com", audio_url: require("./assets/sounds/phonics-sounds/hard/computer-com.mp3") },
-        { text: "pu", audio_url: require("./assets/sounds/phonics-sounds/hard/computer-pu.mp3") },
-        { text: "ter", audio_url: require("./assets/sounds/phonics-sounds/hard/computer-ter.mp3") },
+        { text: "com", audio_url: require(".//assets/sounds/phonics-sounds/hard/computer-com.mp3") },
+        { text: "pu", audio_url: require(".//assets/sounds/phonics-sounds/hard/computer-pu.mp3") },
+        { text: "ter", audio_url: require(".//assets/sounds/phonics-sounds/hard/computer-ter.mp3") },
       ],
     },
     {
       word: "helicopter",
       image_url: require("./assets/images/phonics-images/hard/helicopter.png"),
       syllables: [
-        { text: "hel", audio_url: require("./assets/sounds/phonics-sounds/hard/helicopter-hel.mp3") },
-        { text: "i", audio_url: require("./assets/sounds/phonics-sounds/hard/helicopter-i.mp3") },
-        { text: "cop", audio_url: require("./assets/sounds/phonics-sounds/hard/helicopter-cop.mp3") },
-        { text: "ter", audio_url: require("./assets/sounds/phonics-sounds/hard/helicopter-ter.mp3") },
+        { text: "hel", audio_url: require(".//assets/sounds/phonics-sounds/hard/helicopter-hel.mp3") },
+        { text: "i", audio_url: require(".//assets/sounds/phonics-sounds/hard/helicopter-i.mp3") },
+        { text: "cop", audio_url: require(".//assets/sounds/phonics-sounds/hard/helicopter-cop.mp3") },
+        { text: "ter", audio_url: require(".//assets/sounds/phonics-sounds/hard/helicopter-ter.mp3") },
       ],
     },
     {
       word: "pencil",
-      image_url: require("./assets/images/phonics-images/hard/pencil.png"),
+      image_url: require(".//assets/images/phonics-images/hard/pencil.png"),
       syllables: [
-        { text: "pen", audio_url: require("./assets/sounds/phonics-sounds/hard/pencil-pen.mp3") },
-        { text: "ci", audio_url: require("./assets/sounds/phonics-sounds/hard/pencil-ci.mp3") },
-        { text: "l", audio_url: require("./assets/sounds/phonics-sounds/hard/pencil-l.mp3") },
+        { text: "pen", audio_url: require(".//assets/sounds/phonics-sounds/hard/pencil-pen.mp3") },
+        { text: "ci", audio_url: require(".//assets/sounds/phonics-sounds/hard/pencil-ci.mp3") },
+        { text: "l", audio_url: require(".//assets/sounds/phonics-sounds/hard/pencil-l.mp3") },
       ],
     },
     {
       word: "rainbow",
-      image_url: require("./assets/images/phonics-images/hard/rainbow.png"),
+      image_url: require(".//assets/images/phonics-images/hard/rainbow.png"),
       syllables: [
-        { text: "rain", audio_url: require("./assets/sounds/phonics-sounds/hard/rainbow-rain.mp3") },
-        { text: "bow", audio_url: require("./assets/sounds/phonics-sounds/hard/rainbow-bow.mp3") },
+        { text: "rain", audio_url: require(".//assets/sounds/phonics-sounds/hard/rainbow-rain.mp3") },
+        { text: "bow", audio_url: require(".//assets/sounds/phonics-sounds/hard/rainbow-bow.mp3") },
       ],
     },
     {
       word: "sandwich",
-      image_url: require("./assets/images/phonics-images/hard/sandwich.png"),
+      image_url: require(".//assets/images/phonics-images/hard/sandwich.png"),
       syllables: [
-        { text: "sand", audio_url: require("./assets/sounds/phonics-sounds/hard/sandwich-sand.mp3") },
-        { text: "wich", audio_url: require("./assets/sounds/phonics-sounds/hard/sandwich-wich.mp3") },
+        { text: "sand", audio_url: require(".//assets/sounds/phonics-sounds/hard/sandwich-sand.mp3") },
+        { text: "wich", audio_url: require(".//assets/sounds/phonics-sounds/hard/sandwich-wich.mp3") },
       ],
     },
     {
       word: "scissors",
       image_url: require("./assets/images/phonics-images/hard/scissors.png"),
       syllables: [
-        { text: "s", audio_url: require("./assets/sounds/phonics-sounds/hard/scissors-s.mp3") },
-        { text: "cis", audio_url: require("./assets/sounds/phonics-sounds/hard/scissors-cis.mp3") },
-        { text: "sors", audio_url: require("./assets/sounds/phonics-sounds/hard/scissors-sors.mp3") },
+        { text: "s", audio_url: require(".//assets/sounds/phonics-sounds/hard/scissors-s.mp3") },
+        { text: "cis", audio_url: require(".//assets/sounds/phonics-sounds/hard/scissors-cis.mp3") },
+        { text: "sors", audio_url: require(".//assets/sounds/phonics-sounds/hard/scissors-sors.mp3") },
       ],
     },
     {
       word: "submarine",
       image_url: require("./assets/images/phonics-images/hard/submarine.png"),
       syllables: [
-        { text: "sub", audio_url: require("./assets/sounds/phonics-sounds/hard/submarine-sub.mp3") },
-        { text: "mar", audio_url: require("./assets/sounds/phonics-sounds/hard/submarine-mar.mp3") },
-        { text: "ine", audio_url: require("./assets/sounds/phonics-sounds/hard/submarine-ine.mp3") },
+        { text: "sub", audio_url: require(".//assets/sounds/phonics-sounds/hard/submarine-sub.mp3") },
+        { text: "mar", audio_url: require(".//assets/sounds/phonics-sounds/hard/submarine-mar.mp3") },
+        { text: "ine", audio_url: require(".//assets/sounds/phonics-sounds/hard/submarine-ine.mp3") },
       ],
     },
     {
       word: "television",
       image_url: require("./assets/images/phonics-images/hard/television.png"),
       syllables: [
-        { text: "tel", audio_url: require("./assets/sounds/phonics-sounds/hard/television-tel.mp3") },
-        { text: "e", audio_url: require("./assets/sounds/phonics-sounds/hard/television-e.mp3") },
-        { text: "vision", audio_url: require("./assets/sounds/phonics-sounds/hard/television-vision.mp3") },
+        { text: "tel", audio_url: require(".//assets/sounds/phonics-sounds/hard/television-tel.mp3") },
+        { text: "e", audio_url: require(".//assets/sounds/phonics-sounds/hard/television-e.mp3") },
+        { text: "vision", audio_url: require(".//assets/sounds/phonics-sounds/hard/television-vision.mp3") },
       ],
     },
     {
       word: "toothbrush",
       image_url: require("./assets/images/phonics-images/hard/toothbrush.png"),
       syllables: [
-        { text: "too", audio_url: require("./assets/sounds/phonics-sounds/hard/toothbrush-too.mp3") },
-        { text: "th", audio_url: require("./assets/sounds/phonics-sounds/hard/toothbrush-th.mp3") },
-        { text: "bru", audio_url: require("./assets/sounds/phonics-sounds/hard/toothbrush-bru.mp3") },
-        { text: "sh", audio_url: require("./assets/sounds/phonics-sounds/hard/toothbrush-sh.mp3") },
+        { text: "too", audio_url: require(".//assets/sounds/phonics-sounds/hard/toothbrush-too.mp3") },
+        { text: "th", audio_url: require(".//assets/sounds/phonics-sounds/hard/toothbrush-th.mp3") },
+        { text: "bru", audio_url: require(".//assets/sounds/phonics-sounds/hard/toothbrush-bru.mp3") },
+        { text: "sh", audio_url: require(".//assets/sounds/phonics-sounds/hard/toothbrush-sh.mp3") },
       ],
     },
   ],
@@ -284,7 +283,7 @@ const CORRECT_SOUND = require("./assets/sounds/correct.mp3")
 const INCORRECT_SOUND = require("./assets/sounds/incorrect.mp3")
 const GAME_COMPLETE_SOUND = require("./assets/sounds/level-complete.mp3")
 
-export default function PhonicsGame({ onBackToHome = () => {} }) {
+export default function PhonicsGame({ onBackToHome }) {
   const [loading, setLoading] = useState(true)
   const [questions, setQuestions] = useState([])
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
@@ -302,10 +301,9 @@ export default function PhonicsGame({ onBackToHome = () => {} }) {
   const [isPlaying, setIsPlaying] = useState(false)
   const [isSpeaking, setIsSpeaking] = useState(false)
 
+  // We'll use a single sound reference and load different sounds as needed
+  const soundRef = useRef(null)
   const syllableSoundRef = useRef(null)
-  const correctSoundRef = useRef(null)
-  const incorrectSoundRef = useRef(null)
-  const gameCompleteSoundRef = useRef(null)
   const isMountedRef = useRef(true)
 
   // Set up audio and load high score
@@ -317,40 +315,27 @@ export default function PhonicsGame({ onBackToHome = () => {} }) {
       isMountedRef.current = false
 
       // Stop any ongoing speech
-      if (typeof Speech.stop === 'function') {
-        Speech.stop().catch(error => console.log("Error stopping speech:", error));
+      Speech.stop()
+
+      // Clean up all sounds when component unmounts
+      const cleanupSound = async (ref) => {
+        try {
+          // Only attempt to unload if ref exists and has a sound object with unloadAsync method
+          if (ref && ref.current && typeof ref.current === "object" && ref.current.unloadAsync) {
+            await ref.current.unloadAsync().catch(() => {})
+          }
+        } catch (error) {
+          // Silently handle errors to prevent crashes during cleanup
+          console.log("Cleanup handled gracefully")
+        }
       }
 
-      // Clean up all sounds with safe handling
-      const safeCleanup = async (soundRef) => {
-        if (soundRef.current) {
-          try {
-            if (typeof soundRef.current.getStatusAsync === 'function') {
-              try {
-                const status = await soundRef.current.getStatusAsync();
-                if (status.isLoaded) {
-                  if (typeof soundRef.current.stopAsync === 'function') {
-                    await soundRef.current.stopAsync().catch(() => {});
-                  }
-                  if (typeof soundRef.current.unloadAsync === 'function') {
-                    await soundRef.current.unloadAsync().catch(() => {});
-                  }
-                }
-              } catch (error) {
-                console.log("Error checking sound status during cleanup:", error);
-              }
-            }
-          } catch (error) {
-            console.log("Error in cleanup:", error);
-          }
-        }
-      };
-
       // Clean up each sound
-      safeCleanup(syllableSoundRef);
-      safeCleanup(correctSoundRef);
-      safeCleanup(incorrectSoundRef);
-      safeCleanup(gameCompleteSoundRef);
+      cleanupSound(soundRef)
+
+      // For syllableSoundRef, we're now storing just the audio resource path, not a sound object
+      // So we don't need to unload it, just clear the reference
+      syllableSoundRef.current = null
     }
   }, [])
 
@@ -402,45 +387,39 @@ export default function PhonicsGame({ onBackToHome = () => {} }) {
         playsInSilentModeIOS: true,
         shouldDuckAndroid: true,
         playThroughEarpieceAndroid: false,
-      });
-
-      // Handle each sound separately with try/catch
-      try {
-        const { sound: correctSound } = await Audio.Sound.createAsync(
-          CORRECT_SOUND,
-          { volume: 1.0 }
-        );
-        correctSoundRef.current = correctSound;
-        console.log("Correct sound loaded");
-      } catch (error) {
-        console.error("Failed to load correct sound:", error);
-      }
-      
-      try {
-        const { sound: incorrectSound } = await Audio.Sound.createAsync(
-          INCORRECT_SOUND,
-          { volume: 1.0 }
-        );
-        incorrectSoundRef.current = incorrectSound;
-        console.log("Incorrect sound loaded");
-      } catch (error) {
-        console.error("Failed to load incorrect sound:", error);
-      }
-      
-      try {
-        const { sound: gameCompleteSound } = await Audio.Sound.createAsync(
-          GAME_COMPLETE_SOUND,
-          { volume: 1.0 }
-        );
-        gameCompleteSoundRef.current = gameCompleteSound;
-        console.log("Game complete sound loaded");
-      } catch (error) {
-        console.error("Failed to load game complete sound:", error);
-      }
-      
-      console.log("Game sounds setup completed");
+      })
+      console.log("Game sounds loaded successfully!")
     } catch (error) {
-      console.error("Error setting up audio:", error);
+      console.error("Error setting up audio:", error)
+    }
+  }
+
+  // Play a sound effect
+  const playSound = async (soundFile) => {
+    try {
+      // Unload any previous sound
+      if (soundRef.current && typeof soundRef.current === "object" && soundRef.current.unloadAsync) {
+        await soundRef.current.unloadAsync().catch(() => {})
+        soundRef.current = null
+      }
+
+      // Create and play the new sound
+      const { sound } = await Audio.Sound.createAsync(soundFile, { shouldPlay: true })
+      soundRef.current = sound
+
+      // Set up a listener to clean up when done
+      sound.setOnPlaybackStatusUpdate((status) => {
+        if (status.didJustFinish) {
+          if (sound && sound.unloadAsync) {
+            sound.unloadAsync().catch(() => {})
+          }
+          if (soundRef.current === sound) {
+            soundRef.current = null
+          }
+        }
+      })
+    } catch (error) {
+      console.error("Error playing sound:", error)
     }
   }
 
@@ -509,17 +488,42 @@ export default function PhonicsGame({ onBackToHome = () => {} }) {
 
   // Preload audio for a question (only syllable audio)
   const preloadAudio = async (question) => {
-    if (!question) return;
-    
-    // First clear any existing reference
-    syllableSoundRef.current = null;
-    
+    if (!question) return
+
     try {
-      // For now, just log that we're preparing the audio without actually loading it
-      console.log("Preparing audio for syllable:", question.target_syllable.text);
+      // We'll use a different approach for syllable sounds
+      // Instead of preloading, we'll just store the audio resource
+      syllableSoundRef.current = question.target_syllable.audio_url
+      console.log("Syllable audio preloaded successfully")
     } catch (error) {
-      console.error("Error preparing audio:", error);
-      syllableSoundRef.current = null;
+      console.error("Error preloading audio:", error)
+      syllableSoundRef.current = null
+    }
+  }
+
+  // Play the target syllable audio
+  const playSyllableAudio = async () => {
+    if (isPlaying || isSpeaking || !syllableSoundRef.current) return
+
+    try {
+      setIsPlaying(true)
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+
+      // Create and play the sound on demand instead of preloading
+      const { sound } = await Audio.Sound.createAsync(syllableSoundRef.current, { shouldPlay: true })
+
+      // Set up completion handler
+      sound.setOnPlaybackStatusUpdate((status) => {
+        if (status.didJustFinish) {
+          setIsPlaying(false)
+          if (sound && sound.unloadAsync) {
+            sound.unloadAsync().catch(() => {})
+          }
+        }
+      })
+    } catch (error) {
+      console.error("Error playing syllable audio:", error)
+      setIsPlaying(false)
     }
   }
 
@@ -556,28 +560,6 @@ export default function PhonicsGame({ onBackToHome = () => {} }) {
     }
   }
 
-  // Play the target syllable audio - simplified to avoid audio errors
-  const playSyllableAudio = async () => {
-    if (isPlaying || isSpeaking) return;
-
-    try {
-      // Start the "playing" state for UI feedback
-      setIsPlaying(true);
-      
-      // Visual feedback
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      
-      // Simulate playing sound for 1 second
-      setTimeout(() => {
-        setIsPlaying(false);
-      }, 1000);
-      
-    } catch (error) {
-      console.error("Error simulating audio playback:", error);
-      setIsPlaying(false);
-    }
-  }
-
   // Handle option selection
   const handleSelectOption = (option) => {
     if (selectedOption !== null || isPlaying || isSpeaking) return
@@ -599,25 +581,9 @@ export default function PhonicsGame({ onBackToHome = () => {} }) {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
 
     try {
-      if (correctSoundRef.current) {
-        try {
-          if (typeof correctSoundRef.current.getStatusAsync === 'function') {
-            const status = await correctSoundRef.current.getStatusAsync();
-            if (status.isLoaded) {
-              if (typeof correctSoundRef.current.setPositionAsync === 'function') {
-                await correctSoundRef.current.setPositionAsync(0);
-              }
-              if (typeof correctSoundRef.current.playAsync === 'function') {
-                await correctSoundRef.current.playAsync();
-              }
-            }
-          }
-        } catch (soundError) {
-          console.log("Error with correct sound, continuing:", soundError);
-        }
-      }
+      await playSound(CORRECT_SOUND)
     } catch (error) {
-      console.error("Error playing correct sound:", error);
+      console.error("Error playing correct sound:", error)
     }
 
     setTimeout(() => {
@@ -633,29 +599,14 @@ export default function PhonicsGame({ onBackToHome = () => {} }) {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)
 
     try {
-      if (incorrectSoundRef.current) {
-        try {
-          if (typeof incorrectSoundRef.current.getStatusAsync === 'function') {
-            const status = await incorrectSoundRef.current.getStatusAsync();
-            if (status.isLoaded) {
-              if (typeof incorrectSoundRef.current.setPositionAsync === 'function') {
-                await incorrectSoundRef.current.setPositionAsync(0);
-              }
-              if (typeof incorrectSoundRef.current.playAsync === 'function') {
-                await incorrectSoundRef.current.playAsync();
-              }
-            }
-          }
-        } catch (soundError) {
-          console.log("Error with incorrect sound, continuing:", soundError);
-        }
-      }
+      await playSound(INCORRECT_SOUND)
     } catch (error) {
-      console.error("Error handling incorrect answer:", error);
+      console.error("Error playing incorrect sound:", error)
     }
 
     setTimeout(() => {
       setShowFailure(false)
+      setSelectedOption(null)
       moveToNextQuestion()
     }, 1500)
   }
@@ -665,23 +616,14 @@ export default function PhonicsGame({ onBackToHome = () => {} }) {
     if (currentQuestionIndex < questions.length - 1) {
       setCurrentQuestionIndex(currentQuestionIndex + 1)
     } else {
-      // Game is complete
       try {
-        // First play a success haptic
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        
-        // Wait a moment before showing the summary
-        setTimeout(async () => {
-          await updateHighScore(score)
-          setGameComplete(true)
-        }, 1000)
+        await playSound(GAME_COMPLETE_SOUND)
       } catch (error) {
-        console.error("Error processing game completion:", error)
-        
-        // Ensure we still show the game summary even if sound fails
-        await updateHighScore(score)
-        setGameComplete(true)
+        console.error("Error playing game complete sound:", error)
       }
+
+      await updateHighScore(score)
+      setGameComplete(true)
     }
   }
 
@@ -700,17 +642,15 @@ export default function PhonicsGame({ onBackToHome = () => {} }) {
           try {
             // Stop any ongoing speech
             await Speech.stop()
-            
-            // Give user feedback with haptics instead of sound
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-            
-            // Short delay then show summary
+
+            await playSound(GAME_COMPLETE_SOUND)
+
             setTimeout(async () => {
               await updateHighScore(score)
               setGameComplete(true)
             }, 500)
           } catch (error) {
-            console.error("Error ending game:", error)
+            console.error("Error playing game complete sound:", error)
             await updateHighScore(score)
             setGameComplete(true)
           }
@@ -762,10 +702,10 @@ export default function PhonicsGame({ onBackToHome = () => {} }) {
   // Render loading screen
   if (loading) {
     return (
-      <ImageBackground source={require("./assets/images/jungle-background.jpg")} style={styles.loadingContainer}>
+      <ImageBackground source={require("./assets/images/treasure.webp")} style={styles.loadingContainer}>
         <View style={styles.loadingOverlay}>
           <LottieView
-            source={require("./assets/animations/loading.json")}
+            source={require("./assets/animations/ship-load.json")}
             autoPlay
             loop
             style={styles.loadingAnimation}
@@ -793,9 +733,7 @@ export default function PhonicsGame({ onBackToHome = () => {} }) {
 
   // Render main game
   return (
-    <ImageBackground source={require("./assets/images/game-screen-bg.jpg")} style={styles.container}>
-      <PirateAudio />
-
+    <ImageBackground source={require("./assets/images/Phonics/game-bg.webp")} style={styles.container}>
       <View style={styles.overlay}>
         {/* Progress bar */}
         <View style={styles.progressContainer}>
@@ -816,7 +754,7 @@ export default function PhonicsGame({ onBackToHome = () => {} }) {
 
             {/* Word image */}
             <ImageBackground
-              source={require("./assets/images/wooden-frame.png")}
+              source={require("./assets/images/Phonics/pirate-panel.png")}
               style={styles.woodenFrame}
               resizeMode="stretch"
             >
@@ -832,7 +770,7 @@ export default function PhonicsGame({ onBackToHome = () => {} }) {
                 activeOpacity={0.7}
               >
                 <ImageBackground
-                  source={require("./assets/images/wooden-button.png")}
+                  source={require("./assets/images/Phonics/pirate-yellow.png")}
                   style={styles.pirateButton}
                   resizeMode="stretch"
                 >
@@ -847,7 +785,7 @@ export default function PhonicsGame({ onBackToHome = () => {} }) {
                 activeOpacity={0.7}
               >
                 <ImageBackground
-                  source={require("./assets/images/wooden-button.png")}
+                  source={require("./assets/images/Phonics/pirate-yellow.png")}
                   style={styles.pirateButton}
                   resizeMode="stretch"
                 >
@@ -871,7 +809,7 @@ export default function PhonicsGame({ onBackToHome = () => {} }) {
                   activeOpacity={0.7}
                 >
                   <ImageBackground
-                    source={require("./assets/images/jungle-splash.jpg")}
+                    source={require("./assets/images/Phonics/mcq-scroll.png")}
                     style={styles.optionBackground}
                     resizeMode="stretch"
                   >
@@ -884,7 +822,7 @@ export default function PhonicsGame({ onBackToHome = () => {} }) {
             {/* End game button */}
             <TouchableOpacity style={styles.endGameButton} onPress={handleEndGame} activeOpacity={0.7}>
               <ImageBackground
-                source={require("./assets/images/wooden-button-small.png")}
+                source={require(".//assets/images/Phonics/pirate-wood.png")}
                 style={styles.pirateButtonSmall}
                 resizeMode="stretch"
               >
@@ -898,8 +836,8 @@ export default function PhonicsGame({ onBackToHome = () => {} }) {
         {showSuccess && (
           <View style={styles.animationContainer}>
             <LottieView
-              source={require("./assets/animations/correct.json")}
-              autoPlay
+              source={require(".//assets/animations/monkey-right.json")}
+              autoPlay={true}
               loop={false}
               style={styles.animation}
             />
@@ -910,8 +848,8 @@ export default function PhonicsGame({ onBackToHome = () => {} }) {
         {showFailure && (
           <View style={styles.animationContainer}>
             <LottieView
-              source={require("./assets/animations/incorrect.json")}
-              autoPlay
+              source={require(".//assets/animations/pirate-wrong.json")}
+              autoPlay={true}
               loop={false}
               style={styles.animation}
             />
@@ -930,7 +868,7 @@ const styles = StyleSheet.create({
   },
   overlay: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.2)",
+    backgroundColor: "rgba(0,0,0,0.3)",
     padding: 20,
   },
   loadingContainer: {
@@ -1030,7 +968,7 @@ const styles = StyleSheet.create({
   },
   audioButton: {
     width: Math.min(width * 0.4, 180),
-    height: Math.min(height * 0.08, 60),
+    height: Math.min(height * 0.08, 80),
   },
   pirateButton: {
     width: "100%",
@@ -1039,7 +977,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   audioButtonText: {
-    color: "#3E2723",
+    color: "#FFD700",
     fontSize: Math.min(width * 0.04, 18),
     fontFamily: "OpenDyslexic-Bold",
     textAlign: "center",
@@ -1080,7 +1018,7 @@ const styles = StyleSheet.create({
   },
   endGameButton: {
     width: Math.min(width * 0.5, 200),
-    height: Math.min(height * 0.06, 50),
+    height: Math.min(height * 0.06, 100),
     marginTop: height * 0.02,
   },
   pirateButtonSmall: {
@@ -1090,8 +1028,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   endGameButtonText: {
-    color: "#3E2723",
-    fontSize: Math.min(width * 0.04, 16),
+    color: "#eb9f2d",
+    fontSize: Math.min(width * 0.05, 18),
     fontFamily: "OpenDyslexic",
     textAlign: "center",
   },
@@ -1111,4 +1049,3 @@ const styles = StyleSheet.create({
     height: Math.min(width * 0.5, 200),
   },
 })
-

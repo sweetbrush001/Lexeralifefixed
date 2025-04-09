@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   StyleSheet,
   View,
@@ -12,25 +12,31 @@ import {
   Dimensions,
   Modal,
   TextInput,
+  SafeAreaView,
+  StatusBar,
 } from "react-native";
-import Icon from 'react-native-vector-icons/MaterialIcons';
-import Flashcard from "./Flashcard";
+import { Ionicons } from "@expo/vector-icons";
+import Flashcard from "../Flashcards/Flashcard";
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { getSavedFlashcards, removeFlashcard, clearFlashcards } from "./storage";
+import { getSavedFlashcards, removeFlashcard } from "../Flashcards/storage";
 
+const { width } = Dimensions.get('window');
+
+// Clean, minimalist color palette
 const COLORS = {
-  primary: "#6200ee",
-  background: "#f8f8f8",
-  card: "#ffffff",
+  primary: "#7C4DFF",
+  primaryLight: "#EDE7F6",
+  background: "#FFFFFF",
+  card: "#F9F9F9",
   text: "#333333",
-  border: "#e0e0e0",
-  error: "#f44336",
-  shadow: "rgba(0,0,0,0.1)",
+  textLight: "#757575",
+  border: "#EEEEEE",
+  success: "#66BB6A",
+  error: "#EF5350",
+  shadow: "#000",
 };
 
-const CARD_HEIGHT = 180;
-const STACK_OFFSET = 5;
-const screenWidth = Dimensions.get('window').width;
+const CARD_HEIGHT = 200;
 const FLASHCARDS_KEY = 'flashcards';
 
 export default function SavedScreen({ setActiveTab, setFlashcards, setTimer }) {
@@ -39,13 +45,14 @@ export default function SavedScreen({ setActiveTab, setFlashcards, setTimer }) {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
   const [expandedCollection, setExpandedCollection] = useState(null);
-  const [expandedCard, setExpandedCard] = useState(null);
-  const [animation] = useState(new Animated.Value(0));
   const [modalVisible, setModalVisible] = useState(false);
   const [timerModalVisible, setTimerModalVisible] = useState(false);
   const [selectedCollection, setSelectedCollection] = useState([]);
   const [timerMinutes, setTimerMinutes] = useState('');
   const [timerSeconds, setTimerSeconds] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isSearching, setIsSearching] = useState(false);
+  const searchInputRef = useRef(null);
 
   useEffect(() => {
     loadFlashcards();
@@ -72,18 +79,6 @@ export default function SavedScreen({ setActiveTab, setFlashcards, setTimer }) {
       setLoading(false);
       setRefreshing(false);
     }
-  };
-
-  const toggleCollection = (subtopic) => {
-    setExpandedCollection(expandedCollection === subtopic ? null : subtopic);
-    setExpandedCard(null);
-    
-    Animated.spring(animation, {
-      toValue: expandedCollection === subtopic ? 0 : 1,
-      useNativeDriver: true,
-      tension: 40,
-      friction: 7,
-    }).start();
   };
 
   const handleDelete = async (id, subtopic) => {
@@ -144,158 +139,261 @@ export default function SavedScreen({ setActiveTab, setFlashcards, setTimer }) {
     );
   };
 
+  const toggleSearch = () => {
+    setIsSearching(!isSearching);
+    setSearchQuery('');
+    if (!isSearching) {
+      setTimeout(() => {
+        searchInputRef.current?.focus();
+      }, 100);
+    }
+  };
+
+  const filteredCollections = () => {
+    if (!searchQuery.trim()) return Object.entries(collections);
+    
+    const filtered = {};
+    
+    Object.entries(collections).forEach(([subtopic, cards]) => {
+      const matchingCards = cards.filter(card => 
+        card.question.toLowerCase().includes(searchQuery.toLowerCase()) || 
+        card.answer.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        subtopic.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+      
+      if (matchingCards.length > 0) {
+        filtered[subtopic] = matchingCards;
+      }
+    });
+    
+    return Object.entries(filtered);
+  };
+
+  const navigateToGenerate = () => {
+        setActiveTab('generate');
+  };
+
   const renderCollection = ({ item: [subtopic, cards] }) => {
     const isExpanded = expandedCollection === subtopic;
-    const containerHeight = isExpanded 
-      ? CARD_HEIGHT * cards.length + (cards.length - 1) * 8 
-      : CARD_HEIGHT + (cards.length - 1) * STACK_OFFSET;
 
     return (
       <View style={styles.collectionContainer}>
-        <View style={styles.collectionHeader}>
-          <Text style={styles.collectionTitle}>{subtopic}</Text>
-          <Text style={styles.cardCount}>{cards.length} cards</Text>
-          <View style={styles.buttonContainer}>
-            <TouchableOpacity 
-              style={styles.dropdownButton}
-              onPress={() => toggleCollection(subtopic)}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.dropdownButtonText}>Expand</Text>
-            </TouchableOpacity>
-            <TouchableOpacity 
-              style={styles.deleteCollectionButton}
-              onPress={() => handleDeleteCollection(subtopic)}
-              activeOpacity={0.8}
-            >
-              <Icon name="delete" size={20} color="#fff" />
-            </TouchableOpacity>
+        <TouchableOpacity 
+          style={styles.collectionHeader}
+          onPress={() => setExpandedCollection(isExpanded ? null : subtopic)}
+          activeOpacity={0.7}
+        >
+          <View style={styles.collectionTitleContainer}>
+            <Text style={styles.collectionTitle}>{subtopic}</Text>
+            <View style={styles.cardCountContainer}>
+              <Text style={styles.cardCount}>{cards.length} cards</Text>
+            </View>
           </View>
-        </View>
-
-        <View style={[styles.stackContainer, { height: containerHeight }]}>
-          {cards.map((card, index) => {
-            const offset = isExpanded ? index * (CARD_HEIGHT + 8) : index * STACK_OFFSET;
+          
+          <View style={styles.headerButtons}>
+            <TouchableOpacity 
+              style={styles.iconButton}
+              onPress={() => handleDeleteCollection(subtopic)}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <Ionicons name="trash-outline" size={18} color={COLORS.textLight} />
+            </TouchableOpacity>
             
-            return (
-              <Animated.View
-                key={card.id}
-                style={[
-                  styles.stackedCard,
-                  {
-                    zIndex: cards.length - index,
-                    transform: [{
-                      translateY: animation.interpolate({
-                        inputRange: [0, 1],
-                        outputRange: [index * STACK_OFFSET, offset]
-                      })
-                    }]
-                  }
-                ]}
-              >
-                <TouchableOpacity
-                  style={[styles.flashcardContainer, { backgroundColor: card.backgroundColor || COLORS.card }]}
-                  onPress={() => setExpandedCard(expandedCard === card.id ? null : card.id)}
-                  activeOpacity={0.9}
-                >
-                  <Flashcard 
-                    flashcard={card} 
-                    expanded={expandedCard === card.id}
-                  />
-                  {expandedCard === card.id && (
-                    <TouchableOpacity 
-                      style={styles.deleteButton} 
-                      onPress={() => handleDelete(card.id, subtopic)}
-                    >
-                      <Text style={styles.deleteButtonText}>Delete</Text>
-                    </TouchableOpacity>
-                  )}
-                </TouchableOpacity>
-              </Animated.View>
-            );
-          })}
-        </View>
+            <Ionicons 
+              name={isExpanded ? "chevron-up" : "chevron-down"} 
+              size={20} 
+              color={COLORS.textLight} 
+            />
+          </View>
+        </TouchableOpacity>
+
+        {isExpanded && (
+          <View style={styles.flashcardsContainer}>
+            {cards.map((card, index) => (
+              <View key={card.id || index} style={styles.flashcardWrapper}>
+                <Flashcard flashcard={card} />
+              </View>
+            ))}
+          </View>
+        )}
       </View>
     );
   };
 
   const renderModalContent = () => (
     <View style={styles.modalContent}>
-      <Text style={styles.modalTitle}>Select a Collection to Test</Text>
-      <FlatList
-        data={Object.entries(collections)}
-        keyExtractor={([subtopic]) => subtopic}
-        renderItem={({ item: [subtopic, cards] }) => (
-          <TouchableOpacity
-            style={styles.modalItem}
-            onPress={() => {
-              setSelectedCollection(cards);
-              setModalVisible(false);
-              setTimerModalVisible(true);
-            }}
-          >
-            <Text style={styles.modalItemText}>{subtopic}</Text>
-          </TouchableOpacity>
-        )}
-      />
-      <TouchableOpacity
-        style={styles.modalCloseButton}
-        onPress={() => setModalVisible(false)}
-      >
-        <Text style={styles.modalCloseButtonText}>Close</Text>
-      </TouchableOpacity>
+      <View style={styles.modalHeader}>
+        <Text style={styles.modalTitle}>Select a Collection</Text>
+        <TouchableOpacity
+          style={styles.modalCloseButton}
+          onPress={() => setModalVisible(false)}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
+          <Ionicons name="close" size={24} color={COLORS.text} />
+        </TouchableOpacity>
+      </View>
+      
+      {Object.keys(collections).length === 0 ? (
+        <View style={styles.emptyModalContainer}>
+          <Text style={styles.emptyModalText}>No collections available</Text>
+        </View>
+      ) : (
+        <FlatList
+          data={Object.entries(collections)}
+          keyExtractor={([subtopic]) => subtopic}
+          renderItem={({ item: [subtopic, cards] }) => (
+            <TouchableOpacity
+              style={styles.modalItem}
+              onPress={() => {
+                setSelectedCollection(cards);
+                setModalVisible(false);
+                setTimerModalVisible(true);
+              }}
+            >
+              <Text style={styles.modalItemText}>{subtopic}</Text>
+              <View style={styles.modalItemRight}>
+                <Text style={styles.modalItemCount}>{cards.length} cards</Text>
+                <Ionicons name="chevron-forward" size={18} color={COLORS.textLight} />
+              </View>
+            </TouchableOpacity>
+          )}
+          contentContainerStyle={styles.modalList}
+        />
+      )}
     </View>
   );
 
   const renderTimerModalContent = () => (
     <View style={styles.modalContent}>
-      <Text style={styles.modalTitle}>Set Timer</Text>
-      <View style={styles.timerInputContainer}>
-        <TextInput
-          style={styles.timerInput}
-          keyboardType="numeric"
-          placeholder="Minutes"
-          value={timerMinutes}
-          onChangeText={setTimerMinutes}
-        />
-        <Text style={styles.timerSeparator}>:</Text>
-        <TextInput
-          style={styles.timerInput}
-          keyboardType="numeric"
-          placeholder="Seconds"
-          value={timerSeconds}
-          onChangeText={setTimerSeconds}
-        />
+      <View style={styles.modalHeader}>
+        <Text style={styles.modalTitle}>Set Timer</Text>
+        <TouchableOpacity
+          style={styles.modalCloseButton}
+          onPress={() => setTimerModalVisible(false)}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
+          <Ionicons name="close" size={24} color={COLORS.text} />
+        </TouchableOpacity>
       </View>
-      <TouchableOpacity
-        style={styles.modalCloseButton}
-        onPress={() => {
-          const totalSeconds = (parseInt(timerMinutes) || 0) * 60 + (parseInt(timerSeconds) || 0);
-          setFlashcards(selectedCollection);
-          setTimer(totalSeconds);
-          setActiveTab('test');
-          setTimerModalVisible(false);
-        }}
-      >
-        <Text style={styles.modalCloseButtonText}>Start Test with Timer</Text>
-      </TouchableOpacity>
-      <TouchableOpacity
-        style={styles.modalCloseButton}
-        onPress={() => {
-          setFlashcards(selectedCollection);
-          setTimer(0); // No timer
-          setActiveTab('test');
-          setTimerModalVisible(false);
-        }}
-      >
-        <Text style={styles.modalCloseButtonText}>Start Test without Timer</Text>
-      </TouchableOpacity>
-      <TouchableOpacity
-        style={styles.modalCloseButton}
-        onPress={() => setTimerModalVisible(false)}
-      >
-        <Text style={styles.modalCloseButtonText}>Close</Text>
-      </TouchableOpacity>
+      
+      <View style={styles.timerInputContainer}>
+        <View style={styles.timerInputWrapper}>
+          <TextInput
+            style={styles.timerInput}
+            keyboardType="numeric"
+            placeholder="00"
+            value={timerMinutes}
+            onChangeText={setTimerMinutes}
+            maxLength={2}
+          />
+          <Text style={styles.timerLabel}>Minutes</Text>
+        </View>
+        
+        <Text style={styles.timerSeparator}>:</Text>
+        
+        <View style={styles.timerInputWrapper}>
+          <TextInput
+            style={styles.timerInput}
+            keyboardType="numeric"
+            placeholder="00"
+            value={timerSeconds}
+            onChangeText={setTimerSeconds}
+            maxLength={2}
+          />
+          <Text style={styles.timerLabel}>Seconds</Text>
+        </View>
+      </View>
+      
+      <View style={styles.timerPresets}>
+        <Text style={styles.timerPresetsTitle}>Quick Presets</Text>
+        <View style={styles.timerPresetsRow}>
+          {[1, 2, 5, 10].map(mins => (
+            <TouchableOpacity 
+              key={mins} 
+              style={styles.timerPresetButton}
+              onPress={() => {
+                setTimerMinutes(mins.toString());
+                setTimerSeconds('0');
+              }}
+            >
+              <Text style={styles.timerPresetText}>{mins} min</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </View>
+      
+      <View style={styles.modalButtonGroup}>
+        <TouchableOpacity
+          style={[styles.modalActionButton, styles.primaryButton]}
+          onPress={() => {
+            const totalSeconds = (parseInt(timerMinutes) || 0) * 60 + (parseInt(timerSeconds) || 0);
+            setFlashcards(selectedCollection);
+            setTimer(totalSeconds);
+            setActiveTab('test');
+            setTimerModalVisible(false);
+          }}
+        >
+          <Text style={styles.buttonText}>Start with Timer</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity
+          style={[styles.modalActionButton, styles.secondaryButton]}
+          onPress={() => {
+            setFlashcards(selectedCollection);
+            setTimer(0); // No timer
+            setActiveTab('test');
+            setTimerModalVisible(false);
+          }}
+        >
+          <Text style={styles.buttonText}>Start without Timer</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+
+  const renderHeader = () => (
+    <View style={styles.header}>
+      <View style={styles.headerRow}>
+        <TouchableOpacity 
+          style={styles.headerTitleContainer}
+          onPress={navigateToGenerate}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
+          <Ionicons name="arrow-back" size={24} color={COLORS.text} />
+          <Text style={styles.headerTitle}>My Collections</Text>
+        </TouchableOpacity>
+        {isSearching ? (
+          <View style={styles.searchContainer}>
+            <Ionicons name="search" size={18} color={COLORS.textLight} />
+            <TextInput
+              ref={searchInputRef}
+              style={styles.searchInput}
+              placeholder="Search collections..."
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              autoFocus
+            />
+            <TouchableOpacity onPress={toggleSearch}>
+              <Ionicons name="close" size={18} color={COLORS.textLight} />
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <TouchableOpacity 
+            style={styles.iconButton}
+            onPress={toggleSearch}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+            <Ionicons name="search" size={20} color={COLORS.textLight} />
+          </TouchableOpacity>
+        )}
+      </View>
+      {!isSearching && (
+        <Text style={styles.headerSubtitle}>
+          {Object.keys(collections).length} {Object.keys(collections).length === 1 ? 'collection' : 'collections'} • {
+            Object.values(collections).reduce((total, cards) => total + cards.length, 0)
+          } flashcards
+        </Text>
+      )}
     </View>
   );
 
@@ -303,6 +401,7 @@ export default function SavedScreen({ setActiveTab, setFlashcards, setTimer }) {
     return (
       <View style={styles.centerContainer}>
         <ActivityIndicator size="large" color={COLORS.primary} />
+        <Text style={styles.loadingText}>Loading collections...</Text>
       </View>
     );
   }
@@ -312,66 +411,163 @@ export default function SavedScreen({ setActiveTab, setFlashcards, setTimer }) {
       <View style={styles.centerContainer}>
         <Text style={styles.errorText}>{error}</Text>
         <TouchableOpacity style={styles.retryButton} onPress={loadFlashcards}>
-          <Text style={styles.retryButtonText}>Retry</Text>
+          <Text style={styles.buttonText}>Retry</Text>
         </TouchableOpacity>
       </View>
     );
   }
 
-  if (Object.keys(collections).length === 0) {
-    return (
-      <View style={styles.centerContainer}>
-        <Text style={styles.emptyText}>No flashcard collections yet</Text>
-      </View>
-    );
-  }
+  const filtered = filteredCollections();
+  const isEmpty = filtered.length === 0;
 
   return (
-    <View style={styles.container}>
-      <FlatList
-        data={Object.entries(collections)}
-        keyExtractor={([subtopic]) => subtopic}
-        renderItem={renderCollection}
-        contentContainerStyle={styles.listContent}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={loadFlashcards} />
-        }
-      />
-      <TouchableOpacity 
-        style={styles.testButton}
-        onPress={() => setModalVisible(true)}
-        activeOpacity={0.8}
-      >
-        <Text style={styles.testButtonText}>Test Flashcards</Text>
-      </TouchableOpacity>
-      <Modal
-        visible={modalVisible}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => setModalVisible(false)}
-      >
-        <View style={styles.modalContainer}>
-          {renderModalContent()}
-        </View>
-      </Modal>
-      <Modal
-        visible={timerModalVisible}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => setTimerModalVisible(false)}
-      >
-        <View style={styles.modalContainer}>
-          {renderTimerModalContent()}
-        </View>
-      </Modal>
-    </View>
+    <SafeAreaView style={styles.safeArea}>
+      <StatusBar barStyle="dark-content" backgroundColor={COLORS.background} />
+      <View style={styles.container}>
+        {renderHeader()}
+        
+        {isEmpty ? (
+          <View style={styles.emptyContainer}>
+            {searchQuery ? (
+              <>
+                <Text style={styles.emptyTitle}>No results found</Text>
+                <Text style={styles.emptyText}>
+                  No flashcards match your search "{searchQuery}"
+                </Text>
+                <TouchableOpacity 
+                  style={[styles.emptyButton, styles.primaryButton]}
+                  onPress={() => setSearchQuery('')}
+                >
+                  <Text style={styles.buttonText}>Clear Search</Text>
+                </TouchableOpacity>
+              </>
+            ) : (
+              <>
+                <Text style={styles.emptyTitle}>No flashcards yet</Text>
+                <Text style={styles.emptyText}>
+                  Create your first flashcard collection to get started
+                </Text>
+                <TouchableOpacity 
+                  style={[styles.emptyButton, styles.primaryButton]}
+                  onPress={() => setActiveTab('generate')}
+                >
+                  <Text style={styles.buttonText}>Create Flashcards</Text>
+                </TouchableOpacity>
+              </>
+            )}
+          </View>
+        ) : (
+          <FlatList
+            data={filtered}
+            keyExtractor={([subtopic]) => subtopic}
+            renderItem={renderCollection}
+            contentContainerStyle={styles.listContent}
+            refreshControl={
+              <RefreshControl 
+                refreshing={refreshing} 
+                onRefresh={loadFlashcards}
+                colors={[COLORS.primary]} 
+              />
+            }
+            showsVerticalScrollIndicator={false}
+          />
+        )}
+        
+        {!isEmpty && (
+          <View style={styles.buttonContainer}>
+            <TouchableOpacity 
+              style={[styles.testButton, styles.primaryButton]}
+              onPress={() => setModalVisible(true)}
+            >
+              <Text style={styles.buttonText}>Test Flashcards</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+        
+        <Modal
+          visible={modalVisible}
+          animationType="fade"
+          transparent={true}
+          onRequestClose={() => setModalVisible(false)}
+        >
+          <View style={styles.modalContainer}>
+            <View style={styles.modalOverlay} />
+            {renderModalContent()}
+          </View>
+        </Modal>
+        
+        <Modal
+          visible={timerModalVisible}
+          animationType="fade"
+          transparent={true}
+          onRequestClose={() => setTimerModalVisible(false)}
+        >
+          <View style={styles.modalContainer}>
+            <View style={styles.modalOverlay} />
+            {renderTimerModalContent()}
+          </View>
+        </Modal>
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: COLORS.background,
+  },
   container: {
     flex: 1,
     backgroundColor: COLORS.background,
+  },
+  header: {
+    padding: 16,
+    backgroundColor: COLORS.background,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  headerTitleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: "600",
+    color: COLORS.text,
+    marginLeft: 8, // Add spacing between the arrow and the title
+  },
+  headerSubtitle: {
+    fontSize: 14,
+    color: COLORS.textLight,
+    marginTop: 4,
+  },
+  iconButton: {
+    padding: 8,
+  },
+  searchContainer: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.card,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    marginLeft: 12,
+    height: 40,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  searchInput: {
+    flex: 1,
+    height: 40,
+    marginLeft: 8,
+    fontSize: 16,
+    color: COLORS.text,
   },
   centerContainer: {
     flex: 1,
@@ -380,179 +576,271 @@ const styles = StyleSheet.create({
     padding: 20,
     backgroundColor: COLORS.background,
   },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 16,
+    color: COLORS.textLight,
+  },
   listContent: {
     padding: 16,
+    paddingBottom: 80, // Extra padding for the test button
   },
   collectionContainer: {
-    backgroundColor: COLORS.background,
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 20,
+    marginBottom: 16,
+    backgroundColor: COLORS.card,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    overflow: 'hidden',
   },
   collectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
+    padding: 16,
+  },
+  collectionTitleContainer: {
+    flex: 1,
   },
   collectionTitle: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: "600",
-    color: COLORS.primary,
-    textTransform: 'capitalize',
-  },
-  cardCount: {
-    fontSize: 14,
     color: COLORS.text,
-    opacity: 0.7,
+    marginBottom: 4,
   },
-  buttonContainer: {
+  cardCountContainer: {
     flexDirection: 'row',
     alignItems: 'center',
   },
-  dropdownButton: {
-    backgroundColor: COLORS.primary,
-    padding: 8,
-    borderRadius: 8,
-    marginRight: 8,
+  cardCount: {
+    fontSize: 14,
+    color: COLORS.textLight,
   },
-  dropdownButtonText: {
-    color: "#fff",
-    fontWeight: "500",
-  },
-  deleteCollectionButton: {
-    backgroundColor: COLORS.error,
-    padding: 8,
-    borderRadius: 8,
-  },
-  deleteCollectionButtonText: {
-    color: "#fff",
-    fontWeight: "500",
-  },
-  testButton: {
-    backgroundColor: COLORS.primary,
-    padding: 16,
-    borderRadius: 8,
-    margin: 16,
+  headerButtons: {
+    flexDirection: 'row',
     alignItems: 'center',
   },
-  testButtonText: {
-    color: "#fff",
-    fontWeight: "500",
+  flashcardsContainer: {
+    padding: 16,
+    paddingTop: 0,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.border,
   },
-  stackContainer: {
+  flashcardWrapper: {
+    marginBottom: 16,
     position: 'relative',
-    width: screenWidth - 64,
-  },
-  stackedCard: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    height: CARD_HEIGHT,
-    backgroundColor: COLORS.card,
-    borderRadius: 12,
-    shadowColor: COLORS.shadow,
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
-  },
-  flashcardContainer: {
-    flex: 1,
-    borderRadius: 12,
-    overflow: 'hidden',
   },
   deleteButton: {
-    backgroundColor: COLORS.error,
-    padding: 10,
-    borderRadius: 8,
-    alignItems: "center",
-    marginTop: 8,
-    marginHorizontal: 16,
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    backgroundColor: COLORS.card,
+    borderRadius: 16,
+    width: 32,
+    height: 32,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: COLORS.border,
   },
-  deleteButtonText: {
+  buttonContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    padding: 16,
+    backgroundColor: COLORS.background,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.border,
+  },
+  testButton: {
+    height: 48,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 8,
+  },
+  primaryButton: {
+    backgroundColor: COLORS.primary,
+  },
+  secondaryButton: {
+    backgroundColor: COLORS.textLight,
+  },
+  buttonText: {
     color: "#fff",
-    fontWeight: "500",
+    fontSize: 16,
+    fontWeight: "600",
   },
   errorText: {
     color: COLORS.error,
     marginBottom: 20,
     textAlign: "center",
+    fontSize: 16,
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 32,
+  },
+  emptyTitle: {
+    fontSize: 20,
+    fontWeight: "600",
+    color: COLORS.text,
+    marginBottom: 12,
+    textAlign: "center",
   },
   emptyText: {
     fontSize: 16,
-    color: COLORS.text,
+    color: COLORS.textLight,
     textAlign: "center",
+    marginBottom: 24,
+    lineHeight: 24,
+  },
+  emptyButton: {
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   retryButton: {
     backgroundColor: COLORS.primary,
-    padding: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
     borderRadius: 8,
-  },
-  retryButtonText: {
-    color: "#fff",
-    fontWeight: "500",
+    marginTop: 16,
   },
   modalContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  modalOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.4)',
   },
   modalContent: {
-    width: '80%',
-    backgroundColor: COLORS.card,
+    width: '85%',
+    backgroundColor: COLORS.background,
     borderRadius: 8,
-    padding: 16,
+    padding: 20,
+    maxHeight: '80%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
+    marginBottom: 16,
   },
   modalTitle: {
     fontSize: 20,
     fontWeight: '600',
-    color: COLORS.primary,
-    marginBottom: 16,
+    color: COLORS.text,
+  },
+  modalCloseButton: {
+    padding: 4,
+  },
+  modalList: {
+    paddingVertical: 8,
   },
   modalItem: {
-    padding: 12,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 12,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
-    width: '100%',
-    alignItems: 'center',
   },
   modalItemText: {
     fontSize: 16,
     color: COLORS.text,
   },
-  modalCloseButton: {
-    marginTop: 16,
-    backgroundColor: COLORS.primary,
-    padding: 12,
-    borderRadius: 8,
+  modalItemRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
-  modalCloseButtonText: {
-    color: '#fff',
-    fontWeight: '500',
+  modalItemCount: {
+    fontSize: 14,
+    color: COLORS.textLight,
+    marginRight: 8,
+  },
+  emptyModalContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 24,
+  },
+  emptyModalText: {
+    fontSize: 16,
+    color: COLORS.textLight,
+    textAlign: 'center',
   },
   timerInputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
+    justifyContent: 'center',
+    marginVertical: 20,
+  },
+  timerInputWrapper: {
+    alignItems: 'center',
   },
   timerInput: {
-    flex: 1,
-    padding: 12,
+    width: 70,
+    height: 70,
     borderWidth: 1,
     borderColor: COLORS.border,
     borderRadius: 8,
+    fontSize: 28,
+    fontWeight: '600',
     textAlign: 'center',
+    color: COLORS.text,
+  },
+  timerLabel: {
+    fontSize: 14,
+    color: COLORS.textLight,
+    marginTop: 8,
   },
   timerSeparator: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: '600',
     color: COLORS.text,
-    marginHorizontal: 8,
+    marginHorizontal: 16,
+  },
+  timerPresets: {
+    marginBottom: 20,
+  },
+  timerPresetsTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: COLORS.text,
+    marginBottom: 12,
+  },
+  timerPresetsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  timerPresetButton: {
+    backgroundColor: COLORS.primaryLight,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+    width: '22%',
+  },
+  timerPresetText: {
+    color: COLORS.primary,
+    fontWeight: '600',
+  },
+  modalButtonGroup: {
+    marginTop: 8,
+  },
+  modalActionButton: {
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginBottom: 12,
   },
 });

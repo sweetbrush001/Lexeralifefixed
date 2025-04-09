@@ -26,7 +26,7 @@ const WordScrambleEntry = ({ navigation }) => {
   return (
     <SafeAreaView style={styles.safeArea}>
       <ImageBackground 
-        source={require('../assets/images/background.png')} 
+        source={require('../assets/images/wordScramble/background.webp')} 
         style={styles.backgroundImage}
       >
         <ScrollView contentContainerStyle={styles.scrollContainer}>
@@ -40,11 +40,10 @@ const WordScrambleEntry = ({ navigation }) => {
             
             <View style={styles.content}>
               <Text style={styles.title}>Word Scramble</Text>
-              <Text style={styles.subtitle}>Unscramble words against the clock!</Text>
+              <Text style={styles.subtitle}>Unscramble words in Outerspace</Text>
               
               <View style={styles.levelSelectionContainer}>
-                <Text style={styles.selectText}>Select Difficulty:</Text>
-                
+                            
                 <TouchableOpacity
                   style={[
                     styles.levelButton,
@@ -54,7 +53,7 @@ const WordScrambleEntry = ({ navigation }) => {
                   onPress={() => handleLevelSelect('Easy')}
                 >
                   <Text style={styles.levelButtonText}>Easy</Text>
-                  <Text style={styles.levelDescription}>3-4 letter words</Text>
+                  
                 </TouchableOpacity>
                 
                 <TouchableOpacity
@@ -66,7 +65,7 @@ const WordScrambleEntry = ({ navigation }) => {
                   onPress={() => handleLevelSelect('Medium')}
                 >
                   <Text style={styles.levelButtonText}>Medium</Text>
-                  <Text style={styles.levelDescription}>5-6 letter words</Text>
+                 
                 </TouchableOpacity>
                 
                 <TouchableOpacity
@@ -78,7 +77,7 @@ const WordScrambleEntry = ({ navigation }) => {
                   onPress={() => handleLevelSelect('Hard')}
                 >
                   <Text style={styles.levelButtonText}>Hard</Text>
-                  <Text style={styles.levelDescription}>7+ letter words</Text>
+                  
                 </TouchableOpacity>
               </View>
               
@@ -100,14 +99,7 @@ const WordScrambleEntry = ({ navigation }) => {
                 <Text style={styles.scoreboardButtonText}>View Scoreboard</Text>
               </TouchableOpacity>
               
-              <View style={styles.rulesContainer}>
-                <Text style={styles.rulesTitle}>How to Play:</Text>
-                <Text style={styles.rulesText}>• Unscramble the given word</Text>
-                <Text style={styles.rulesText}>• Type your answer and press "Check"</Text>
-                <Text style={styles.rulesText}>• You can use a hint once per word</Text>
-                <Text style={styles.rulesText}>• Skip difficult words (with penalty)</Text>
-                <Text style={styles.rulesText}>• Score more points by solving quickly!</Text>
-              </View>
+              
             </View>
           </View>
         </ScrollView>
@@ -126,10 +118,12 @@ const styles = StyleSheet.create({
   },
   scrollContainer: {
     flexGrow: 1,
+    justifyContent: 'center', // Add this
   },
   container: {
     flex: 1,
     padding: 20,
+    justifyContent: 'center', // Add this
   },
   backButton: {
     position: 'absolute',
@@ -144,12 +138,12 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 60,
+    marginTop: 0, // Change from 60 to 0
   },
   title: {
     fontFamily: 'OpenDyslexic-Bold',
     fontSize: 32,
-    color: '#E0B0FF',
+    color: 'white',
     marginBottom: 10,
     textAlign: 'center',
   },
@@ -176,7 +170,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     marginBottom: 15,
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'center', 
     alignItems: 'center',
     width: '100%',
   },
@@ -197,6 +191,7 @@ const styles = StyleSheet.create({
     fontFamily: 'OpenDyslexic-Bold',
     fontSize: 20,
     color: 'white',
+    textAlign: 'center', 
   },
   levelDescription: {
     fontFamily: 'OpenDyslexic',
