@@ -485,21 +485,37 @@ export default function PhonicsGame({ onBackToHome }) {
     if (!question) return
 
     try {
-      // Unload previous sound if exists
-      if (syllableSoundRef.current) {
-        await syllableSoundRef.current.unloadAsync().catch(() => {})
-        syllableSoundRef.current = null
-      }
-
-      // Load the target syllable sound
-      const { sound } = await Audio.Sound.createAsync(question.target_syllable.audio_url)
-
-      // Store reference
-      syllableSoundRef.current = sound
+      // We'll use a different approach for syllable sounds
+      // Instead of preloading, we'll just store the audio resource
+      syllableSoundRef.current = question.target_syllable.audio_url
       console.log("Syllable audio preloaded successfully")
     } catch (error) {
       console.error("Error preloading audio:", error)
       syllableSoundRef.current = null
+    }
+  }
+
+  // Play the target syllable audio
+  const playSyllableAudio = async () => {
+    if (isPlaying || isSpeaking || !syllableSoundRef.current) return
+
+    try {
+      setIsPlaying(true)
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+
+      // Create and play the sound on demand instead of preloading
+      const { sound } = await Audio.Sound.createAsync(syllableSoundRef.current, { shouldPlay: true })
+
+      // Set up completion handler
+      sound.setOnPlaybackStatusUpdate((status) => {
+        if (status.didJustFinish) {
+          setIsPlaying(false)
+          sound.unloadAsync().catch(() => {})
+        }
+      })
+    } catch (error) {
+      console.error("Error playing syllable audio:", error)
+      setIsPlaying(false)
     }
   }
 
@@ -533,29 +549,6 @@ export default function PhonicsGame({ onBackToHome }) {
     } catch (error) {
       console.error("Error playing word with Speech API:", error)
       setIsSpeaking(false)
-    }
-  }
-
-  // Play the target syllable audio
-  const playSyllableAudio = async () => {
-    if (isPlaying || isSpeaking || !syllableSoundRef.current) return
-
-    try {
-      setIsPlaying(true)
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
-
-      // Play the sound
-      await syllableSoundRef.current.playAsync()
-
-      // Set up completion handler
-      syllableSoundRef.current.setOnPlaybackStatusUpdate((playbackStatus) => {
-        if (playbackStatus.didJustFinish) {
-          setIsPlaying(false)
-        }
-      })
-    } catch (error) {
-      console.error("Error playing syllable audio:", error)
-      setIsPlaying(false)
     }
   }
 
