@@ -26,7 +26,7 @@ const { width } = Dimensions.get("window");
 const COLORS = {
   primary: "#7C4DFF", // Purple primary color
   primaryLight: "#B39DDB",
-  secondary: "#FF9800", // Orange accent
+  secondary: "#FF9800", 
   background: "#F5F7FA",
   card: "#FFFFFF",
   text: "#333333",
