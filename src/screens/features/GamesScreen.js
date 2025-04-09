@@ -50,7 +50,7 @@ const GamesScreen = () => {
             style={styles.backButton}
             onPress={() => navigation.navigate('Home')}
           >
-            <Feather name="arrow-left" size={24} color="#FF6B6B" />
+            <Feather name="arrow-left" size={24} color="#ff846b" />
           </TouchableOpacity>
           <ReadableText style={[styles.headerTitle, fontStyle]} readable={true} priority={1}>
             Brain Training Games
@@ -86,14 +86,14 @@ const GamesScreen = () => {
             <BlurView intensity={10} style={styles.cardBlur}>
               <View style={styles.gameCardContent}>
                 <View style={styles.gameIconContainer}>
-                  <MaterialCommunityIcons name="puzzle" size={32} color="#FF6B6B" />
+                  <MaterialCommunityIcons name="island" size={32} color="#F7D08A" />
                 </View>
                 <View style={styles.gameInfo}>
                   <ReadableText style={[styles.gameTitle, fontStyle]} readable={true} priority={4}>
-                    Word Builder
+                    Pirate Phonics
                   </ReadableText>
                   <ReadableText style={[styles.gameDescription, fontStyle]} readable={true} priority={5}>
-                    Build words by arranging syllables in the correct order.
+                    Select words by listening to the sounds.
                   </ReadableText>
                 </View>
               </View>
@@ -108,7 +108,7 @@ const GamesScreen = () => {
             <BlurView intensity={10} style={styles.cardBlur}>
               <View style={styles.gameCardContent}>
                 <View style={styles.gameIconContainer}>
-                  <MaterialCommunityIcons name="cards" size={32} color="#FF6B6B" />
+                  <MaterialCommunityIcons name="cards" size={32} color="#D8BFD8" />
                 </View>
                 <View style={styles.gameInfo}>
                   <ReadableText style={[styles.gameTitle, fontStyle]} readable={true} priority={6}>
@@ -130,14 +130,14 @@ const GamesScreen = () => {
             <BlurView intensity={10} style={styles.cardBlur}>
               <View style={styles.gameCardContent}>
                 <View style={styles.gameIconContainer}>
-                  <MaterialCommunityIcons name="alphabetical" size={32} color="#FF6B6B" />
+                  <MaterialCommunityIcons name="forest" size={32} color="#A3D9A5" />
                 </View>
                 <View style={styles.gameInfo}>
                   <ReadableText style={[styles.gameTitle, fontStyle]} readable={true} priority={8}>
-                    Letter Recognition
+                    Jungle Spelling 
                   </ReadableText>
                   <ReadableText style={[styles.gameDescription, fontStyle]} readable={true} priority={9}>
-                    Practice identifying letters and their sounds.
+                    Practice spelling with animals.
                   </ReadableText>
                 </View>
               </View>
@@ -152,7 +152,7 @@ const GamesScreen = () => {
             <BlurView intensity={10} style={styles.cardBlur}>
               <View style={styles.gameCardContent}>
                 <View style={styles.gameIconContainer}>
-                  <MaterialCommunityIcons name="text-box" size={32} color="#FF6B6B" />
+                  <MaterialCommunityIcons name="text-box" size={32} color="#FFD8B1" />
                 </View>
                 <View style={styles.gameInfo}>
                   <ReadableText style={[styles.gameTitle, fontStyle]} readable={true} priority={10}>
@@ -174,7 +174,7 @@ const GamesScreen = () => {
             <BlurView intensity={10} style={styles.cardBlur}>
               <View style={styles.gameCardContent}>
                 <View style={styles.gameIconContainer}>
-                  <MaterialCommunityIcons name="view-grid" size={32} color="#FF6B6B" />
+                  <MaterialCommunityIcons name="view-grid" size={32} color="#fcef95" />
                 </View>
                 <View style={styles.gameInfo}>
                   <ReadableText style={[styles.gameTitle, fontStyle]} readable={true} priority={12}>
@@ -196,7 +196,7 @@ const GamesScreen = () => {
             <BlurView intensity={10} style={styles.cardBlur}>
               <View style={styles.gameCardContent}>
                 <View style={styles.gameIconContainer}>
-                  <MaterialCommunityIcons name="brain" size={32} color="#FF6B6B" />
+                  <MaterialCommunityIcons name="brain" size={32} color="#C3B1E1" />
                 </View>
                 <View style={styles.gameInfo}>
                   <ReadableText style={[styles.gameTitle, fontStyle]} readable={true} priority={14}>
@@ -218,7 +218,7 @@ const GamesScreen = () => {
             <BlurView intensity={10} style={styles.cardBlur}>
               <View style={styles.gameCardContent}>
                 <View style={styles.gameIconContainer}>
-                  <MaterialCommunityIcons name="shuffle-variant" size={32} color="#FF6B6B" />
+                  <MaterialCommunityIcons name="shuffle-variant" size={32} color="#FFCCD2" />
                 </View>
                 <View style={styles.gameInfo}>
                   <ReadableText style={[styles.gameTitle, fontStyle]} readable={true} priority={16}>
@@ -240,7 +240,7 @@ const GamesScreen = () => {
             <BlurView intensity={10} style={styles.cardBlur}>
               <View style={styles.gameCardContent}>
                 <View style={styles.gameIconContainer}>
-                  <MaterialCommunityIcons name="jellyfish" size={32} color="#FF6B6B" />
+                  <MaterialCommunityIcons name="jellyfish" size={32} color="#AEC6CF" />
                 </View>
                 <View style={styles.gameInfo}>
                   <ReadableText style={[styles.gameTitle, fontStyle]} readable={true} priority={18}>
@@ -262,7 +262,7 @@ const GamesScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#ccdafc',
   },
   header: {
     flexDirection: 'row',
@@ -326,10 +326,10 @@ const styles = StyleSheet.create({
   },
   gameCard: {
     width: '100%',
-    borderRadius: 20,
+    borderRadius: 20, // Increased from 20 to 30 for more rounded corners
     overflow: 'hidden',
     marginBottom: 15,
-    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -337,7 +337,7 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   cardBlur: {
-    padding: 20,
+    padding: 24, // Increased from 20 to 24 for more interior spacing
   },
   gameCardContent: {
     flexDirection: 'row',
@@ -347,7 +347,7 @@ const styles = StyleSheet.create({
     width: 60,
     height: 60,
     borderRadius: 30,
-    backgroundColor: '#FAF3F0',
+    backgroundColor: '#fff8f5',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 15,
