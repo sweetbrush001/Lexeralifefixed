@@ -170,7 +170,7 @@ export default function SavedScreen({ setActiveTab, setFlashcards, setTimer }) {
   };
 
   const navigateToGenerate = () => {
-        setActiveTab('generate');
+    setActiveTab('generate');
   };
 
   const renderCollection = ({ item: [subtopic, cards] }) => {

@@ -469,6 +469,8 @@ const styles = StyleSheet.create({
     width: 38, // Smaller
     height: 38,
     marginBottom: 10,
+    marginLeft: 150
+  
   },
   versionText: {
     fontSize: 13,
