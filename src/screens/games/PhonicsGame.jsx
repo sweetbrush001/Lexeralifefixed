@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import { View, Text, TouchableOpacity, StyleSheet, Image, Dimensions, Alert, ImageBackground, ImageBackgroundBase } from "react-native"
+import { View, Text, TouchableOpacity, StyleSheet, Image, Dimensions, Alert, ImageBackground } from "react-native"
 import { Audio } from "expo-av"
 import * as Speech from "expo-speech"
 import * as Haptics from "expo-haptics"
@@ -301,10 +301,9 @@ export default function PhonicsGame({ onBackToHome }) {
   const [isPlaying, setIsPlaying] = useState(false)
   const [isSpeaking, setIsSpeaking] = useState(false)
 
+  // We'll use a single sound reference and load different sounds as needed
+  const soundRef = useRef(null)
   const syllableSoundRef = useRef(null)
-  const correctSoundRef = useRef(null)
-  const incorrectSoundRef = useRef(null)
-  const gameCompleteSoundRef = useRef(null)
   const isMountedRef = useRef(true)
 
   // Set up audio and load high score
@@ -319,25 +318,20 @@ export default function PhonicsGame({ onBackToHome }) {
       Speech.stop()
 
       // Clean up all sounds when component unmounts
-      const cleanupSound = async (soundRef) => {
-        if (soundRef.current) {
+      const cleanupSound = async (ref) => {
+        if (ref.current) {
           try {
-            const status = await soundRef.current.getStatusAsync().catch(() => ({ isLoaded: false }))
-            if (status.isLoaded) {
-              await soundRef.current.stopAsync().catch(() => {})
-              await soundRef.current.unloadAsync().catch(() => {})
-            }
+            await ref.current.unloadAsync().catch(() => {})
           } catch (error) {
             console.error("Error cleaning up sound:", error)
           }
+          ref.current = null
         }
       }
 
       // Clean up each sound
+      cleanupSound(soundRef)
       cleanupSound(syllableSoundRef)
-      cleanupSound(correctSoundRef)
-      cleanupSound(incorrectSoundRef)
-      cleanupSound(gameCompleteSoundRef)
     }
   }, [])
 
@@ -389,21 +383,37 @@ export default function PhonicsGame({ onBackToHome }) {
         playsInSilentModeIOS: true,
         shouldDuckAndroid: true,
         playThroughEarpieceAndroid: false,
-      });
-
-      // Load each sound effect
-      const { sound: correctSound } = await Audio.Sound.createAsync(CORRECT_SOUND);
-      const { sound: incorrectSound } = await Audio.Sound.createAsync(INCORRECT_SOUND);
-      const { sound: gameCompleteSound } = await Audio.Sound.createAsync(GAME_COMPLETE_SOUND);
-
-      // Store references
-      correctSoundRef.current = correctSound;
-      incorrectSoundRef.current = incorrectSound;
-      gameCompleteSoundRef.current = gameCompleteSound;
-
-      console.log("Game sounds loaded successfully!");
+      })
+      console.log("Game sounds loaded successfully!")
     } catch (error) {
-      console.error("Error setting up audio:", error);
+      console.error("Error setting up audio:", error)
+    }
+  }
+
+  // Play a sound effect
+  const playSound = async (soundFile) => {
+    try {
+      // Unload any previous sound
+      if (soundRef.current) {
+        await soundRef.current.unloadAsync().catch(() => {})
+        soundRef.current = null
+      }
+
+      // Create and play the new sound
+      const { sound } = await Audio.Sound.createAsync(soundFile, { shouldPlay: true })
+      soundRef.current = sound
+
+      // Set up a listener to clean up when done
+      sound.setOnPlaybackStatusUpdate((status) => {
+        if (status.didJustFinish) {
+          sound.unloadAsync().catch(() => {})
+          if (soundRef.current === sound) {
+            soundRef.current = null
+          }
+        }
+      })
+    } catch (error) {
+      console.error("Error playing sound:", error)
     }
   }
 
@@ -472,31 +482,24 @@ export default function PhonicsGame({ onBackToHome }) {
 
   // Preload audio for a question (only syllable audio)
   const preloadAudio = async (question) => {
-    if (!question) return;
+    if (!question) return
 
     try {
       // Unload previous sound if exists
       if (syllableSoundRef.current) {
-        try {
-          const status = await syllableSoundRef.current.getStatusAsync();
-          if (status.isLoaded) {
-            await syllableSoundRef.current.unloadAsync();
-          }
-        } catch (err) {
-          console.log("Error unloading previous sound:", err);
-        }
-        syllableSoundRef.current = null;
+        await syllableSoundRef.current.unloadAsync().catch(() => {})
+        syllableSoundRef.current = null
       }
 
       // Load the target syllable sound
-      const { sound } = await Audio.Sound.createAsync(question.target_syllable.audio_url);
-      
+      const { sound } = await Audio.Sound.createAsync(question.target_syllable.audio_url)
+
       // Store reference
-      syllableSoundRef.current = sound;
-      console.log("Syllable audio preloaded successfully");
+      syllableSoundRef.current = sound
+      console.log("Syllable audio preloaded successfully")
     } catch (error) {
-      console.error("Error preloading audio:", error);
-      syllableSoundRef.current = null;
+      console.error("Error preloading audio:", error)
+      syllableSoundRef.current = null
     }
   }
 
@@ -535,29 +538,24 @@ export default function PhonicsGame({ onBackToHome }) {
 
   // Play the target syllable audio
   const playSyllableAudio = async () => {
-    if (isPlaying || isSpeaking) return;
-    
-    if (!syllableSoundRef.current) {
-      console.error("Syllable sound reference is not initialized");
-      return;
-    }
-    
+    if (isPlaying || isSpeaking || !syllableSoundRef.current) return
+
     try {
-      setIsPlaying(true);
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      
+      setIsPlaying(true)
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+
       // Play the sound
-      await syllableSoundRef.current.playAsync();
-      
+      await syllableSoundRef.current.playAsync()
+
       // Set up completion handler
       syllableSoundRef.current.setOnPlaybackStatusUpdate((playbackStatus) => {
         if (playbackStatus.didJustFinish) {
-          setIsPlaying(false);
+          setIsPlaying(false)
         }
-      });
+      })
     } catch (error) {
-      console.error("Error playing syllable audio:", error);
-      setIsPlaying(false);
+      console.error("Error playing syllable audio:", error)
+      setIsPlaying(false)
     }
   }
 
@@ -577,78 +575,54 @@ export default function PhonicsGame({ onBackToHome }) {
 
   // Handle correct answer
   const handleCorrectAnswer = async () => {
-    setScore(score + 1);
-    setShowSuccess(true);
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    setScore(score + 1)
+    setShowSuccess(true)
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
 
     try {
-      if (correctSoundRef.current) {
-        const status = await correctSoundRef.current.getStatusAsync();
-        if (status.isLoaded) {
-          await correctSoundRef.current.setPositionAsync(0);
-          await correctSoundRef.current.playAsync();
-        } else {
-          console.log("Correct sound not loaded");
-        }
-      }
+      await playSound(CORRECT_SOUND)
     } catch (error) {
-      console.error("Error playing correct sound:", error);
+      console.error("Error playing correct sound:", error)
     }
 
     setTimeout(() => {
-      setShowSuccess(false);
-      setSelectedOption(null);
-      moveToNextQuestion();
-    }, 1500);
+      setShowSuccess(false)
+      setSelectedOption(null)
+      moveToNextQuestion()
+    }, 1500)
   }
 
   // Handle incorrect answer
   const handleIncorrectAnswer = async () => {
-    setShowFailure(true);
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+    setShowFailure(true)
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)
 
     try {
-      if (incorrectSoundRef.current) {
-        const status = await incorrectSoundRef.current.getStatusAsync();
-        if (status.isLoaded) {
-          await incorrectSoundRef.current.setPositionAsync(0);
-          await incorrectSoundRef.current.playAsync();
-        } else {
-          console.log("Incorrect sound not loaded");
-        }
-      }
+      await playSound(INCORRECT_SOUND)
     } catch (error) {
-      console.error("Error playing incorrect sound:", error);
+      console.error("Error playing incorrect sound:", error)
     }
 
     setTimeout(() => {
-      setShowFailure(false);
-      setSelectedOption(null);
-      moveToNextQuestion();
-    }, 1500);
+      setShowFailure(false)
+      setSelectedOption(null)
+      moveToNextQuestion()
+    }, 1500)
   }
 
   // Move to the next question or end the game
   const moveToNextQuestion = async () => {
     if (currentQuestionIndex < questions.length - 1) {
-      setCurrentQuestionIndex(currentQuestionIndex + 1);
+      setCurrentQuestionIndex(currentQuestionIndex + 1)
     } else {
       try {
-        if (gameCompleteSoundRef.current) {
-          const status = await gameCompleteSoundRef.current.getStatusAsync();
-          if (status.isLoaded) {
-            await gameCompleteSoundRef.current.setPositionAsync(0);
-            await gameCompleteSoundRef.current.playAsync();
-          } else {
-            console.log("Game complete sound not loaded");
-          }
-        }
+        await playSound(GAME_COMPLETE_SOUND)
       } catch (error) {
-        console.error("Error playing game complete sound:", error);
+        console.error("Error playing game complete sound:", error)
       }
 
-      await updateHighScore(score);
-      setGameComplete(true);
+      await updateHighScore(score)
+      setGameComplete(true)
     }
   }
 
@@ -668,25 +642,12 @@ export default function PhonicsGame({ onBackToHome }) {
             // Stop any ongoing speech
             await Speech.stop()
 
-            if (gameCompleteSoundRef.current) {
-              const status = await gameCompleteSoundRef.current.getStatusAsync()
-              if (status.isLoaded) {
-                await gameCompleteSoundRef.current.setPositionAsync(0)
-                await gameCompleteSoundRef.current.playAsync()
-              } else {
-                console.log("Game complete sound not loaded, attempting to reload")
-                await gameCompleteSoundRef.current.loadAsync(GAME_COMPLETE_SOUND)
-                await gameCompleteSoundRef.current.playAsync()
-              }
+            await playSound(GAME_COMPLETE_SOUND)
 
-              setTimeout(async () => {
-                await updateHighScore(score)
-                setGameComplete(true)
-              }, 500)
-            } else {
+            setTimeout(async () => {
               await updateHighScore(score)
               setGameComplete(true)
-            }
+            }, 500)
           } catch (error) {
             console.error("Error playing game complete sound:", error)
             await updateHighScore(score)
@@ -1087,4 +1048,3 @@ const styles = StyleSheet.create({
     height: Math.min(width * 0.5, 200),
   },
 })
-

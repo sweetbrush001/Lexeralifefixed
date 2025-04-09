@@ -13,6 +13,7 @@ export default function PhonicsSplashScreen({ onStartGame, onBackToHome }) {
   const soundRef = useRef(null)
   const fadeAnim = useRef(new Animated.Value(0)).current
   const scaleAnim = useRef(new Animated.Value(0.9)).current
+  const isMounted = useRef(true)
 
   useEffect(() => {
     loadSound()
@@ -33,41 +34,62 @@ export default function PhonicsSplashScreen({ onStartGame, onBackToHome }) {
     ]).start()
 
     return () => {
-      if (soundRef.current) soundRef.current.unloadAsync()
+      isMounted.current = false
+      if (soundRef.current) {
+        const cleanup = async () => {
+          try {
+            await soundRef.current.unloadAsync().catch(() => {})
+          } catch (error) {
+            console.error("Error cleaning up splash screen sound:", error)
+          }
+        }
+        cleanup()
+      }
     }
   }, [])
 
   const loadSound = async () => {
     try {
-      // Use the createAsync method correctly
-      const { sound } = await Audio.Sound.createAsync(
-        require("../games/assets/sounds/ocean-ambience.mp3"), 
-        {
-          isLooping: true,
-          shouldPlay: true,
-          volume: 0.7,
-        }
-      );
-      
-      soundRef.current = sound;
-      setSoundLoaded(true);
-      console.log("Splash screen sound loaded successfully");
+      // Configure audio mode first
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: false,
+        playsInSilentModeIOS: true,
+        shouldDuckAndroid: true,
+        playThroughEarpieceAndroid: false,
+        staysActiveInBackground: false,
+      })
+
+      // Use the createAsync method with all options in the initial config
+      const { sound } = await Audio.Sound.createAsync(require("../games/assets/sounds/ocean-ambience.mp3"), {
+        shouldPlay: true,
+        isLooping: true,
+        volume: 0.7,
+      })
+
+      if (isMounted.current) {
+        soundRef.current = sound
+        setSoundLoaded(true)
+        console.log("Splash screen sound loaded successfully")
+      } else {
+        // Clean up if component unmounted during loading
+        await sound.unloadAsync().catch(() => {})
+      }
     } catch (error) {
-      console.error("Error loading pirate sound:", error);
+      console.error("Error loading pirate sound:", error)
     }
   }
 
   const handleStartGame = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy)
     if (soundRef.current) {
-      try {
-        // First stop the sound, then unload it
-        soundRef.current.stopAsync()
-          .then(() => soundRef.current.unloadAsync())
-          .catch(error => console.error("Error stopping sound:", error));
-      } catch (error) {
-        console.error("Error handling sound cleanup:", error);
+      const cleanup = async () => {
+        try {
+          await soundRef.current.unloadAsync().catch(() => {})
+        } catch (error) {
+          console.error("Error stopping sound:", error)
+        }
       }
+      cleanup()
     }
     onStartGame()
   }
@@ -75,23 +97,25 @@ export default function PhonicsSplashScreen({ onStartGame, onBackToHome }) {
   const handleBackToHome = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
     if (soundRef.current) {
-      try {
-        // First stop the sound, then unload it
-        soundRef.current.stopAsync()
-          .then(() => soundRef.current.unloadAsync())
-          .catch(error => console.error("Error stopping sound:", error));
-      } catch (error) {
-        console.error("Error handling sound cleanup:", error);
+      const cleanup = async () => {
+        try {
+          await soundRef.current.unloadAsync().catch(() => {})
+        } catch (error) {
+          console.error("Error stopping sound:", error)
+        }
       }
+      cleanup()
     }
     onBackToHome()
   }
 
   return (
-    <ImageBackground source={require("../games/assets/images/Phonics/splash-screen.webp")} style={styles.container} resizeMode="cover">
+    <ImageBackground
+      source={require("../games/assets/images/Phonics/splash-screen.webp")}
+      style={styles.container}
+      resizeMode="cover"
+    >
       <View style={styles.overlay}>
-        
-
         {/* Main content in the middle */}
         <Animated.View
           style={[
@@ -251,8 +275,7 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
   },
   wavesAnimation: {
-    width: width* 5,
-    height: height* 0.25,
+    width: width * 5,
+    height: height * 0.25,
   },
 })
-

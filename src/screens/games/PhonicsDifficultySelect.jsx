@@ -35,64 +35,56 @@ export default function PhonicsDifficultySelect({ onSelectDifficulty, onBackToHo
           shouldDuckAndroid: true,
           playThroughEarpieceAndroid: false,
           staysActiveInBackground: false,
-        });
+        })
 
-        // Create and load the sound
-        const { sound } = await Audio.Sound.createAsync(
-          require(".//assets/sounds/ocean-ambience.mp3"),
-          {
-            shouldPlay: true,  // Play immediately
-            isLooping: true,   // Set looping directly in the options
-            volume: 0.5,
-          }
-        );
+        // Create and load the sound with looping enabled in the initial options
+        const { sound } = await Audio.Sound.createAsync(require(".//assets/sounds/ocean-ambience.mp3"), {
+          shouldPlay: true,
+          isLooping: true,
+          volume: 0.5,
+        })
 
         // Only set state if component is still mounted
         if (isMounted.current) {
-          soundRef.current = sound;
-          setSoundLoaded(true);
-          console.log("Difficulty select sound loaded and playing");
+          soundRef.current = sound
+          setSoundLoaded(true)
+          console.log("Difficulty select sound loaded and playing")
         } else {
           // If component unmounted during setup, clean up immediately
           try {
-            await sound.unloadAsync();
+            await sound.unloadAsync()
           } catch (error) {
-            console.error("Error unloading sound during cleanup:", error);
+            console.error("Error unloading sound during cleanup:", error)
           }
         }
       } catch (error) {
-        console.error("Error setting up difficulty select sound:", error);
+        console.error("Error setting up difficulty select sound:", error)
       }
-    };
+    }
 
-    setupAudio();
+    setupAudio()
 
     // Cleanup function
     return () => {
-      console.log("PhonicsDifficultySelect unmounting, cleaning up resources");
-      isMounted.current = false;
+      console.log("PhonicsDifficultySelect unmounting, cleaning up resources")
+      isMounted.current = false
 
       // Clean up sound
       if (soundRef.current) {
         const cleanup = async () => {
           try {
-            const status = await soundRef.current.getStatusAsync().catch(() => null);
-            if (status && status.isLoaded) {
-              await soundRef.current.stopAsync().catch(() => {});
-              await soundRef.current.unloadAsync().catch(() => {});
-              console.log("Difficulty select sound cleaned up successfully");
-            }
+            soundRef.current.unloadAsync().catch(() => {})
           } catch (error) {
-            console.log("Error cleaning up difficulty select sound:", error);
+            console.log("Error cleaning up difficulty select sound:", error)
           } finally {
-            soundRef.current = null;
+            soundRef.current = null
           }
-        };
+        }
 
-        cleanup();
+        cleanup()
       }
-    };
-  }, []);
+    }
+  }, [])
 
   // Try to load animation
   useEffect(() => {
@@ -106,50 +98,44 @@ export default function PhonicsDifficultySelect({ onSelectDifficulty, onBackToHo
   }, [])
 
   const handleSelect = (difficulty) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
 
     // Stop sound before navigating
     const stopSound = async () => {
       if (soundRef.current && soundLoaded) {
         try {
-          const status = await soundRef.current.getStatusAsync().catch(() => null);
-          if (status && status.isLoaded) {
-            await soundRef.current.stopAsync().catch(() => {});
-          }
+          await soundRef.current.unloadAsync().catch(() => {})
         } catch (error) {
-          console.log("Error stopping sound on select:", error);
+          console.log("Error stopping sound on select:", error)
         }
       }
 
       // Navigate after attempting to stop sound
-      onSelectDifficulty(difficulty);
-    };
+      onSelectDifficulty(difficulty)
+    }
 
-    stopSound();
-  };
+    stopSound()
+  }
 
   const handleBackToHome = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
 
     // Stop sound before navigating
     const stopSound = async () => {
       if (soundRef.current && soundLoaded) {
         try {
-          const status = await soundRef.current.getStatusAsync().catch(() => null);
-          if (status && status.isLoaded) {
-            await soundRef.current.stopAsync().catch(() => {});
-          }
+          await soundRef.current.unloadAsync().catch(() => {})
         } catch (error) {
-          console.log("Error stopping sound on back:", error);
+          console.log("Error stopping sound on back:", error)
         }
       }
 
       // Navigate after attempting to stop sound
-      onBackToHome();
-    };
+      onBackToHome()
+    }
 
-    stopSound();
-  };
+    stopSound()
+  }
 
   return (
     <ImageBackground
@@ -247,7 +233,7 @@ const styles = StyleSheet.create({
   },
   difficultyButton: {
     width: width * 0.7,
-    height: height * 0.12, 
+    height: height * 0.12,
     marginBottom: height * 0.015, // Reduced gap between buttons
     alignItems: "center",
     justifyContent: "center",
@@ -258,7 +244,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     resizeMode: "contain",
-    aspectRatio: 1.5, 
+    aspectRatio: 1.5,
   },
   woodenSign2: {
     width: "100%",
@@ -266,30 +252,30 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     resizeMode: "contain",
-    aspectRatio: 1.6, 
+    aspectRatio: 1.6,
   },
   buttonText1: {
     fontSize: Math.min(width * 0.04, 24),
     fontFamily: "OpenDyslexic-Bold",
     color: "#3afcab",
     textAlign: "center",
-    transform: [{translateY: -2}],
+    transform: [{ translateY: -2 }],
     paddingHorizontal: 10,
   },
   buttonText2: {
-    fontSize: Math.min(width *0.04, 24),
+    fontSize: Math.min(width * 0.04, 24),
     fontFamily: "OpenDyslexic-Bold",
     color: "#fcc83a",
     textAlign: "center",
-    transform: [{translateY: -2}],
+    transform: [{ translateY: -2 }],
     paddingHorizontal: 10,
   },
   buttonText3: {
-    fontSize: Math.min(width *0.04, 24),
+    fontSize: Math.min(width * 0.04, 24),
     fontFamily: "OpenDyslexic-Bold",
     color: "#f76565",
     textAlign: "center",
-    transform: [{translateY: -5}],
+    transform: [{ translateY: -5 }],
     paddingHorizontal: 10,
   },
   backButton: {
@@ -321,4 +307,3 @@ const styles = StyleSheet.create({
     height: height * 0.2,
   },
 })
-
