@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import { View, Text, TouchableOpacity, StyleSheet, Image, Dimensions, Alert, ImageBackground } from "react-native"
+import { View, Text, TouchableOpacity, StyleSheet, Image, Dimensions, Alert, ImageBackground, ImageBackgroundBase } from "react-native"
 import { Audio } from "expo-av"
 import * as Speech from "expo-speech"
 import * as Haptics from "expo-haptics"
@@ -10,7 +10,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage"
 import PhonicsSplashScreen from "./PhonicsSplashScreen"
 import PhonicsDifficultySelect from "./PhonicsDifficultySelect"
 import PhonicsGameSummary from "./PhonicsGameSummary"
-import PirateAudio from "../../data/PirateAudio"
+import PirateAudio from "./PirateAudio"
 
 const { width, height } = Dimensions.get("window")
 
@@ -284,7 +284,7 @@ const CORRECT_SOUND = require("./assets/sounds/correct.mp3")
 const INCORRECT_SOUND = require("./assets/sounds/incorrect.mp3")
 const GAME_COMPLETE_SOUND = require("./assets/sounds/level-complete.mp3")
 
-export default function PhonicsGame({ onBackToHome = () => {} }) {
+export default function PhonicsGame({ onBackToHome }) {
   const [loading, setLoading] = useState(true)
   const [questions, setQuestions] = useState([])
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
@@ -317,40 +317,28 @@ export default function PhonicsGame({ onBackToHome = () => {} }) {
       isMountedRef.current = false
 
       // Stop any ongoing speech
-      if (typeof Speech.stop === 'function') {
-        Speech.stop().catch(error => console.log("Error stopping speech:", error));
-      }
+      Speech.stop()
 
-      // Clean up all sounds with safe handling
-      const safeCleanup = async (soundRef) => {
+      // Clean up all sounds when component unmounts
+      const cleanupSound = async (soundRef) => {
         if (soundRef.current) {
           try {
-            if (typeof soundRef.current.getStatusAsync === 'function') {
-              try {
-                const status = await soundRef.current.getStatusAsync();
-                if (status.isLoaded) {
-                  if (typeof soundRef.current.stopAsync === 'function') {
-                    await soundRef.current.stopAsync().catch(() => {});
-                  }
-                  if (typeof soundRef.current.unloadAsync === 'function') {
-                    await soundRef.current.unloadAsync().catch(() => {});
-                  }
-                }
-              } catch (error) {
-                console.log("Error checking sound status during cleanup:", error);
-              }
+            const status = await soundRef.current.getStatusAsync()
+            if (status.isLoaded) {
+              await soundRef.current.stopAsync()
+              await soundRef.current.unloadAsync()
             }
           } catch (error) {
-            console.log("Error in cleanup:", error);
+            console.error("Error cleaning up sound:", error)
           }
         }
-      };
+      }
 
       // Clean up each sound
-      safeCleanup(syllableSoundRef);
-      safeCleanup(correctSoundRef);
-      safeCleanup(incorrectSoundRef);
-      safeCleanup(gameCompleteSoundRef);
+      cleanupSound(syllableSoundRef)
+      cleanupSound(correctSoundRef)
+      cleanupSound(incorrectSoundRef)
+      cleanupSound(gameCompleteSoundRef)
     }
   }, [])
 
@@ -402,45 +390,31 @@ export default function PhonicsGame({ onBackToHome = () => {} }) {
         playsInSilentModeIOS: true,
         shouldDuckAndroid: true,
         playThroughEarpieceAndroid: false,
-      });
+      })
 
-      // Handle each sound separately with try/catch
-      try {
-        const { sound: correctSound } = await Audio.Sound.createAsync(
-          CORRECT_SOUND,
-          { volume: 1.0 }
-        );
-        correctSoundRef.current = correctSound;
-        console.log("Correct sound loaded");
-      } catch (error) {
-        console.error("Failed to load correct sound:", error);
-      }
-      
-      try {
-        const { sound: incorrectSound } = await Audio.Sound.createAsync(
-          INCORRECT_SOUND,
-          { volume: 1.0 }
-        );
-        incorrectSoundRef.current = incorrectSound;
-        console.log("Incorrect sound loaded");
-      } catch (error) {
-        console.error("Failed to load incorrect sound:", error);
-      }
-      
-      try {
-        const { sound: gameCompleteSound } = await Audio.Sound.createAsync(
-          GAME_COMPLETE_SOUND,
-          { volume: 1.0 }
-        );
-        gameCompleteSoundRef.current = gameCompleteSound;
-        console.log("Game complete sound loaded");
-      } catch (error) {
-        console.error("Failed to load game complete sound:", error);
-      }
-      
-      console.log("Game sounds setup completed");
+      // Create sound objects for feedback
+      const correctSound = new Audio.Sound()
+      const incorrectSound = new Audio.Sound()
+      const gameCompleteSound = new Audio.Sound()
+
+      // Load sounds
+      await correctSound.loadAsync(CORRECT_SOUND)
+      await incorrectSound.loadAsync(INCORRECT_SOUND)
+      await gameCompleteSound.loadAsync(GAME_COMPLETE_SOUND)
+
+      // Set volume
+      await correctSound.setVolumeAsync(1.0)
+      await incorrectSound.setVolumeAsync(1.0)
+      await gameCompleteSound.setVolumeAsync(1.0)
+
+      // Store references
+      correctSoundRef.current = correctSound
+      incorrectSoundRef.current = incorrectSound
+      gameCompleteSoundRef.current = gameCompleteSound
+
+      console.log("Game sounds loaded successfully!")
     } catch (error) {
-      console.error("Error setting up audio:", error);
+      console.error("Error setting up audio:", error)
     }
   }
 
@@ -509,17 +483,16 @@ export default function PhonicsGame({ onBackToHome = () => {} }) {
 
   // Preload audio for a question (only syllable audio)
   const preloadAudio = async (question) => {
-    if (!question) return;
-    
-    // First clear any existing reference
-    syllableSoundRef.current = null;
-    
+    if (!question) return
+
     try {
-      // For now, just log that we're preparing the audio without actually loading it
-      console.log("Preparing audio for syllable:", question.target_syllable.text);
+      // Preload target syllable audio
+      const { sound: syllableSound } = await Audio.Sound.createAsync(question.target_syllable.audio_url, {
+        shouldPlay: false,
+      })
+      syllableSoundRef.current = syllableSound
     } catch (error) {
-      console.error("Error preparing audio:", error);
-      syllableSoundRef.current = null;
+      console.error("Error preloading audio:", error)
     }
   }
 
@@ -556,25 +529,25 @@ export default function PhonicsGame({ onBackToHome = () => {} }) {
     }
   }
 
-  // Play the target syllable audio - simplified to avoid audio errors
+  // Play the target syllable audio
   const playSyllableAudio = async () => {
-    if (isPlaying || isSpeaking) return;
+    if (!syllableSoundRef.current || isPlaying || isSpeaking) return
 
     try {
-      // Start the "playing" state for UI feedback
-      setIsPlaying(true);
-      
-      // Visual feedback
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      
-      // Simulate playing sound for 1 second
-      setTimeout(() => {
-        setIsPlaying(false);
-      }, 1000);
-      
+      setIsPlaying(true)
+      await syllableSoundRef.current.setPositionAsync(0)
+      await syllableSoundRef.current.playAsync()
+
+      syllableSoundRef.current.setOnPlaybackStatusUpdate((status) => {
+        if (status.didJustFinish) {
+          setIsPlaying(false)
+        }
+      })
+
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
     } catch (error) {
-      console.error("Error simulating audio playback:", error);
-      setIsPlaying(false);
+      console.error("Error playing syllable audio:", error)
+      setIsPlaying(false)
     }
   }
 
@@ -599,25 +572,9 @@ export default function PhonicsGame({ onBackToHome = () => {} }) {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
 
     try {
-      if (correctSoundRef.current) {
-        try {
-          if (typeof correctSoundRef.current.getStatusAsync === 'function') {
-            const status = await correctSoundRef.current.getStatusAsync();
-            if (status.isLoaded) {
-              if (typeof correctSoundRef.current.setPositionAsync === 'function') {
-                await correctSoundRef.current.setPositionAsync(0);
-              }
-              if (typeof correctSoundRef.current.playAsync === 'function') {
-                await correctSoundRef.current.playAsync();
-              }
-            }
-          }
-        } catch (soundError) {
-          console.log("Error with correct sound, continuing:", soundError);
-        }
-      }
+      await correctSoundRef.current?.playFromPositionAsync(0)
     } catch (error) {
-      console.error("Error playing correct sound:", error);
+      console.error("Error playing correct sound:", error)
     }
 
     setTimeout(() => {
@@ -634,28 +591,23 @@ export default function PhonicsGame({ onBackToHome = () => {} }) {
 
     try {
       if (incorrectSoundRef.current) {
-        try {
-          if (typeof incorrectSoundRef.current.getStatusAsync === 'function') {
-            const status = await incorrectSoundRef.current.getStatusAsync();
-            if (status.isLoaded) {
-              if (typeof incorrectSoundRef.current.setPositionAsync === 'function') {
-                await incorrectSoundRef.current.setPositionAsync(0);
-              }
-              if (typeof incorrectSoundRef.current.playAsync === 'function') {
-                await incorrectSoundRef.current.playAsync();
-              }
-            }
-          }
-        } catch (soundError) {
-          console.log("Error with incorrect sound, continuing:", soundError);
+        const status = await incorrectSoundRef.current.getStatusAsync()
+        if (status.isLoaded) {
+          await incorrectSoundRef.current.setPositionAsync(0)
+          await incorrectSoundRef.current.playAsync()
+        } else {
+          console.log("Incorrect sound not loaded, attempting to reload")
+          await incorrectSoundRef.current.loadAsync(INCORRECT_SOUND)
+          await incorrectSoundRef.current.playAsync()
         }
       }
     } catch (error) {
-      console.error("Error handling incorrect answer:", error);
+      console.error("Error playing incorrect sound:", error)
     }
 
     setTimeout(() => {
       setShowFailure(false)
+      setSelectedOption(null)
       moveToNextQuestion()
     }, 1500)
   }
@@ -665,23 +617,24 @@ export default function PhonicsGame({ onBackToHome = () => {} }) {
     if (currentQuestionIndex < questions.length - 1) {
       setCurrentQuestionIndex(currentQuestionIndex + 1)
     } else {
-      // Game is complete
       try {
-        // First play a success haptic
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        
-        // Wait a moment before showing the summary
-        setTimeout(async () => {
-          await updateHighScore(score)
-          setGameComplete(true)
-        }, 1000)
+        if (gameCompleteSoundRef.current) {
+          const status = await gameCompleteSoundRef.current.getStatusAsync()
+          if (status.isLoaded) {
+            await gameCompleteSoundRef.current.setPositionAsync(0)
+            await gameCompleteSoundRef.current.playAsync()
+          } else {
+            console.log("Game complete sound not loaded, attempting to reload")
+            await gameCompleteSoundRef.current.loadAsync(GAME_COMPLETE_SOUND)
+            await gameCompleteSoundRef.current.playAsync()
+          }
+        }
       } catch (error) {
-        console.error("Error processing game completion:", error)
-        
-        // Ensure we still show the game summary even if sound fails
-        await updateHighScore(score)
-        setGameComplete(true)
+        console.error("Error playing game complete sound:", error)
       }
+
+      await updateHighScore(score)
+      setGameComplete(true)
     }
   }
 
@@ -700,17 +653,28 @@ export default function PhonicsGame({ onBackToHome = () => {} }) {
           try {
             // Stop any ongoing speech
             await Speech.stop()
-            
-            // Give user feedback with haptics instead of sound
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-            
-            // Short delay then show summary
-            setTimeout(async () => {
+
+            if (gameCompleteSoundRef.current) {
+              const status = await gameCompleteSoundRef.current.getStatusAsync()
+              if (status.isLoaded) {
+                await gameCompleteSoundRef.current.setPositionAsync(0)
+                await gameCompleteSoundRef.current.playAsync()
+              } else {
+                console.log("Game complete sound not loaded, attempting to reload")
+                await gameCompleteSoundRef.current.loadAsync(GAME_COMPLETE_SOUND)
+                await gameCompleteSoundRef.current.playAsync()
+              }
+
+              setTimeout(async () => {
+                await updateHighScore(score)
+                setGameComplete(true)
+              }, 500)
+            } else {
               await updateHighScore(score)
               setGameComplete(true)
-            }, 500)
+            }
           } catch (error) {
-            console.error("Error ending game:", error)
+            console.error("Error playing game complete sound:", error)
             await updateHighScore(score)
             setGameComplete(true)
           }
@@ -762,10 +726,10 @@ export default function PhonicsGame({ onBackToHome = () => {} }) {
   // Render loading screen
   if (loading) {
     return (
-      <ImageBackground source={require("./assets/images/jungle-background.jpg")} style={styles.loadingContainer}>
+      <ImageBackground source={require("./assets/images/treasure.webp")} style={styles.loadingContainer}>
         <View style={styles.loadingOverlay}>
           <LottieView
-            source={require("./assets/animations/loading.json")}
+            source={require("./assets/animations/ship-load.json")}
             autoPlay
             loop
             style={styles.loadingAnimation}
@@ -793,7 +757,7 @@ export default function PhonicsGame({ onBackToHome = () => {} }) {
 
   // Render main game
   return (
-    <ImageBackground source={require("./assets/images/game-screen-bg.jpg")} style={styles.container}>
+    <ImageBackground source={require("./assets/images/game-bg.webp")} style={styles.container}>
       <PirateAudio />
 
       <View style={styles.overlay}>
@@ -816,7 +780,7 @@ export default function PhonicsGame({ onBackToHome = () => {} }) {
 
             {/* Word image */}
             <ImageBackground
-              source={require("./assets/images/wooden-frame.png")}
+              source={require("./assets/images/pirate-panel.png")}
               style={styles.woodenFrame}
               resizeMode="stretch"
             >
@@ -832,7 +796,7 @@ export default function PhonicsGame({ onBackToHome = () => {} }) {
                 activeOpacity={0.7}
               >
                 <ImageBackground
-                  source={require("./assets/images/wooden-button.png")}
+                  source={require("./assets/images/pirate-yellow.png")}
                   style={styles.pirateButton}
                   resizeMode="stretch"
                 >
@@ -847,7 +811,7 @@ export default function PhonicsGame({ onBackToHome = () => {} }) {
                 activeOpacity={0.7}
               >
                 <ImageBackground
-                  source={require("./assets/images/wooden-button.png")}
+                  source={require("./assets/images/pirate-yellow.png")}
                   style={styles.pirateButton}
                   resizeMode="stretch"
                 >
@@ -871,7 +835,7 @@ export default function PhonicsGame({ onBackToHome = () => {} }) {
                   activeOpacity={0.7}
                 >
                   <ImageBackground
-                    source={require("./assets/images/jungle-splash.jpg")}
+                    source={require("./assets/images/mcq-scroll.png")}
                     style={styles.optionBackground}
                     resizeMode="stretch"
                   >
@@ -884,7 +848,7 @@ export default function PhonicsGame({ onBackToHome = () => {} }) {
             {/* End game button */}
             <TouchableOpacity style={styles.endGameButton} onPress={handleEndGame} activeOpacity={0.7}>
               <ImageBackground
-                source={require("./assets/images/wooden-button-small.png")}
+                source={require("./assets/images/pirate-wood.png")}
                 style={styles.pirateButtonSmall}
                 resizeMode="stretch"
               >
@@ -898,7 +862,7 @@ export default function PhonicsGame({ onBackToHome = () => {} }) {
         {showSuccess && (
           <View style={styles.animationContainer}>
             <LottieView
-              source={require("./assets/animations/correct.json")}
+              source={require("./assets/animations/monkey-right.json")}
               autoPlay
               loop={false}
               style={styles.animation}
@@ -910,7 +874,7 @@ export default function PhonicsGame({ onBackToHome = () => {} }) {
         {showFailure && (
           <View style={styles.animationContainer}>
             <LottieView
-              source={require("./assets/animations/incorrect.json")}
+              source={require("./assets/animations/pirate-wrong.json")}
               autoPlay
               loop={false}
               style={styles.animation}
@@ -930,7 +894,7 @@ const styles = StyleSheet.create({
   },
   overlay: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.2)",
+    backgroundColor: "rgba(0,0,0,0.3)",
     padding: 20,
   },
   loadingContainer: {
@@ -1030,7 +994,7 @@ const styles = StyleSheet.create({
   },
   audioButton: {
     width: Math.min(width * 0.4, 180),
-    height: Math.min(height * 0.08, 60),
+    height: Math.min(height * 0.08, 80),
   },
   pirateButton: {
     width: "100%",
@@ -1039,7 +1003,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   audioButtonText: {
-    color: "#3E2723",
+    color: "#FFD700",
     fontSize: Math.min(width * 0.04, 18),
     fontFamily: "OpenDyslexic-Bold",
     textAlign: "center",
@@ -1080,7 +1044,7 @@ const styles = StyleSheet.create({
   },
   endGameButton: {
     width: Math.min(width * 0.5, 200),
-    height: Math.min(height * 0.06, 50),
+    height: Math.min(height * 0.06, 100),
     marginTop: height * 0.02,
   },
   pirateButtonSmall: {
@@ -1090,8 +1054,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   endGameButtonText: {
-    color: "#3E2723",
-    fontSize: Math.min(width * 0.04, 16),
+    color: "#eb9f2d",
+    fontSize: Math.min(width * 0.05, 18),
     fontFamily: "OpenDyslexic",
     textAlign: "center",
   },

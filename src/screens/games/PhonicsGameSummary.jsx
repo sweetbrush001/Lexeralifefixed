@@ -11,7 +11,7 @@ export default function PhonicsGameSummary({
   highScore,
   onPlayAgain,
   onChangeDifficulty,
-  onBackToHome = () => {},
+  onBackToHome,
 }) {
   const percentage = Math.round((score / totalQuestions) * 100)
 
@@ -27,23 +27,17 @@ export default function PhonicsGameSummary({
 
   const handleBackToHome = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
-    
-    // Only call if it's a function
-    if (typeof onBackToHome === 'function') {
-      onBackToHome()
-    } else {
-      console.warn("onBackToHome is not a function")
-    }
+    onBackToHome()
   }
 
   // Get the appropriate animation based on score
   const getAnimation = () => {
     if (percentage >= 80) {
-      return require("./assets/animations/try-again.json")
+      return require("./assets/animations/great-treasure.json")
     } else if (percentage >= 50) {
-      return require("./assets/animations/good-score.json")
+      return require("./assets/animations/good-treasure.json")
     } else {
-      return require("./assets/animations/great-score.json")
+      return require("./assets/animations/poor-treasure.json")
     }
   }
 
@@ -59,14 +53,14 @@ export default function PhonicsGameSummary({
   }
 
   return (
-    <ImageBackground source={require("./assets/images/jungle-background.jpg")} style={styles.container}>
+    <ImageBackground source={require("./assets/images/pirate-splash-bg.png")} style={styles.container}>
       <View style={styles.overlay}>
         <LottieView source={getAnimation()} autoPlay loop style={styles.animation} />
 
         <Text style={styles.title}>Adventure Complete!</Text>
 
         <ImageBackground
-          source={require("./assets/images/jungle-background.jpg")}
+          source={require("./assets/images/pirate-scroll.png")}
           style={styles.statsContainer}
           resizeMode="stretch"
         >
@@ -88,7 +82,7 @@ export default function PhonicsGameSummary({
         <View style={styles.buttonsContainer}>
           <TouchableOpacity style={styles.button} onPress={handlePlayAgain} activeOpacity={0.7}>
             <ImageBackground
-              source={require("./assets/images/wooden-button.png")}
+              source={require("./assets/images/pirate-wood.png")}
               style={styles.woodenButton}
               resizeMode="stretch"
             >
@@ -98,7 +92,7 @@ export default function PhonicsGameSummary({
 
           <TouchableOpacity style={styles.button} onPress={handleChangeDifficulty} activeOpacity={0.7}>
             <ImageBackground
-              source={require("./assets/images/wooden-button.png")}
+              source={require("./assets/images/pirate-wood.png")}
               style={styles.woodenButton}
               resizeMode="stretch"
             >
@@ -108,7 +102,7 @@ export default function PhonicsGameSummary({
 
           <TouchableOpacity style={styles.button} onPress={handleBackToHome} activeOpacity={0.7}>
             <ImageBackground
-              source={require("./assets/images/wooden-button.png")}
+              source={require("./assets/images/pirate-wood.png")}
               style={styles.woodenButton}
               resizeMode="stretch"
             >
@@ -136,66 +130,67 @@ const styles = StyleSheet.create({
   },
   animation: {
     width: width * 0.4,
-    height: width * 0.4,
-    marginBottom: height * 0.02,
+    height: width * 0.3,
+    marginBottom: height * 0.001,
   },
   title: {
-    fontSize: Math.min(width * 0.08, 42),
+    fontSize: Math.min(width * 0.08, 38),
     fontFamily: "OpenDyslexic-Bold",
     color: "#FFFFFF",
     textShadowColor: "rgba(0, 0, 0, 0.75)",
     textShadowOffset: { width: -1, height: 1 },
     textShadowRadius: 10,
-    marginBottom: height * 0.02,
+    marginBottom: height * 0.01,
   },
   statsContainer: {
-    width: width * 0.85,
-    height: height * 0.3,
-    marginVertical: height * 0.03,
+    width: width * 1.05,
+    height: height * 0.45,
+    marginVertical: height * 0.02,
     justifyContent: "center",
     alignItems: "center",
   },
   statsContent: {
-    width: "80%",
+    width: "70%",
     alignItems: "center",
+    padding: 20,
   },
   messageText: {
-    fontSize: Math.min(width * 0.06, 28),
+    fontSize: Math.min(width * 0.06, 24),
     fontFamily: "OpenDyslexic-Bold",
-    color: "#8B4513",
+    color: "#4f270a",
     marginBottom: height * 0.015,
     textAlign: "center",
   },
   difficultyText: {
-    fontSize: Math.min(width * 0.05, 24),
+    fontSize: Math.min(width * 0.05, 22),
     fontFamily: "OpenDyslexic-Bold",
     color: "#8B4513",
-    marginBottom: height * 0.015,
+    
     textAlign: "center",
   },
   scoreText: {
-    fontSize: Math.min(width * 0.07, 32),
+    fontSize: Math.min(width * 0.07, 28),
     fontFamily: "OpenDyslexic-Bold",
     color: "#8B4513",
-    marginBottom: height * 0.015,
+    
     textAlign: "center",
   },
   statsText: {
-    fontSize: Math.min(width * 0.05, 25),
+    fontSize: Math.min(width * 0.05, 22),
     fontFamily: "OpenDyslexic-Bold",
     color: "#8B4513",
-    marginBottom: height * 0.01,
+    
     textAlign: "center",
   },
   buttonsContainer: {
     width: "90%",
     alignItems: "center",
-    gap: height * 0.015,
+    gap: height * 0.001,
   },
   button: {
-    width: width * 0.7,
+    width: width * 0.5,
     height: height * 0.07,
-    marginBottom: height * 0.01,
+    marginBottom: height * 0.001,
   },
   woodenButton: {
     width: "100%",
@@ -204,10 +199,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   buttonText: {
-    color: "#3E2723",
-    fontSize: Math.min(width * 0.05, 20),
+    color: "#eb9f2d",
+    fontSize: Math.min(width * 0.03, 22),
     fontFamily: "OpenDyslexic-Bold",
     textAlign: "center",
+    transform: [{ translateY: -2 }],
   },
 })
 

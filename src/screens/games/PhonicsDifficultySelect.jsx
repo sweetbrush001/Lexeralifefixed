@@ -8,7 +8,7 @@ import { Audio } from "expo-av"
 
 const { width, height } = Dimensions.get("window")
 
-export default function PhonicsDifficultySelect({ onSelectDifficulty, onBackToHome = () => {} }) {
+export default function PhonicsDifficultySelect({ onSelectDifficulty, onBackToHome }) {
   const scaleAnim = useRef(new Animated.Value(0.9)).current
   const soundRef = useRef(null)
   const [soundLoaded, setSoundLoaded] = useState(false)
@@ -23,9 +23,9 @@ export default function PhonicsDifficultySelect({ onSelectDifficulty, onBackToHo
       friction: 8,
       tension: 40,
       useNativeDriver: true,
-    }).start();
+    }).start()
 
-    // Simplified audio setup
+    // Set up audio
     const setupAudio = async () => {
       try {
         // Configure audio mode first
@@ -34,33 +34,33 @@ export default function PhonicsDifficultySelect({ onSelectDifficulty, onBackToHo
           playsInSilentModeIOS: true,
           shouldDuckAndroid: true,
           playThroughEarpieceAndroid: false,
-        });
+          staysActiveInBackground: false,
+        })
 
-        // Create and load the sound with options in one call
-        const { sound } = await Audio.Sound.createAsync(
-          require("./assets/sounds/ocean-ambience.mp3"),
-          { 
-            isLooping: true,
-            volume: 0.5,
-            shouldPlay: true 
-          }
-        );
+        // Create and load the sound
+        const soundObject = new Audio.Sound()
+        await soundObject.loadAsync(require("./assets/sounds/ocean-ambience.mp3"))
+        await soundObject.setIsLoopingAsync(true)
+        await soundObject.setVolumeAsync(0.5)
 
         // Only set state if component is still mounted
         if (isMounted.current) {
-          soundRef.current = sound;
-          setSoundLoaded(true);
-          console.log("Difficulty select sound loaded successfully");
+          soundRef.current = soundObject
+          setSoundLoaded(true)
+
+          // Play the sound
+          await soundObject.playAsync()
+          console.log("Difficulty select sound loaded and playing")
         } else {
-          // Clean up immediately if unmounted
-          sound.unloadAsync().catch(console.error);
+          // If component unmounted during setup, clean up immediately
+          await soundObject.unloadAsync()
         }
       } catch (error) {
-        console.error("Error setting up difficulty select sound:", error);
+        console.error("Error setting up difficulty select sound:", error)
       }
-    };
+    }
 
-    setupAudio();
+    setupAudio()
 
     // Cleanup function
     return () => {
@@ -101,44 +101,50 @@ export default function PhonicsDifficultySelect({ onSelectDifficulty, onBackToHo
   }, [])
 
   const handleSelect = (difficulty) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
 
-    // Simplified sound stopping
-    try {
+    // Stop sound before navigating
+    const stopSound = async () => {
       if (soundRef.current && soundLoaded) {
-        soundRef.current.stopAsync().catch(error => {
-          console.log("Error stopping sound on select:", error);
-        });
+        try {
+          const status = await soundRef.current.getStatusAsync()
+          if (status.isLoaded) {
+            await soundRef.current.stopAsync()
+          }
+        } catch (error) {
+          console.log("Error stopping sound on select:", error)
+        }
       }
-    } catch (error) {
-      console.log("Error handling difficulty selection:", error);
+
+      // Navigate after attempting to stop sound
+      onSelectDifficulty(difficulty)
     }
 
-    // Navigate regardless of sound stop success
-    onSelectDifficulty(difficulty);
-  };
+    stopSound()
+  }
 
   const handleBackToHome = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
 
-    // Simplified sound stopping
-    try {
+    // Stop sound before navigating
+    const stopSound = async () => {
       if (soundRef.current && soundLoaded) {
-        soundRef.current.stopAsync().catch(error => {
-          console.log("Error stopping sound on back:", error);
-        });
+        try {
+          const status = await soundRef.current.getStatusAsync()
+          if (status.isLoaded) {
+            await soundRef.current.stopAsync()
+          }
+        } catch (error) {
+          console.log("Error stopping sound on back:", error)
+        }
       }
-    } catch (error) {
-      console.log("Error handling back to home:", error);
+
+      // Navigate after attempting to stop sound
+      onBackToHome()
     }
 
-    // Only call if it's a function
-    if (typeof onBackToHome === 'function') {
-      onBackToHome();
-    } else {
-      console.warn("onBackToHome is not a function");
-    }
-  };
+    stopSound()
+  }
 
   return (
     <ImageBackground
@@ -152,38 +158,38 @@ export default function PhonicsDifficultySelect({ onSelectDifficulty, onBackToHo
         <Animated.View style={[styles.buttonsContainer, { transform: [{ scale: scaleAnim }] }]}>
           <TouchableOpacity style={styles.difficultyButton} onPress={() => handleSelect("easy")} activeOpacity={0.7}>
             <ImageBackground
-              source={require("./assets/images/logo.png")}
-              style={styles.woodenSign}
+              source={require("./assets/images/pirate-green.png")}
+              style={styles.woodenSign1}
               resizeMode="contain"
             >
-              <Text style={styles.buttonText}>Cabin Boy</Text>
+              <Text style={styles.buttonText1}>Cabin Boy</Text>
             </ImageBackground>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.difficultyButton} onPress={() => handleSelect("medium")} activeOpacity={0.7}>
             <ImageBackground
-              source={require("./assets/images/logo.png")}
-              style={styles.woodenSign}
+              source={require("./assets/images/pirate-yellow.png")}
+              style={styles.woodenSign2}
               resizeMode="contain"
             >
-              <Text style={styles.buttonText}>First Mate</Text>
+              <Text style={styles.buttonText2}>First Mate</Text>
             </ImageBackground>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.difficultyButton} onPress={() => handleSelect("hard")} activeOpacity={0.7}>
             <ImageBackground
-              source={require("./assets/images/logo.png")}
-              style={styles.woodenSign}
+              source={require("./assets/images/pirate-red.png")}
+              style={styles.woodenSign2}
               resizeMode="contain"
             >
-              <Text style={styles.buttonText}>Captain</Text>
+              <Text style={styles.buttonText3}>Captain</Text>
             </ImageBackground>
           </TouchableOpacity>
         </Animated.View>
 
         <TouchableOpacity style={styles.backButton} onPress={handleBackToHome} activeOpacity={0.7}>
           <ImageBackground
-            source={require("./assets/images/wooden-button-small.png")}
+            source={require("./assets/images/pirate-wood.png")}
             style={styles.woodenButtonSmall}
             resizeMode="stretch"
           >
@@ -194,7 +200,7 @@ export default function PhonicsDifficultySelect({ onSelectDifficulty, onBackToHo
         {animationLoaded && (
           <View style={styles.animationContainer}>
             <LottieView
-              source={require("./assets/animations/loading.json")}
+              source={require("./assets/animations/ship-load.json")}
               autoPlay
               loop
               style={styles.shipAnimation}
@@ -214,7 +220,7 @@ const styles = StyleSheet.create({
   },
   overlay: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.2)",
+    backgroundColor: "rgba(0,0,0,0.3)",
     alignItems: "center",
     justifyContent: "center",
     padding: 20,
@@ -233,30 +239,57 @@ const styles = StyleSheet.create({
     width: "100%",
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: height * 0.05,
   },
   difficultyButton: {
     width: width * 0.7,
-    height: height * 0.1,
-    marginBottom: height * 0.02,
+    height: height * 0.12, 
+    marginBottom: height * 0.015, // Reduced gap between buttons
     alignItems: "center",
     justifyContent: "center",
   },
-  woodenSign: {
+  woodenSign1: {
     width: "100%",
     height: "100%",
     justifyContent: "center",
     alignItems: "center",
+    resizeMode: "contain",
+    aspectRatio: 1.5, 
   },
-  buttonText: {
-    fontSize: Math.min(width * 0.06, 28),
+  woodenSign2: {
+    width: "100%",
+    height: "100%",
+    justifyContent: "center",
+    alignItems: "center",
+    resizeMode: "contain",
+    aspectRatio: 1.6, 
+  },
+  buttonText1: {
+    fontSize: Math.min(width * 0.04, 24),
     fontFamily: "OpenDyslexic-Bold",
-    color: "#3E2723",
+    color: "#3afcab",
     textAlign: "center",
+    transform: [{translateY: -2}],
+    paddingHorizontal: 10,
+  },
+  buttonText2: {
+    fontSize: Math.min(width *0.04, 24),
+    fontFamily: "OpenDyslexic-Bold",
+    color: "#fcc83a",
+    textAlign: "center",
+    transform: [{translateY: -2}],
+    paddingHorizontal: 10,
+  },
+  buttonText3: {
+    fontSize: Math.min(width *0.04, 24),
+    fontFamily: "OpenDyslexic-Bold",
+    color: "#f76565",
+    textAlign: "center",
+    transform: [{translateY: -5}],
+    paddingHorizontal: 10,
   },
   backButton: {
-    width: width * 0.5,
-    height: height * 0.06,
+    width: width * 0.45,
+    height: height * 0.08,
     marginBottom: height * 0.05,
   },
   woodenButtonSmall: {
@@ -266,9 +299,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   backButtonText: {
-    fontSize: Math.min(width * 0.04, 18),
+    fontSize: Math.min(width * 0.03, 20),
     fontFamily: "OpenDyslexic-Bold",
-    color: "#3E2723",
+    color: "#eb9f2d",
     textAlign: "center",
   },
   animationContainer: {
