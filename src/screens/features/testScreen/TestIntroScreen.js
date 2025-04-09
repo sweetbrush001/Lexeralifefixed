@@ -105,17 +105,17 @@ const styles = StyleSheet.create({
   header: {
     paddingHorizontal: 24,
     paddingTop: 40,
-    paddingBottom: 20,
+    paddingBottom: 15,
   },
   title: {
-    fontSize: 70,
+    fontSize: 60,
     fontWeight: "800",
     color: "#1A1A1A",
-    marginBottom: 10,
+    marginBottom: 5,
     letterSpacing: -0.5,
     textAlign: "center",
     position: "relative",
-    marginTop: 50,
+    marginTop: 40,
    
   },
   subtitle: {
