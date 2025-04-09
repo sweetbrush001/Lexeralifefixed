@@ -2,7 +2,7 @@
 
 import { View, Text, TouchableOpacity, StyleSheet, ImageBackground } from "react-native";
 import { Feather } from "@expo/vector-icons";
-import * as Haptics from "expo-haptics"
+import * as Haptics from "expo-haptics";
 
 const AudioControls = ({ onPlayAudio, playbackRate, setPlaybackRate }) => {
   const handlePlaybackRateChange = (newRate) => {
@@ -54,7 +54,7 @@ const styles = StyleSheet.create({
   container: {
     width: "50%",
     alignItems: "center",
-    marginVertical: 10,
+    marginVertical: 0,
   },
   playButton: {
     flexDirection: "row",
@@ -82,13 +82,14 @@ const styles = StyleSheet.create({
   },
   speedControls: {
     flexDirection: "row",
-    justifyContent: "space-between",
+    justifyContent: "center", 
     width: "100%",
-    paddingHorizontal: 20,
+    paddingHorizontal: 20,  
   },
   speedButton: {
     paddingVertical: 8,
     paddingHorizontal: 12,
+    
   },
   tinyButton: {
     width: 60,
